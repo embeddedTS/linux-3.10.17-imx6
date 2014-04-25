@@ -1290,6 +1290,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	char phy_name[MII_BUS_ID_SIZE + 3];
 	int phy_id;
 	int dev_id = fep->dev_id;
+	const char *pm;
 
 	fep->phy_dev = NULL;
 
@@ -1333,6 +1334,40 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 
 	phy_dev->advertising = phy_dev->supported;
 
+	if (fep->pdev) {
+	   if (of_property_read_string(fep->pdev->dev.of_node, 
+	      "phy-autoneg", &pm) == 0) {	   	   	 	 	 	 
+	      if (!strcasecmp(pm, "enable"))
+	         phy_dev->autoneg = AUTONEG_ENABLE;
+	      else if (!strcasecmp(pm, "disable"))
+	         phy_dev->autoneg = AUTONEG_DISABLE;
+	      else
+	         printk("Warning:  Invalid value '%s' for phy-autoneg\n", pm);
+	   }
+	
+	   if (of_property_read_string(fep->pdev->dev.of_node, 
+	      "phy-speed", &pm) == 0) {	   	 	 	 	 
+	      if (!strcmp(pm, "1000"))
+	         phy_dev->speed = SPEED_1000;
+	      else if (!strcmp(pm, "100"))
+	         phy_dev->speed = SPEED_100;
+	      else if (!strcmp(pm, "10"))
+	         phy_dev->speed = SPEED_10;
+	      else 
+	         printk("Warning:  Invalid value '%s' for phy-speed\n", pm);
+	   }
+				
+	   if (of_property_read_string(fep->pdev->dev.of_node, 
+	      "phy-duplex", &pm) == 0) {	   	   	 	 	 	 
+	      if (!strcasecmp(pm, "full"))
+	         phy_dev->duplex = DUPLEX_FULL;
+	      else if (!strcasecmp(pm, "half"))
+	         phy_dev->duplex = DUPLEX_HALF;	   
+	      else 
+	         printk("Warning:  Invalid value '%s' for phy-duplex\n", pm);
+	   }
+	}
+	
 	fep->phy_dev = phy_dev;
 	fep->link = 0;
 	fep->full_duplex = 0;
@@ -2148,7 +2183,7 @@ fec_probe(struct platform_device *pdev)
 	struct resource *r;
 	const struct of_device_id *of_id;
 	static int dev_id;
-
+	
 	of_id = of_match_device(fec_dt_ids, &pdev->dev);
 	if (of_id)
 		pdev->id_entry = of_id->data;
@@ -2201,7 +2236,7 @@ fec_probe(struct platform_device *pdev)
 	} else {
 		fep->phy_interface = ret;
 	}
-
+	
 	fep->clk_ipg = devm_clk_get(&pdev->dev, "ipg");
 	if (IS_ERR(fep->clk_ipg)) {
 		ret = PTR_ERR(fep->clk_ipg);
