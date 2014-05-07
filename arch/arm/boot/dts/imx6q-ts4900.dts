@@ -18,6 +18,10 @@
 	model = "Technologic Systems i.MX6 Quad TS-4900";
 	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
 
+	aliases {
+		mxcfb0 = &mxcfb0;
+	};
+	
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -74,24 +78,24 @@
 		mux-ext-port = <4>;
 	};
 
-    mxcfb1: fb@0 {
+	
+    mxcfb0: fb@0 {
             compatible = "fsl,mxc_sdc_fb";
-            disp_dev = "ldb";
-            interface_pix_fmt = "RGB666";            
-            //mode_str ="LDB-XGA";
-            mode_str ="OKAYA-WVGA";
+            disp_dev = "lcd";
+            interface_pix_fmt = "RGB24";            
+            mode_str ="OKAYA-WVGA";            
             default_bpp = <16>;
             int_clk = <0>;
             late_init = <0>;
-            status = "disabled";
+            status = "okay";
     };
 
-
+    
 	lcd@0 {
 		compatible = "fsl,lcd";
 		ipu_id = <0>;
 		disp_id = <0>;
-		default_ifmt = "RGB565";
+		default_ifmt = "RGB24";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ipu_4900>;		
 		status = "okay";							
@@ -102,16 +106,9 @@
 		compatible = "pwm-backlight";
 		pwms = <&pwm3 0 5000000>;
 		brightness-levels = <0 4 8 16 32 64 128 255>;
-		default-brightness-level = <7>;
+		default-brightness-level = <255>;
 	};
 
-
-	backlight_lvds {
-		compatible = "pwm-backlight";
-		pwms = <&pwm4 0 5000000>;
-		brightness-levels = <0 4 8 16 32 64 128 255>;
-		default-brightness-level = <7>;
-	};
 };
 
 &pwm3 {
@@ -503,6 +500,7 @@
         status = "okay";
 };
 
+
 &fec {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_enet_4900>;
@@ -511,14 +509,4 @@
 		status = "okay";	
 };
 
-//&fec {
-		//pinctrl-names = "default";
-		//pinctrl-0 = <&pinctrl_enet_1>;
-		//phy-mode = "rgmii";
-		//phy-autoneg = "disable";
-		//phy-speed = "100";			
-		//phy-duplex = "full";
-		//phy-reset-gpios = <&gpio3 23 0>;
-		//status = "okay";	
-//};
 
