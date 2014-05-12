@@ -133,6 +133,17 @@ config MAX1363
 	  max11646, max11647) Provides direct access via sysfs and buffered
 	  data via the iio dev interface.
 
+config MCP3422
+        tristate "Microchip Technology MCP3422/3/4/6/7/8 driver"
+        depends on I2C
+        help
+          Say yes here to build support for Microchip Technology's
+          MCP3422, MCP3423, MCP3424, MCP3426, MCP3427 or MCP3428
+          analog to digital converters.
+
+          This driver can also be built as a module. If so, the module will be
+          called mcp3422.
+
 config TI_ADC081C
 	tristate "Texas Instruments ADC081C021/027"
 	depends on I2C
