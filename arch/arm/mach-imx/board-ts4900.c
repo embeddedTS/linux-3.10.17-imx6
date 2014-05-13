@@ -79,7 +79,7 @@ static __init int ts4900_wl12xx_init(void)
 	}
 */
 
-	ret = ts4900_register_mmcsd1(&ts4900_wl12xx_mmc_config);
+	//ret = ts4900_register_mmcsd1(&ts4900_wl12xx_mmc_config);
 	if (ret) {
 		pr_err("wl12xx/mmc registration failed: %d\n", ret);
 		goto exit;
@@ -121,11 +121,5 @@ exit:
 
 void imx6q_ts4900_init(void)
 {
-   printk("imx6q_ts4900_init()\n");  
-   
-#if (defined(CONFIG_WL12XX) || defined(CONFIG_WL12XX_MODULE))
-   ts4900_wl12xx_init();
-   sdfs
-#endif
-   
+   printk("imx6q_ts4900_init()\n");   
 }
