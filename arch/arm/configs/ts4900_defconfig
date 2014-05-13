@@ -461,10 +461,7 @@ CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
 CONFIG_ARM_APPENDED_DTB=y
 # CONFIG_ARM_ATAG_DTB_COMPAT is not set
-CONFIG_CMDLINE="console=ttymxc0,115200 androidboot.console=ttymxc0 vmalloc=400M debug init=/init video=mxcfb0:dev=lcd,OKAYA-WVGA,if=RGB565,fbpix=RGB565 video=mxcfb1:off video=mxcfb2:off fbmem=28M root=/dev/mmcblk0p1 rootwait rw"
-# CONFIG_CMDLINE_FROM_BOOTLOADER is not set
-# CONFIG_CMDLINE_EXTEND is not set
-CONFIG_CMDLINE_FORCE=y
+CONFIG_CMDLINE=""
 # CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
 CONFIG_AUTO_ZRELADDR=y
@@ -505,10 +502,7 @@ CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
 # CONFIG_ARM_EXYNOS5440_CPUFREQ is not set
 CONFIG_ARM_IMX6_CPUFREQ=y
 # CONFIG_ARM_KIRKWOOD_CPUFREQ is not set
-CONFIG_CPU_IDLE=y
-# CONFIG_CPU_IDLE_MULTIPLE_DRIVERS is not set
-CONFIG_CPU_IDLE_GOV_LADDER=y
-CONFIG_CPU_IDLE_GOV_MENU=y
+# CONFIG_CPU_IDLE is not set
 # CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED is not set
 
 #
@@ -1105,15 +1099,9 @@ CONFIG_FEC=y
 # CONFIG_NET_VENDOR_NATSEMI is not set
 # CONFIG_ETHOC is not set
 # CONFIG_NET_VENDOR_SEEQ is not set
-CONFIG_NET_VENDOR_SMSC=y
-CONFIG_SMC91X=y
-# CONFIG_SMC911X is not set
-CONFIG_SMSC911X=y
-# CONFIG_SMSC911X_ARCH_HOOKS is not set
+# CONFIG_NET_VENDOR_SMSC is not set
 # CONFIG_NET_VENDOR_STMICRO is not set
-CONFIG_NET_VENDOR_WIZNET=y
-# CONFIG_WIZNET_W5100 is not set
-# CONFIG_WIZNET_W5300 is not set
+# CONFIG_NET_VENDOR_WIZNET is not set
 CONFIG_PHYLIB=y
 
 #
@@ -1127,7 +1115,7 @@ CONFIG_PHYLIB=y
 # CONFIG_LXT_PHY is not set
 # CONFIG_CICADA_PHY is not set
 # CONFIG_VITESSE_PHY is not set
-CONFIG_SMSC_PHY=y
+# CONFIG_SMSC_PHY is not set
 # CONFIG_BROADCOM_PHY is not set
 # CONFIG_BCM87XX_PHY is not set
 # CONFIG_ICPLUS_PHY is not set
@@ -1152,36 +1140,8 @@ CONFIG_MICREL_PHY=y
 # CONFIG_USB_PEGASUS is not set
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_RTL8152 is not set
-CONFIG_USB_USBNET=y
-# CONFIG_USB_NET_AX8817X is not set
-# CONFIG_USB_NET_AX88179_178A is not set
-CONFIG_USB_NET_CDCETHER=y
-# CONFIG_USB_NET_CDC_EEM is not set
-CONFIG_USB_NET_CDC_NCM=y
-# CONFIG_USB_NET_CDC_MBIM is not set
-# CONFIG_USB_NET_DM9601 is not set
-# CONFIG_USB_NET_SMSC75XX is not set
-CONFIG_USB_NET_SMSC95XX=y
-# CONFIG_USB_NET_GL620A is not set
-# CONFIG_USB_NET_NET1080 is not set
-# CONFIG_USB_NET_PLUSB is not set
-# CONFIG_USB_NET_MCS7830 is not set
-# CONFIG_USB_NET_RNDIS_HOST is not set
-CONFIG_USB_NET_CDC_SUBSET=y
-# CONFIG_USB_ALI_M5632 is not set
-# CONFIG_USB_AN2720 is not set
-# CONFIG_USB_BELKIN is not set
-# CONFIG_USB_ARMLINUX is not set
-# CONFIG_USB_EPSON2888 is not set
-# CONFIG_USB_KC2190 is not set
-# CONFIG_USB_NET_ZAURUS is not set
-# CONFIG_USB_NET_CX82310_ETH is not set
-# CONFIG_USB_NET_KALMIA is not set
-# CONFIG_USB_NET_QMI_WWAN is not set
-# CONFIG_USB_NET_INT51X1 is not set
+# CONFIG_USB_USBNET is not set
 # CONFIG_USB_IPHETH is not set
-# CONFIG_USB_SIERRA_NET is not set
-# CONFIG_USB_VL600 is not set
 CONFIG_WLAN=y
 # CONFIG_LIBERTAS_THINFIRM is not set
 # CONFIG_AT76C50X_USB is not set
@@ -1189,16 +1149,7 @@ CONFIG_WLAN=y
 # CONFIG_USB_NET_RNDIS_WLAN is not set
 # CONFIG_RTL8187 is not set
 # CONFIG_MAC80211_HWSIM is not set
-CONFIG_ATH_CARDS=y
-# CONFIG_ATH_DEBUG is not set
-# CONFIG_ATH9K is not set
-# CONFIG_ATH9K_HTC is not set
-# CONFIG_CARL9170 is not set
-CONFIG_ATH6KL=m
-CONFIG_ATH6KL_SDIO=m
-# CONFIG_ATH6KL_USB is not set
-# CONFIG_ATH6KL_DEBUG is not set
-# CONFIG_AR5523 is not set
+# CONFIG_ATH_CARDS is not set
 # CONFIG_B43 is not set
 # CONFIG_B43LEGACY is not set
 # CONFIG_BRCMFMAC is not set
@@ -1235,7 +1186,7 @@ CONFIG_INPUT_MOUSEDEV_SCREEN_X=1024
 CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
 # CONFIG_INPUT_JOYDEV is not set
 CONFIG_INPUT_EVDEV=y
-CONFIG_INPUT_EVBUG=m
+CONFIG_INPUT_EVBUG=y
 
 #
 # Input Device Drivers
@@ -1284,7 +1235,7 @@ CONFIG_MOUSE_PS2_ELANTECH=y
 # CONFIG_INPUT_JOYSTICK is not set
 # CONFIG_INPUT_TABLET is not set
 CONFIG_INPUT_TOUCHSCREEN=y
-# CONFIG_TOUCHSCREEN_ADS7846 is not set
+CONFIG_TOUCHSCREEN_ADS7846=y
 # CONFIG_TOUCHSCREEN_AD7877 is not set
 # CONFIG_TOUCHSCREEN_AD7879 is not set
 # CONFIG_TOUCHSCREEN_ATMEL_MXT is not set
@@ -1341,6 +1292,7 @@ CONFIG_INPUT_MMA8450=y
 # CONFIG_INPUT_CM109 is not set
 # CONFIG_INPUT_UINPUT is not set
 # CONFIG_INPUT_PCF8574 is not set
+# CONFIG_INPUT_PWM_BEEPER is not set
 # CONFIG_INPUT_GPIO_ROTARY_ENCODER is not set
 # CONFIG_INPUT_DA9052_ONKEY is not set
 # CONFIG_INPUT_ADXL34X is not set
@@ -1439,7 +1391,7 @@ CONFIG_I2C_ALGOPCA=m
 #
 # CONFIG_I2C_CBUS_GPIO is not set
 # CONFIG_I2C_DESIGNWARE_PLATFORM is not set
-# CONFIG_I2C_GPIO is not set
+CONFIG_I2C_GPIO=y
 CONFIG_I2C_IMX=y
 # CONFIG_I2C_OCORES is not set
 # CONFIG_I2C_PCA_PLATFORM is not set
@@ -1471,7 +1423,7 @@ CONFIG_SPI_MASTER=y
 #
 # CONFIG_SPI_ALTERA is not set
 CONFIG_SPI_BITBANG=y
-# CONFIG_SPI_GPIO is not set
+CONFIG_SPI_GPIO=y
 CONFIG_SPI_IMX=y
 # CONFIG_SPI_FSL_SPI is not set
 # CONFIG_SPI_OC_TINY is not set
@@ -1484,7 +1436,7 @@ CONFIG_SPI_IMX=y
 #
 # SPI Protocol Masters
 #
-# CONFIG_SPI_SPIDEV is not set
+CONFIG_SPI_SPIDEV=y
 # CONFIG_SPI_TLE62X0 is not set
 
 #
@@ -1591,6 +1543,7 @@ CONFIG_GPIO_MXC=y
 CONFIG_POWER_SUPPLY=y
 # CONFIG_POWER_SUPPLY_DEBUG is not set
 # CONFIG_PDA_POWER is not set
+# CONFIG_GENERIC_ADC_BATTERY is not set
 # CONFIG_TEST_POWER is not set
 # CONFIG_BATTERY_DS2780 is not set
 # CONFIG_BATTERY_DS2781 is not set
@@ -1649,6 +1602,7 @@ CONFIG_HWMON=y
 # CONFIG_SENSORS_GL520SM is not set
 # CONFIG_SENSORS_GPIO_FAN is not set
 # CONFIG_SENSORS_HIH6130 is not set
+# CONFIG_SENSORS_IIO_HWMON is not set
 # CONFIG_SENSORS_IT87 is not set
 # CONFIG_SENSORS_JC42 is not set
 # CONFIG_SENSORS_LINEAGE is not set
@@ -1684,6 +1638,7 @@ CONFIG_SENSORS_MAX17135=y
 # CONFIG_SENSORS_MAX6697 is not set
 # CONFIG_SENSORS_MCP3021 is not set
 # CONFIG_SENSORS_NCT6775 is not set
+# CONFIG_SENSORS_NTC_THERMISTOR is not set
 # CONFIG_SENSORS_PC87360 is not set
 # CONFIG_SENSORS_PC87427 is not set
 # CONFIG_SENSORS_PCF8591 is not set
@@ -1965,29 +1920,30 @@ CONFIG_FB_MODE_HELPERS=y
 # CONFIG_FB_GOLDFISH is not set
 # CONFIG_FB_VIRTUAL is not set
 # CONFIG_FB_METRONOME is not set
-CONFIG_FB_MX3=y
+# CONFIG_FB_MX3 is not set
 # CONFIG_FB_BROADSHEET is not set
 # CONFIG_FB_AUO_K190X is not set
 CONFIG_FB_MXS=y
 # CONFIG_FB_SIMPLE is not set
 # CONFIG_EXYNOS_VIDEO is not set
 CONFIG_BACKLIGHT_LCD_SUPPORT=y
-CONFIG_LCD_CLASS_DEVICE=y
-CONFIG_LCD_L4F00242T03=y
+CONFIG_LCD_CLASS_DEVICE=m
+# CONFIG_LCD_L4F00242T03 is not set
 # CONFIG_LCD_LMS283GF05 is not set
 # CONFIG_LCD_LTV350QV is not set
 # CONFIG_LCD_ILI922X is not set
 # CONFIG_LCD_ILI9320 is not set
 # CONFIG_LCD_TDO24M is not set
 # CONFIG_LCD_VGG2432A4 is not set
-CONFIG_LCD_PLATFORM=y
+CONFIG_LCD_PLATFORM=m
 # CONFIG_LCD_S6E63M0 is not set
 # CONFIG_LCD_LD9040 is not set
 # CONFIG_LCD_AMS369FG06 is not set
 # CONFIG_LCD_LMS501KF03 is not set
 # CONFIG_LCD_HX8357 is not set
-CONFIG_BACKLIGHT_CLASS_DEVICE=y
-CONFIG_BACKLIGHT_GENERIC=y
+CONFIG_BACKLIGHT_CLASS_DEVICE=m
+CONFIG_BACKLIGHT_GENERIC=m
+CONFIG_BACKLIGHT_PWM=m
 # CONFIG_BACKLIGHT_DA9052 is not set
 # CONFIG_BACKLIGHT_ADP8860 is not set
 # CONFIG_BACKLIGHT_ADP8870 is not set
@@ -1996,10 +1952,10 @@ CONFIG_BACKLIGHT_GENERIC=y
 # CONFIG_BACKLIGHT_LP855X is not set
 CONFIG_FB_MXC=y
 CONFIG_FB_MXC_SYNC_PANEL=y
-# CONFIG_FB_MXC_LDB is not set
+CONFIG_FB_MXC_LDB=y
 # CONFIG_FB_MXC_MIPI_DSI is not set
 # CONFIG_FB_MXC_HDMI is not set
-CONFIG_FB_MXC_EDID=y
+# CONFIG_FB_MXC_EDID is not set
 # CONFIG_FB_MXC_EINK_PANEL is not set
 # CONFIG_FB_MXS_SII902X is not set
 # CONFIG_HANNSTAR_CABC is not set
@@ -2425,6 +2381,7 @@ CONFIG_LEDS_CLASS=y
 # CONFIG_LEDS_PCA9633 is not set
 # CONFIG_LEDS_DA9052 is not set
 # CONFIG_LEDS_DAC124S085 is not set
+# CONFIG_LEDS_PWM is not set
 # CONFIG_LEDS_REGULATOR is not set
 # CONFIG_LEDS_BD2802 is not set
 # CONFIG_LEDS_LT3593 is not set
@@ -2575,6 +2532,101 @@ CONFIG_STAGING=y
 # CONFIG_TRANZPORT is not set
 # CONFIG_LINE6_USB is not set
 # CONFIG_VT6656 is not set
+
+#
+# IIO staging drivers
+#
+
+#
+# Accelerometers
+#
+# CONFIG_ADIS16201 is not set
+# CONFIG_ADIS16203 is not set
+# CONFIG_ADIS16204 is not set
+# CONFIG_ADIS16209 is not set
+# CONFIG_ADIS16220 is not set
+# CONFIG_ADIS16240 is not set
+# CONFIG_LIS3L02DQ is not set
+
+#
+# Analog to digital converters
+#
+# CONFIG_AD7291 is not set
+# CONFIG_AD7606 is not set
+# CONFIG_AD799X is not set
+# CONFIG_AD7780 is not set
+# CONFIG_AD7816 is not set
+# CONFIG_AD7192 is not set
+# CONFIG_AD7280 is not set
+
+#
+# Analog digital bi-direction converters
+#
+# CONFIG_ADT7316 is not set
+
+#
+# Capacitance to digital converters
+#
+# CONFIG_AD7150 is not set
+# CONFIG_AD7152 is not set
+# CONFIG_AD7746 is not set
+
+#
+# Direct Digital Synthesis
+#
+# CONFIG_AD5930 is not set
+# CONFIG_AD9832 is not set
+# CONFIG_AD9834 is not set
+# CONFIG_AD9850 is not set
+# CONFIG_AD9852 is not set
+# CONFIG_AD9910 is not set
+# CONFIG_AD9951 is not set
+
+#
+# Digital gyroscope sensors
+#
+# CONFIG_ADIS16060 is not set
+# CONFIG_ADIS16130 is not set
+# CONFIG_ADIS16260 is not set
+
+#
+# Network Analyzer, Impedance Converters
+#
+# CONFIG_AD5933 is not set
+
+#
+# Light sensors
+#
+# CONFIG_SENSORS_ISL29018 is not set
+# CONFIG_SENSORS_ISL29028 is not set
+# CONFIG_TSL2583 is not set
+# CONFIG_TSL2x7x is not set
+
+#
+# Magnetometer sensors
+#
+# CONFIG_SENSORS_HMC5843 is not set
+
+#
+# Active energy metering IC
+#
+# CONFIG_ADE7753 is not set
+# CONFIG_ADE7754 is not set
+# CONFIG_ADE7758 is not set
+# CONFIG_ADE7759 is not set
+# CONFIG_ADE7854 is not set
+
+#
+# Resolver to digital converters
+#
+# CONFIG_AD2S90 is not set
+# CONFIG_AD2S1200 is not set
+# CONFIG_AD2S1210 is not set
+
+#
+# Triggers - standalone
+#
+# CONFIG_IIO_SIMPLE_DUMMY is not set
 # CONFIG_ZSMALLOC is not set
 # CONFIG_USB_ENESTORAGE is not set
 # CONFIG_BCM_WIMAX is not set
@@ -2598,9 +2650,10 @@ CONFIG_STAGING=y
 # CONFIG_CED1401 is not set
 CONFIG_DRM_IMX=y
 CONFIG_DRM_IMX_FB_HELPER=y
-# CONFIG_DRM_IMX_PARALLEL_DISPLAY is not set
+CONFIG_DRM_IMX_PARALLEL_DISPLAY=y
 # CONFIG_DRM_IMX_TVE is not set
-# CONFIG_DRM_IMX_IPUV3_CORE is not set
+CONFIG_DRM_IMX_IPUV3_CORE=y
+CONFIG_DRM_IMX_IPUV3=y
 # CONFIG_DGRP is not set
 CONFIG_CLKDEV_LOOKUP=y
 CONFIG_HAVE_CLK_PREPARE=y
@@ -2631,8 +2684,102 @@ CONFIG_CLKSRC_MMIO=y
 # CONFIG_PM_DEVFREQ is not set
 # CONFIG_EXTCON is not set
 # CONFIG_MEMORY is not set
-# CONFIG_IIO is not set
-# CONFIG_PWM is not set
+CONFIG_IIO=m
+# CONFIG_IIO_BUFFER is not set
+# CONFIG_IIO_TRIGGER is not set
+
+#
+# Accelerometers
+#
+# CONFIG_KXSD9 is not set
+# CONFIG_IIO_ST_ACCEL_3AXIS is not set
+
+#
+# Analog to digital converters
+#
+# CONFIG_AD7266 is not set
+# CONFIG_AD7298 is not set
+# CONFIG_AD7923 is not set
+# CONFIG_AD7791 is not set
+# CONFIG_AD7793 is not set
+# CONFIG_AD7476 is not set
+# CONFIG_AD7887 is not set
+# CONFIG_EXYNOS_ADC is not set
+# CONFIG_MAX1363 is not set
+CONFIG_MCP3422=m
+# CONFIG_TI_ADC081C is not set
+
+#
+# Amplifiers
+#
+# CONFIG_AD8366 is not set
+
+#
+# Hid Sensor IIO Common
+#
+
+#
+# Digital to analog converters
+#
+# CONFIG_AD5064 is not set
+# CONFIG_AD5360 is not set
+# CONFIG_AD5380 is not set
+# CONFIG_AD5421 is not set
+# CONFIG_AD5624R_SPI is not set
+# CONFIG_AD5446 is not set
+# CONFIG_AD5449 is not set
+# CONFIG_AD5504 is not set
+# CONFIG_AD5755 is not set
+# CONFIG_AD5764 is not set
+# CONFIG_AD5791 is not set
+# CONFIG_AD5686 is not set
+# CONFIG_MAX517 is not set
+# CONFIG_MCP4725 is not set
+
+#
+# Frequency Synthesizers DDS/PLL
+#
+
+#
+# Clock Generator/Distribution
+#
+# CONFIG_AD9523 is not set
+
+#
+# Phase-Locked Loop (PLL) frequency synthesizers
+#
+# CONFIG_ADF4350 is not set
+
+#
+# Digital gyroscope sensors
+#
+# CONFIG_ADIS16080 is not set
+# CONFIG_ADIS16136 is not set
+# CONFIG_ADXRS450 is not set
+# CONFIG_IIO_ST_GYRO_3AXIS is not set
+# CONFIG_ITG3200 is not set
+
+#
+# Inertial measurement units
+#
+# CONFIG_ADIS16400 is not set
+# CONFIG_ADIS16480 is not set
+# CONFIG_INV_MPU6050_IIO is not set
+
+#
+# Light sensors
+#
+# CONFIG_ADJD_S311 is not set
+# CONFIG_SENSORS_TSL2563 is not set
+# CONFIG_VCNL4000 is not set
+
+#
+# Magnetometer sensors
+#
+# CONFIG_AK8975 is not set
+# CONFIG_IIO_ST_MAGN_3AXIS is not set
+CONFIG_PWM=y
+CONFIG_PWM_IMX=y
 CONFIG_IRQCHIP=y
 CONFIG_ARM_GIC=y
 # CONFIG_IPACK_BUS is not set
