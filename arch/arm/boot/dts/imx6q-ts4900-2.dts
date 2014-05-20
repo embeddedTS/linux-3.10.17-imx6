@@ -15,7 +15,7 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "Technologic Systems i.MX6 Quad TS-4900";
+	model = "Technologic Systems i.MX6 Quad TS-4900 (TS-TPC-8390)";
 	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
 
 	aliases {
@@ -531,12 +531,14 @@
 	codec: sgtl5000@0a {
 		compatible = "fsl,sgtl5000";
 		reg = <0x0a>;
-		clocks = <&clks 169>;
+		clock-frequency = <12000000>;
+		VDDA-supply = <&reg_3p3v>;
+		VDDIO-supply = <&reg_3p3v>;
 	};
 };
 
 &sata {
-        status = "okay";
+        status = "disabled";
 };
 
 &flexcan1 {
