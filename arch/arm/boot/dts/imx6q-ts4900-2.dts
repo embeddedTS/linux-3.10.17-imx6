@@ -53,7 +53,6 @@
 			regulator-always-on;
 		};
 
-		
 		reg_usb_otg_vbus: usb_otg_vbus {
 			compatible = "regulator-fixed";
 			regulator-name = "usb_otg_vbus";
@@ -142,6 +141,7 @@
 			vcc-supply = <&reg_3p3v>;
 			spi-max-frequency = <100000>;
 			pendown-gpio = <&gpio3 11 0>;
+			ti,penirq-recheck-delay-usecs = /bits/ 16 <5000>;
 			ti,vref-mv = <3300>;
 			ti,swap-xy;
 			ti,keep-vref-on;
@@ -151,8 +151,8 @@
 			ti,y-plate-ohms = /bits/ 16 <400>;
 			ti,pressure-max = /bits/ 16 <15000>;
 			ti,debounce-rep = /bits/ 16 <2>;
-			ti,debounce-tol = /bits/ 16 <300>;
-			ti,debounce-max = /bits/ 16 <2>;
+			ti,debounce-tol = /bits/ 16 <65535>;
+			ti,debounce-max = /bits/ 16 <0>;
 			ti,pendown-gpio-debounce = <100000>;
 			linux,wakeup;
 		};
