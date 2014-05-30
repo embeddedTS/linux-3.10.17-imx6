@@ -85,7 +85,7 @@
 			"Mic Jack", "Mic Bias",
 			"Headphone Jack", "HP_OUT";
 		mux-int-port = <1>;
-		mux-ext-port = <4>;
+		mux-ext-port = <3>;
 	};
 
     mxcfb0: fb@0 {
@@ -206,8 +206,8 @@
 
 
 &ssi1 {
-	fsl,mode = "i2s-slave";
-	status = "okay";
+        fsl,mode = "i2s-slave";
+        status = "okay";
 };
 
 &iomuxc {
@@ -531,7 +531,7 @@
 	codec: sgtl5000@0a {
 		compatible = "fsl,sgtl5000";
 		reg = <0x0a>;
-		clock-frequency = <12000000>;
+		clocks = <&clks 201>;
 		VDDA-supply = <&reg_3p3v>;
 		VDDIO-supply = <&reg_3p3v>;
 	};
