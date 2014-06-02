@@ -407,7 +407,7 @@
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1_1>;
-	
+
 	rtc: isl12022@6f {
 		compatible = "isl,isl12022";
 		reg = <0x6f>;
@@ -419,12 +419,6 @@
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c2_2>;
-
-	codec: sgtl5000@0a {
-		compatible = "fsl,sgtl5000";
-		reg = <0x0a>;
-		clocks = <&clks 169>;
-	};
 };
 
 &sata {
