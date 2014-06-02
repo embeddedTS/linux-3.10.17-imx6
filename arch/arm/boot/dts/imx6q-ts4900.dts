@@ -407,9 +407,9 @@
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1_1>;
-
-	rtc: isl12020@6f {
-		compatible = "isl,isl12020";
+	
+	rtc: isl12022@6f {
+		compatible = "isl,isl12022";
 		reg = <0x6f>;
 	};
 };
