@@ -65,7 +65,6 @@
 			regulator-always-on;
 		};
 
-		
 		reg_usb_otg_vbus: usb_otg_vbus {
 			compatible = "regulator-fixed";
 			regulator-name = "usb_otg_vbus";
@@ -73,16 +72,6 @@
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio3 22 0>;
 			enable-active-high;
-		};
-
-		reg_lcd_3p3: lcd3p3 {
-			compatible = "regulator-fixed";
-			regulator-name = "lcd-3p3";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio2 19 1>;
-			enable-active-high;
-			regulator-boot-on;
 		};
 	};
 
