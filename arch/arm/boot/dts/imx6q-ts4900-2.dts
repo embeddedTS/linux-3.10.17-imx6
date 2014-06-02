@@ -26,6 +26,46 @@
 		reg = <0x10000000 0x40000000>;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		green-led {
+			label = "green-led";
+			gpios = <&gpio2 24 1>;
+			default-state = "on";
+		};
+
+		red-led {
+			label = "red-led";
+			gpios = <&gpio1 2 1>;
+			default-state = "off";
+		};
+
+		en-lcd-3p3v {
+			label = "en-lcd-3p3v";
+			gpios = <&gpio2 19 0>;
+			linux,default-trigger = "backlight";
+			default-state = "on";
+		};
+
+		// These are intended as userspace controlled IO.  In this kernel
+		// version LEDs are the best interface I can find to allow both
+		// userspace control and a default value.
+
+		en-usb-5v {
+			label = "en-usb-5v";
+			gpios = <&gpio2 22 1>;
+			default-state = "on";
+		};
+
+		en-speaker {
+			label = "en-speaker";
+			gpios = <&gpio5 30 0>;
+			default-state = "on";
+		};
+	};
+
+
 	regulators {
 		compatible = "simple-bus";
 
@@ -60,16 +100,6 @@
 			regulator-max-microvolt = <5000000>;
 			gpio = <&gpio3 22 0>;
 			enable-active-high;
-		};
-
-		reg_lcd_3p3: lcd3p3 {
-			compatible = "regulator-fixed";
-			regulator-name = "lcd-3p3";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio2 19 1>;
-			enable-active-high;
-			regulator-boot-on;
 		};
 	};
 
