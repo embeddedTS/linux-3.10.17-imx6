@@ -22,6 +22,22 @@
 		reg = <0x10000000 0x40000000>;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		green-led {
+			label = "green-led";
+			gpios = <&gpio2 24 1>;
+			default-state = "on";
+		};
+
+		red-led {
+			label = "red-led";
+			gpios = <&gpio1 2 1>;
+			default-state = "off";
+		};
+	};
+
 	regulators {
 		compatible = "simple-bus";
 
