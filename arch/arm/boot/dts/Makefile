@@ -135,6 +135,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	imx6sl-evk-csi.dtb \
 	imx6sl-evk-ldo.dtb \
 	vf610-twr.dtb \
+	imx6dl-ts4900.dtb \
 	imx6q-ts4900.dtb \
 	imx6q-ts4900-2.dtb
 dtb-$(CONFIG_ARCH_MXS) += imx23-evk.dtb \
