@@ -50,7 +50,7 @@
 		en-usb-5v {
 			label = "en-usb-5v";
 			gpios = <&gpio2 22 1>;
-			default-state = "on";
+			default-state = "off";
 		};
 
 		en-speaker {
