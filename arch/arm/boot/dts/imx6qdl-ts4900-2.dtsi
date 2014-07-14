@@ -211,7 +211,7 @@
 	status = "okay";
 	flash: n25q064@0 {
 		compatible = "st,n25q064";
-		spi-max-frequency = <59000000>;
+		spi-max-frequency = <25000000>;
 		reg = <0>;
 	};
 };
@@ -494,7 +494,6 @@
 	vmmc-supply = <&reg_3p3v>;
 	bus-width = <4>;
 	status = "okay";
-	fsl,cd-controller;
 	fsl,wp-controller;
 	non-removable;
 }; 
