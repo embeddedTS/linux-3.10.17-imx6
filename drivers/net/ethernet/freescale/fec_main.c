@@ -19,6 +19,10 @@
  * Copyright (c) 2004-2006 Macq Electronique SA.
  *
  * Copyright (C) 2010-2013 Freescale Semiconductor, Inc.
+ *
+ * Includes some patches originally made by boundarydevices to 3.0.35,
+ * slightly modified to fit the 3.10 kernel here, by Technologic Systems for
+ * the imx6-based TS-4900 board.
  */
 
 #include <linux/module.h>
@@ -63,6 +67,11 @@
 
 #include "fec.h"
 
+#if defined(CONFIG_MACH_TS4900)
+#include <../arch/arm/mach-imx/hardware.h>
+#include <../arch/arm/mach-imx/common.h>
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 #include <linux/busfreq-imx6.h>
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
@@ -84,7 +93,9 @@ static void fec_reset_phy(struct platform_device *pdev);
 /* Pause frame feild and FIFO threshold */
 #define FEC_ENET_FCE	(1 << 5)
 #define FEC_ENET_RSEM_V	0x84
+#define FEC_ENET_RSEM_V_TO1 0x10
 #define FEC_ENET_RSFL_V	16
+#define FEC_ENET_RSFL_V_TO1 0x20
 #define FEC_ENET_RAEM_V	0x8
 #define FEC_ENET_RAFL_V	0x8
 #define FEC_ENET_OPD_V	0xFFF0
@@ -478,6 +489,7 @@ fec_restart(struct net_device *ndev, int duplex)
 	u32 temp_mac[2];
 	u32 rcntl = OPT_FRAME_SIZE | 0x04;
 	u32 ecntl = 0x2; /* ETHEREN */
+	u32 rsem_val = 0;
 
 	if (netif_running(ndev)) {
 		netif_device_detach(ndev);
@@ -542,6 +554,10 @@ fec_restart(struct net_device *ndev, int duplex)
 		rcntl |= 0x02;
 		writel(0x0, fep->hwp + FEC_X_CNTRL);
 	}
+
+#ifdef FEC_FTRL
+	writel(PKT_MAXBUF_SIZE, fep->hwp + FEC_FTRL);
+#endif
 
 	fep->full_duplex = duplex;
 
@@ -629,6 +645,38 @@ fec_restart(struct net_device *ndev, int duplex)
 	}
 #endif /* !defined(CONFIG_M5272) */
 
+#if defined(CONFIG_MACH_TS4900)
+
+   if (cpu_is_imx6q() || (cpu_is_imx6dl()
+      && (imx_get_soc_revision() >= IMX_CHIP_REVISION_1_1))) {
+   /* enable pause frame*/
+      rcntl |= FEC_ENET_FCE;
+   }
+   
+   if (cpu_is_imx6q() || (cpu_is_imx6dl()      
+      && (imx_get_soc_revision() >= IMX_CHIP_REVISION_1_1))) {
+         
+         if (cpu_is_imx6q() && (imx_get_soc_revision() < IMX_CHIP_REVISION_1_1)) {
+            rsem_val = FEC_ENET_RSEM_V_TO1;
+         } else
+            rsem_val = FEC_ENET_RSEM_V;
+         /* set FIFO threshold parameter to reduce overrun */			
+         writel(rsem_val, fep->hwp + FEC_R_FIFO_RSEM);
+      }
+      
+	if (cpu_is_imx6q() && (imx_get_soc_revision() < IMX_CHIP_REVISION_1_1))
+	   writel(FEC_ENET_RSFL_V_TO1, fep->hwp + FEC_R_FIFO_RSFL);
+	else
+	   writel(FEC_ENET_RSFL_V, fep->hwp + FEC_R_FIFO_RSFL);
+	
+	writel(FEC_ENET_RAEM_V, fep->hwp + FEC_R_FIFO_RAEM);
+	writel(FEC_ENET_RAFL_V, fep->hwp + FEC_R_FIFO_RAFL);
+
+	/* OPD */
+	writel(FEC_ENET_OPD_V, fep->hwp + FEC_OPD);
+	
+#endif
+      
 	writel(rcntl, fep->hwp + FEC_R_CNTRL);
 
 	if (id_entry->driver_data & FEC_QUIRK_ENET_MAC) {
@@ -878,28 +926,32 @@ fec_enet_rx(struct net_device *ndev, int budget)
 			goto rx_processing_done;
 
 		/* Check for errors. */
+		status ^= BD_ENET_RX_LAST;
 		if (status & (BD_ENET_RX_LG | BD_ENET_RX_SH | BD_ENET_RX_NO |
-			   BD_ENET_RX_CR | BD_ENET_RX_OV)) {
+			   BD_ENET_RX_CR | BD_ENET_RX_OV | BD_ENET_RX_LAST |
+			   BD_ENET_RX_CL)) {
 			ndev->stats.rx_errors++;
-			if (status & (BD_ENET_RX_LG | BD_ENET_RX_SH)) {
-				/* Frame too long or too short. */
-				ndev->stats.rx_length_errors++;
-			}
-			if (status & BD_ENET_RX_NO)	/* Frame alignment */
-				ndev->stats.rx_frame_errors++;
-			if (status & BD_ENET_RX_CR)	/* CRC Error */
-				ndev->stats.rx_crc_errors++;
-			if (status & BD_ENET_RX_OV)	/* FIFO overrun */
+			if (status & BD_ENET_RX_OV) {
+				/* FIFO overrun */
 				ndev->stats.rx_fifo_errors++;
-		}
-
-		/* Report late collisions as a frame error.
-		 * On this error, the BD is closed, but we don't know what we
-		 * have in the buffer.  So, just drop this frame on the floor.
-		 */
-		if (status & BD_ENET_RX_CL) {
-			ndev->stats.rx_errors++;
-			ndev->stats.rx_frame_errors++;
+			} else {
+				if (status & (BD_ENET_RX_LG | BD_ENET_RX_SH
+				| BD_ENET_RX_LAST)) {
+					/* Frame too long or too short. */
+					ndev->stats.rx_length_errors++;
+					if (status & BD_ENET_RX_LAST)
+				dev_err(&ndev->dev,
+					"rcv is not +last, "
+					"0x%x\n", status);
+					}
+					if (status & BD_ENET_RX_CR) /* CRC Error */
+						ndev->stats.rx_crc_errors++;
+					/*
+					* Report late collisions as a frame error.
+					*/
+					if (status & (BD_ENET_RX_NO | BD_ENET_RX_CL))
+						+ ndev->stats.rx_frame_errors++;
+			}
 			goto rx_processing_done;
 		}
 
@@ -1328,6 +1380,15 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 #if !defined(CONFIG_M5272)
 		phy_dev->supported |= SUPPORTED_Pause;
 #endif
+
+#if defined(CONFIG_MACH_TS4900)
+      if (cpu_is_imx6q() || cpu_is_imx6dl()) {
+         /* SUPPORTED_Asym_Pause prevents my switch from linking up */
+         phy_dev->supported &= PHY_GBIT_FEATURES | SUPPORTED_Pause;
+      } else
+         phy_dev->supported &= PHY_BASIC_FEATURES;
+#endif
+
 	}
 	else
 		phy_dev->supported &= PHY_BASIC_FEATURES;
@@ -2209,6 +2270,10 @@ fec_probe(struct platform_device *pdev)
 		fep->pause_flag |= FEC_PAUSE_FLAG_AUTONEG;
 #endif
 
+#if defined(CONFIG_MACH_TS4900)
+   fep->pause_flag |= FEC_PAUSE_FLAG_ENABLE;
+#endif   
+   
 	/* Select default pin state */
 	pinctrl_pm_select_default_state(&pdev->dev);
 
