@@ -494,6 +494,14 @@
 		compatible = "isl,isl12022";
 		reg = <0x6f>;
 	};
+
+	fpga: ts4900gpio@28 {
+		compatible = "ts4900gpio";
+		reg = <0x28>;
+		bbclk25;
+		uart2en;
+		uart4en;
+	};
 };
 
 &i2c2 {

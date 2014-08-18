@@ -462,6 +462,12 @@ config GPIO_TPS65912
 	help
 	  This driver supports TPS65912 gpio chip
 
+config GPIO_TS4900
+	tristate "TS-4900 FPGA GPIO"
+	depends on I2C
+	help
+	  This driver supports the TS-4900 FPGA gpio
+
 config GPIO_TWL4030
 	tristate "TWL4030, TWL5030, and TPS659x0 GPIOs"
 	depends on TWL4030_CORE
