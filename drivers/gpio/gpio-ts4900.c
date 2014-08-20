@@ -44,7 +44,7 @@ static inline int gpio_ts4900_write(struct i2c_client *client, u16 addr, u8 data
 	msg.len = 3;
 	msg.buf = out;
 
-	//dev_dbg(&client->dev, "%s Writing 0x%X to 0x%X\n", __func__, data, addr);
+	dev_dbg(&client->dev, "%s Writing 0x%X to 0x%X\n", __func__, data, addr);
 
 	ret = i2c_transfer(client->adapter, &msg, 1);
 	if (ret != 1) {
@@ -85,7 +85,7 @@ static inline int gpio_ts4900_read(struct i2c_client *client, u16 addr)
 			__func__, ret);
 		return -EIO;
 	}
-	//dev_dbg(&client->dev, "%s read 0x%X from 0x%X\n", __func__, data[0], addr);
+	dev_dbg(&client->dev, "%s read 0x%X from 0x%X\n", __func__, data[0], addr);
 
 	return data[0];
 }
@@ -95,10 +95,13 @@ static int ts4900_set_gpio_direction(struct i2c_client *client,
 {
 	u8 reg;
 
+	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n", 
+		__func__, gpio, is_input);
+
 	reg = gpio_ts4900_read(client, gpio);
 	
-	if(is_input) reg &= 0x3;
-	else reg |= 0x4;
+	if(is_input) reg &= 0x6;
+	else reg |= 0x1;
 
 	gpio_ts4900_write(client, gpio, reg);
 
@@ -108,10 +111,14 @@ static int ts4900_set_gpio_direction(struct i2c_client *client,
 static int ts4900_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
 {
 	u8 reg;
+
+	dev_dbg(&client->dev, "%s setting gpio %d to output=%d\n", 
+		__func__, gpio, enable);
+
 	reg = gpio_ts4900_read(client, gpio);
 	
 	if(enable) reg |= 0x2;
-	else reg &= 0x3;
+	else reg &= 0x5;
 
 	return gpio_ts4900_write(client, gpio, reg);
 }
@@ -119,6 +126,8 @@ static int ts4900_set_gpio_dataout(struct i2c_client *client, int gpio, int enab
 static int ts4900_get_gpio_datain(struct i2c_client *client, int gpio)
 {
 	u8 reg, addr;
+	
+	dev_dbg(&client->dev, "%s Getting GPIO %d Input\n", __func__, gpio);
 
 	addr = gpio;
 	if(gpio > 12) gpio += 44;
@@ -165,7 +174,8 @@ static int ts_direction_out(struct gpio_chip *chip, unsigned offset, int value)
 	struct gpio_ts4900_priv *priv = to_gpio_ts4900(chip);
 
 	mutex_lock(&priv->mutex);
-	ts4900_set_gpio_direction(priv->client, offset, value);
+	ts4900_set_gpio_dataout(priv->client, offset, value);
+	ts4900_set_gpio_direction(priv->client, offset, 0);
 	mutex_unlock(&priv->mutex);
 
 	return 0;
@@ -312,7 +322,7 @@ MODULE_ALIAS("platform:ts4900gpio");
 
 static struct i2c_driver gpio_ts4900_driver = {
 	.driver = {
-		.name	= "ts4900_gpio",
+		.name	= "ts4900gpio",
 		.owner	= THIS_MODULE,
 #ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(ts4900gpio_ids),
