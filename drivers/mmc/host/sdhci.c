@@ -1426,9 +1426,12 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
 	spin_lock_irqsave(&host->lock, flags);
 
 	if (host->flags & SDHCI_DEVICE_DEAD) {
+		printk(KERN_INFO "TEST Here %d\n", __LINE__);
 		spin_unlock_irqrestore(&host->lock, flags);
-		if (host->vmmc && ios->power_mode == MMC_POWER_OFF)
+		if (host->vmmc && ios->power_mode == MMC_POWER_OFF){
+			printk(KERN_INFO "TEST Here %d\n", __LINE__);
 			mmc_regulator_set_ocr(host->mmc, host->vmmc, 0);
+		}
 		return;
 	}
 
@@ -1455,6 +1458,7 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
 
 	if (host->vmmc && vdd_bit != -1) {
 		spin_unlock_irqrestore(&host->lock, flags);
+
 		mmc_regulator_set_ocr(host->mmc, host->vmmc, vdd_bit);
 		spin_lock_irqsave(&host->lock, flags);
 	}
@@ -3083,14 +3087,9 @@ int sdhci_add_host(struct sdhci_host *host)
 
 	ocr_avail = 0;
 
-	host->vmmc = regulator_get(mmc_dev(mmc), "vmmc");
-	if (IS_ERR_OR_NULL(host->vmmc)) {
-		if (PTR_ERR(host->vmmc) < 0) {
-			pr_info("%s: no vmmc regulator found\n",
-				mmc_hostname(mmc));
-			host->vmmc = NULL;
-		}
-	}
+	/* If there are external regulators, get them */
+	if (mmc_regulator_get_supply(mmc) == -EPROBE_DEFER)
+		return -EPROBE_DEFER;
 
 #ifdef CONFIG_REGULATOR
 	/*
