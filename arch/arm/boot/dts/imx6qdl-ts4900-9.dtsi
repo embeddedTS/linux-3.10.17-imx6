@@ -69,12 +69,24 @@
 			gpio = <&gpio3 22 0>;
 			enable-active-high;
 		};
+
+		wl12xx_vmmc: wl12xx_vmmc {
+			compatible = "regulator-fixed";
+			regulator-name = "wl12xx_vmmc";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			gpio = <&gpio8 14 0>;
+			startup-delay-us = <100000>;
+			enable-active-high;
+			regulator-boot-on;
+		};
 	};
 
 	wlan {
-	   compatible = "ti,wilink8";
-	   interrupt-parent = <&gpio1>;
-	   interrupts = <26 IRQ_TYPE_EDGE_FALLING>;
+		compatible = "ti,wilink8";
+		interrupt-parent = <&gpio1>;
+		wlen-gpio = <&gpio8 14 0>;
+		interrupts = <26 IRQ_TYPE_EDGE_FALLING>;
 	};
 };
 
@@ -381,9 +393,11 @@
 		reg = <0x6f>;
 	};
 
-	fpga: ts4900gpio@28 {
+	gpio8: ts4900gpio@28 {
 		compatible = "ts4900gpio";
 		reg = <0x28>;
+		#gpio-cells = <2>;
+		gpio-controller;
 		bbclk14;
 		uart2en;
 		uart4en;
