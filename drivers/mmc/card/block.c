@@ -40,6 +40,7 @@
 #include <linux/mmc/host.h>
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sd.h>
+#include <linux/mmc/sdhci.h>
 
 #include <asm/uaccess.h>
 
@@ -1958,6 +1959,7 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 {
 	struct mmc_blk_data *md;
 	int devidx, ret;
+	struct sdhci_host *host;
 
 	devidx = find_first_zero_bit(dev_use, max_devices);
 	if (devidx >= max_devices)
@@ -2030,8 +2032,27 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
 	 * messages to tell when the card is present.
 	 */
 
-	snprintf(md->disk->disk_name, sizeof(md->disk->disk_name),
-		 "mmcblk%d%s", card->host->index, subname ? subname : "");
+	 /* This is a hack for this kernel, but new kernels will likely implement
+	  * a DT alias to assign mmc controllers in a consistent order.  This would be
+	  * preferred, but it doesn't exist here.
+	  * Without this, Linux assigns the mmcblk# in order of enumeration,
+	  * and the emmc & sd interfaces do not come up in an consistent order.
+	  * Also, the mmc0 gets deferred by a regulator so while it is the first 
+	  * controller, it is the last to come up so it gets card->host->index 2
+	  *  instead of 0.
+	  */
+
+	host = mmc_priv(card->host);
+	if(strstr(host->hw_name, "2194000.usdhc")) { // SD
+			snprintf(md->disk->disk_name, sizeof(md->disk->disk_name),
+		 "mmcblk%d%s", 1, subname ? subname : "");
+	} else if(strstr(host->hw_name, "2198000.usdhc")) { // EMMC
+			snprintf(md->disk->disk_name, sizeof(md->disk->disk_name),
+		 "mmcblk%d%s", 2, subname ? subname : "");
+	} else {
+			snprintf(md->disk->disk_name, sizeof(md->disk->disk_name),
+		 "mmcblk%d%s", md->name_idx, subname ? subname : "");
+	}
 
 	if (mmc_card_mmc(card))
 		blk_queue_logical_block_size(md->queue.queue,
