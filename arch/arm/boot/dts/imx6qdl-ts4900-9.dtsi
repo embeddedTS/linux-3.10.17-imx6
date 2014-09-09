@@ -321,13 +321,10 @@
 &usdhc1 { 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1_4900>;
-	vmmc-supply = <&reg_1p8v>;
+	vmmc-supply = <&wl12xx_vmmc>;
 	bus-width = <4>;
 	status = "okay";
-	fsl,cd-controller;
-	fsl,wp-controller;
 	non-removable;
-
 };
 
 // SD
