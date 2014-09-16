@@ -1,0 +1,7 @@
+config TS4900_MUXBUS
+   tristate "MUXBUS on TS-4900"
+   depends on MACH_TS4900
+   help
+      This option enables the driver for the muxbus on the TS-49XX 
+      series of boards from Technologic Systems
+      
