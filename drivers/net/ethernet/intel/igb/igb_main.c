@@ -76,6 +76,8 @@ static const struct e1000_info *igb_info_tbl[] = {
 	[board_82575] = &e1000_82575_info,
 };
 
+static char TSOUI[4] = {0x00, 0xd0, 0x69, 0xf7};
+
 static DEFINE_PCI_DEVICE_TABLE(igb_pci_tbl) = {
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I354_BACKPLANE_1GBPS) },
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I354_SGMII) },
@@ -110,6 +112,8 @@ static DEFINE_PCI_DEVICE_TABLE(igb_pci_tbl) = {
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_82575EB_COPPER), board_82575 },
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_82575EB_FIBER_SERDES), board_82575 },
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_82575GB_QUAD_COPPER), board_82575 },
+	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_COPPER1), board_82575 },
+	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_I210_COPPER2), board_82575 },
 	/* required last entry */
 	{0, }
 };
@@ -2067,8 +2071,9 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	err = -EIO;
 	hw->hw_addr = ioremap(mmio_start, mmio_len);
-	if (!hw->hw_addr)
+	if (!hw->hw_addr){
 		goto err_ioremap;
+	}
 
 	netdev->netdev_ops = &igb_netdev_ops;
 	igb_set_ethtool_ops(netdev);
@@ -2092,13 +2097,15 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	memcpy(&hw->nvm.ops, ei->nvm_ops, sizeof(hw->nvm.ops));
 	/* Initialize skew-specific constants */
 	err = ei->get_invariants(hw);
-	if (err)
+	if (err){
 		goto err_sw_init;
+	}
 
 	/* setup the private structure */
 	err = igb_sw_init(adapter);
-	if (err)
+	if (err) {
 		goto err_sw_init;
+	}
 
 	igb_get_bus_info_pcie(hw);
 
@@ -2163,14 +2170,20 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	 */
 	hw->mac.ops.reset_hw(hw);
 
+
+	// These two devices are "unprogrammed", or may not have the NVM
+	// attached
+	if(hw->device_id != E1000_DEV_ID_I210_COPPER1 &&
+		  hw->device_id != E1000_DEV_ID_I210_COPPER2){
 	/* make sure the NVM is good , i211 parts have special NVM that
 	 * doesn't contain a checksum
 	 */
-	if (hw->mac.type != e1000_i211) {
-		if (hw->nvm.ops.validate(hw) < 0) {
-			dev_err(&pdev->dev, "The NVM Checksum Is Not Valid\n");
-			err = -EIO;
-			goto err_eeprom;
+		if (hw->mac.type != e1000_i211) {
+			if (hw->nvm.ops.validate(hw) < 0) {
+				dev_err(&pdev->dev, "The NVM Checksum Is Not Valid\n");
+				err = -EIO;
+				goto err_eeprom;
+			}
 		}
 	}
 
@@ -2182,8 +2195,9 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	if (!is_valid_ether_addr(netdev->dev_addr)) {
 		dev_err(&pdev->dev, "Invalid MAC Address\n");
-		err = -EIO;
-		goto err_eeprom;
+		dev_info(&pdev->dev, "Using random mac address\n");
+		eth_hw_addr_random(netdev);
+		memcpy(netdev->dev_addr, TSOUI, sizeof(TSOUI));
 	}
 
 	/* get firmware version for ethtool -i */
