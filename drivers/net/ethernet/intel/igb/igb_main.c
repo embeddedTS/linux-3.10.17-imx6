@@ -2197,6 +2197,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		dev_err(&pdev->dev, "Invalid MAC Address\n");
 		dev_info(&pdev->dev, "Using random mac address\n");
 		eth_hw_addr_random(netdev);
+		memcpy(netdev->dev_addr, hw->mac.addr, netdev->addr_len);
 		memcpy(netdev->dev_addr, TSOUI, sizeof(TSOUI));
 	}
 
