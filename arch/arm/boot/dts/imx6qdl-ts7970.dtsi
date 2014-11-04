@@ -40,14 +40,14 @@
 
 		blue-led {
 			label = "blue-led";
-			gpios = <&gpio4 25 1>;
+			gpios = <&gpio4 25 0>;
 			default-state = "off";
 		};
 
 		usb-hub-reset {
 			label = "usb-hub-reset";
-			gpios = <&gpio2 11 1>;
-			default-state = "off";
+			gpios = <&gpio2 11 0>;
+			default-state = "on";
 		};
 	};
 
