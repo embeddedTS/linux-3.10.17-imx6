@@ -13,6 +13,10 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
+	aliases {
+		mxcfb0 = &mxcfb0;
+	};
+	
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -47,10 +51,9 @@
 		usb-hub-reset {
 			label = "usb-hub-reset";
 			gpios = <&gpio2 11 0>;
-			default-state = "on";
+			default-state = "off";
 		};
 	};
-
 	regulators {
 		compatible = "simple-bus";
 
@@ -113,17 +116,6 @@
 		mux-ext-port = <3>;
 	};
 
-	mxcfb1: fb@0 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "ldb";
-		interface_pix_fmt = "RGB666";
-		mode_str ="LDB-XGA";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
-	};
-
 	sound-hdmi {
 		compatible = "fsl,imx6q-audio-hdmi",
 			     "fsl,imx-audio-hdmi";
@@ -131,15 +123,13 @@
 		hdmi-controller = <&hdmi_audio>;
 	};
 
-	mxcfb2: fb@1 {
+	mxcfb0: fb@0 {
 		compatible = "fsl,mxc_sdc_fb";
 		disp_dev = "hdmi";
-		interface_pix_fmt = "RGB24";
-		mode_str ="1920x1080M@60";
-		default_bpp = <24>;
+		mode_str ="1280x720@60";
 		int_clk = <0>;
 		late_init = <0>;
-		status = "enabled";
+		status = "disabled";
 	};
 
 	wlan {
