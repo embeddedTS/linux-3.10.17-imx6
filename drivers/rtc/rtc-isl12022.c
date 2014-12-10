@@ -27,9 +27,11 @@
 #define ISL12022_REG_MO		0x04
 #define ISL12022_REG_YR		0x05
 #define ISL12022_REG_DW		0x06
-
 #define ISL12022_REG_SR		0x07
 #define ISL12022_REG_INT	0x08
+#define ISL12022_REG_VDD	0x09
+#define ISL12022_REG_VBAT	0x0a
+#define ISL12022_REG_BETA	0x0d
 
 /* ISL register bits */
 #define ISL12022_HR_MIL		(1 << 7)	/* military or 24 hour time */
@@ -39,6 +41,14 @@
 
 #define ISL12022_INT_WRTC	(1 << 6)
 
+#define ISL12022_VDD_VB75T_OFFSET	0
+#define ISL12022_VDD_VB75T_MASK		0x7
+#define ISL12022_VDD_VB85T_OFFSET	0
+#define ISL12022_VDD_VB85T_MASK		0x7
+
+#define ISL12022_BETA_TSE	(1 << 7)	/* Enable temp sensor compensation */
+#define ISL12022_BETA_BTSE	(1 << 6)	/* Temp sensor enabled in battery mode */
+#define ISL12022_BETA_BTSR	(1 << 6) 	/* Sample Frequency (1=10min,0=1min) */
 
 static struct i2c_driver isl12022_driver;
 
@@ -162,6 +172,7 @@ static int isl12022_set_datetime(struct i2c_client *client, struct rtc_time *tm)
 	size_t i;
 	int ret;
 	uint8_t buf[ISL12022_REG_DW + 1];
+	uint8_t beta;
 
 	dev_dbg(&client->dev, "%s: secs=%d, mins=%d, hours=%d, "
 		"mday=%d, mon=%d, year=%d, wday=%d\n",
@@ -180,6 +191,32 @@ static int isl12022_set_datetime(struct i2c_client *client, struct rtc_time *tm)
 		if (!(buf[0] & ISL12022_INT_WRTC)) {
 			dev_info(&client->dev,
 				 "init write enable and 24 hour format\n");
+
+			ret = isl12022_read_regs(client, ISL12022_REG_BETA, &beta, 1);
+			if (ret)
+				return ret;
+
+			/* Enable temp reading compensation per 10min  while powered
+			 * by vcc & battery */
+			ret = isl12022_write_reg(client,
+						 ISL12022_REG_BETA,
+						 (beta | ISL12022_BETA_TSE | ISL12022_BETA_BTSE)
+							& ~ISL12022_BETA_BTSR);
+			if (ret)
+				return ret;
+
+			/* Disable VDD trip detection */
+			ret = isl12022_write_reg(client, ISL12022_REG_VDD, 0);
+			if (ret)
+				return ret;
+
+			/* Set VBAT trip levels
+			 * VB85T 0 0 1 (2.295V)
+			 * VB75T 0 0 1 (2.025V)
+			 */
+			ret = isl12022_write_reg(client, ISL12022_REG_VBAT, 0x24);
+			if (ret)
+				return ret;
 
 			/* Set the write enable bit. */
 			ret = isl12022_write_reg(client,
@@ -251,6 +288,8 @@ static int isl12022_probe(struct i2c_client *client,
 			  const struct i2c_device_id *id)
 {
 	struct isl12022 *isl12022;
+	uint8_t buf;
+	int ret;
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C))
 		return -ENODEV;
@@ -263,6 +302,12 @@ static int isl12022_probe(struct i2c_client *client,
 	dev_dbg(&client->dev, "chip found, driver version " DRV_VERSION "\n");
 
 	i2c_set_clientdata(client, isl12022);
+
+	/* Make sure somebody is home */
+	ret = isl12022_read_regs(client, ISL12022_REG_INT, &buf, 1);
+	if (ret){
+		return -ENODEV;
+	}
 
 	isl12022->rtc = devm_rtc_device_register(&client->dev,
 					isl12022_driver.driver.name,
