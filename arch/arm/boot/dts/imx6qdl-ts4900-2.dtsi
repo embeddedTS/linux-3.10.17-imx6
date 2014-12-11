@@ -195,8 +195,8 @@
 
 	adc-i2c {
 		compatible = "i2c-gpio";
-		gpios = <&gpio6 31 0>, /* sda */
-				<&gpio2 20 0>; /* scl */
+		gpios = <&gpio2 20 0>, /* sda */
+				<&gpio6 31 0>; /* scl */
 		#address-cells = <1>;
 		#size-cells = <0>;
 
