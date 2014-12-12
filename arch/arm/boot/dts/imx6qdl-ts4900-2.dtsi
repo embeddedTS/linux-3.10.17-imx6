@@ -199,11 +199,6 @@
 				<&gpio6 31 0>; /* scl */
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		mcp3428@68 {
-			compatible = "mcp3428";
-			reg = <0x68>;
-		};
 	};
 };
 
