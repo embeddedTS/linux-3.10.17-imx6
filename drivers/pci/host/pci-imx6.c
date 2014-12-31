@@ -326,6 +326,9 @@ static void imx6_pcie_host_init(struct pcie_port *pp)
 
 	imx6_pcie_init_phy(pp);
 
+	regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12,
+		IMX6Q_GPR12_PCIE_CTL_2, 1 << 10);
+
 	imx6_pcie_deassert_core_reset(pp);
 
 	dw_pcie_setup_rc(pp);
