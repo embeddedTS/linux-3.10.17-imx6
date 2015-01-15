@@ -343,7 +343,7 @@
 	ipu-4900 {
 		pinctrl_ipu_4900: ipu2grp-1 {
 			fsl,pins = <
-				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK      0x30
+				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK      0x38
 				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15            0xe0 // DE
 				MX6QDL_PAD_DI0_PIN2__IPU1_DI0_PIN02             0xe0 // Hsync
 				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03             0xe0 // Vsync

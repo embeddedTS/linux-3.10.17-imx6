@@ -50,7 +50,7 @@ static struct fb_videomode lcdif_modedb[] = {
 	0,},
 	{
 	"OKAYA-WVGA", 60, 800, 480, 30066, 50, 70, 0, 0, 50, 50, 
-	FB_SYNC_CLK_LAT_FALL,
+	0,
 	FB_VMODE_NONINTERLACED,
 	0,},
 	{
