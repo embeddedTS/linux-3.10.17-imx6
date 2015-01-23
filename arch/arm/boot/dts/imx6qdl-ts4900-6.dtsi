@@ -283,11 +283,13 @@
 				MX6QDL_PAD_EIM_LBA__EIM_LBA_B          0x80000000 // BUS_ALE#
 				MX6QDL_PAD_EIM_RW__EIM_RW              0x80000000 // BUS_DIR
 				MX6QDL_PAD_EIM_CS0__EIM_CS0_B          0x80000000 // BUS_CS#
-				MX6QDL_PAD_EIM_WAIT__EIM_WAIT_B        0x80000000 // BUS_WAIT#
+				MX6QDL_PAD_EIM_WAIT__EIM_DTACK_B        0x80000000 // BUS_WAIT#
 				// On REV A this is CN1_99, on REV C CN1_65
 				MX6QDL_PAD_EIM_D31__GPIO3_IO31         0x80000000 // D31/GPIO
 				// On REV A this is CN1_65, on REV C CN1_99
 				MX6QDL_PAD_EIM_EB1__EIM_EB1_B          0x80000000 // BUS_BHE#
+
+				MX6QDL_PAD_CSI0_DATA_EN__EIM_DATA00    0x80000000 // BUS_BHE#
 			>;
 		};
 	};
@@ -307,6 +309,18 @@
 
 &weim {
     status = "okay";
+	#address-cells = <2>;
+	#size-cells = <1>;
+    pc104@0,0 {
+    	reg = <0 0 0x02000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		bank-width = <2>;
+		//   EIM_CS0GCR1, EIM_CS0GCR2, EIM_CS0RCR1,
+		// EIM_CS0RCR2, EIM_CS0WCR1, EIM_CS0WCR2
+    	fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
+    			0x00000000 0x1C092480 0x00000000>;
+    };
 };
 
 // WIFI
@@ -393,6 +407,7 @@
 		gpio-controller;
 		uart2en;
 		uart4en;
+		bbclk14;
 	};
 };
 
