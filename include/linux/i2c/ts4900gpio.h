@@ -5,7 +5,7 @@
 struct ts4900gpio_platform_data {
 	int bbclk12;
 	int bbclk14;
-	int bbclk25;
+	int bbclk24;
 	int uart2en;
 	int uart4en;
 };
