@@ -238,7 +238,7 @@ static const struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device 
 
 	pdata->bbclk12 = of_property_read_bool(node, "bbclk12");
 	pdata->bbclk14 = of_property_read_bool(node, "bbclk14");
-	pdata->bbclk25 = of_property_read_bool(node, "bbclk25");
+	pdata->bbclk24 = of_property_read_bool(node, "bbclk24");
 	pdata->uart2en = of_property_read_bool(node, "uart2en");
 	pdata->uart4en = of_property_read_bool(node, "uart4en");
 
@@ -297,8 +297,10 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 		printk(KERN_INFO "Enabling 14.3MHz baseboard clock on CN1-87\n");
 		gpio_ts4900_write(client, 48, 0x1);	
 	} 
-	if(pdata->bbclk25) {
-		printk(KERN_ERR "Not yet implemented\n");
+	if(pdata->bbclk24) {
+		printk(KERN_ERR "Enabling 24MHz baseboard clock on CN1-87\n");
+		gpio_ts4900_write(client, 47, 0x1);
+		gpio_ts4900_write(client, 52, 0x1);
 	} 
 	if(pdata->uart2en) {
 		printk(KERN_INFO "Mapping ttymxc1 to CN2-78/CN2-80\n");
