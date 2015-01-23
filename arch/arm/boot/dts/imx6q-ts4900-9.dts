@@ -18,7 +18,3 @@
 	model = "Technologic Systems i.MX6 Quad TS-4900 (TS-8150)";
 	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
 };
-
-&sata {
-        status = "disabled";
-};
