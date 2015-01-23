@@ -91,7 +91,6 @@ static struct gpio  muxbus_gpio_pins[] = {
 };   
    
 
-
 static inline void muxbus_bhe(int level)
 {
    gpio_set_value(MUXBUS_BHEN_GPIO, level);
