@@ -300,7 +300,7 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 	if(pdata->bbclk24) {
 		printk(KERN_ERR "Enabling 24MHz baseboard clock on CN1-87\n");
 		gpio_ts4900_write(client, 47, 0x1);
-		gpio_ts4900_write(client, 51, 0x1);
+		gpio_ts4900_write(client, 52, 0x1);
 	} 
 	if(pdata->uart2en) {
 		printk(KERN_INFO "Mapping ttymxc1 to CN2-78/CN2-80\n");
