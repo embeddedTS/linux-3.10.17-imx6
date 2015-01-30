@@ -122,7 +122,4 @@ obj-$(CONFIG_SOC_IMX53) += mach-imx53.o
 
 obj-$(CONFIG_SOC_VF610) += clk-vf610.o mach-vf610.o
 
-obj-$(CONFIG_MACH_TS4900) += board-ts4900.o
-
-
 obj-y += devices/
