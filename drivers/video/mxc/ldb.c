@@ -159,6 +159,11 @@ static struct fb_videomode ldb_modedb[] = {
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
+	{
+	"HANTRONIX-SVGA", 60, 800, 600, 25000, 50, 70, 0, 0, 50, 50,
+	0,
+	FB_VMODE_NONINTERLACED,
+	0,},
 };
 static int ldb_modedb_sz = ARRAY_SIZE(ldb_modedb);
 
