@@ -1,0 +1,24 @@
+/*
+ * Copyright 2011 Freescale Semiconductor, Inc.
+ * Copyright 2011 Linaro Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "imx6qdl-ts4900-a.dtsi"
+
+/ {
+	model = "Technologic Systems i.MX6 Quad TS-4900 (TS-TPC-8900)";
+	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
+};
+
+&sata {
+        status = "disabled";
+};
