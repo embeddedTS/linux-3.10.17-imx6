@@ -39,7 +39,6 @@
 		// These are intended as userspace controlled IO.  In this kernel
 		// version LEDs are the best interface I can find to allow both
 		// userspace control and a default value.
-
 		en-usb-5v {
 			label = "en-usb-5v";
 			gpios = <&gpio2 22 1>;
@@ -55,7 +54,6 @@
 
 	regulators {
 		compatible = "simple-bus";
-
 		reg_2p5v: 2p5v {
 			compatible = "regulator-fixed";
 			regulator-name = "2P5V";
@@ -80,7 +78,6 @@
 			gpio = <&gpio2 19 0>;
 			startup-delay-us = <60000>;
 			regulator-boot-on;
-			enable-active-high;
 		};
 
 		reg_1p8v: 1p8v {
@@ -130,20 +127,20 @@
             compatible = "fsl,mxc_sdc_fb";
             disp_dev = "lcd";
             interface_pix_fmt = "RGB24";            
-            mode_str ="OKAYA-WVGA";            
+            mode_str ="OKAYA-WVGA";
             default_bpp = <16>;
             int_clk = <0>;
             late_init = <0>;
             status = "okay";
     };
-    
+
 	lcd@0 {
 		compatible = "fsl,lcd";
 		ipu_id = <0>;
 		disp_id = <0>;
 		default_ifmt = "RGB24";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu_4900>;		
+		pinctrl-0 = <&pinctrl_ipu_4900>;
 		status = "okay";
 	};
 
@@ -175,8 +172,8 @@
 		touch: ads7843@0 {
 			compatible = "ti,ads7843";
 			reg = <0>;
-			interrupt-parent = <&gpio3>;
-			interrupts = <11 2>;
+			//interrupt-parent = <&gpio3>;
+			//interrupts = <11 2>;
 			vcc-supply = <&reg_3p3v>;
 			spi-max-frequency = <100000>;
 			pendown-gpio = <&gpio3 11 0>;
@@ -254,7 +251,7 @@
 	pinctrl-0 = <&pinctrl_misc>;
 
 	uart1-4900 {
-		pinctrl_uart1_4900: uart1-grp-2 {
+		pinctrl_uart1_4900: tsuart1-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA	0x1b0b1
 				MX6QDL_PAD_SD3_DAT6__UART1_RX_DATA	0x1b0b1
@@ -263,7 +260,7 @@
 	};
 
 	uart2-4900 {
-		pinctrl_uart2_4900: uart2-grp-2 {
+		pinctrl_uart2_4900: tsuart2-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_7__UART2_TX_DATA	0x1b0b1
 				MX6QDL_PAD_GPIO_8__UART2_RX_DATA	0x1b0b1
@@ -274,7 +271,7 @@
 	};
 
 	uart3-4900 {
-		pinctrl_uart3_4900: uart3-grp-2 {
+		pinctrl_uart3_4900: tsuart3-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
@@ -283,7 +280,7 @@
 	};
 
 	uart4-4900 {
-		pinctrl_uart4_4900: uart4-grp-2 {
+		pinctrl_uart4_4900: tsuart4-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
@@ -293,7 +290,7 @@
 	};
 
 	uart5-4900 {
-		pinctrl_uart5_4900: uart5-grp-2 {
+		pinctrl_uart5_4900: tsuart5-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL1__UART5_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW1__UART5_RX_DATA	0x1b0b1
@@ -303,7 +300,7 @@
 
 	// TODO verify irq uses same pad settings
 	usdhc1-4900 {
-		pinctrl_usdhc1_4900: usdhc1grp-1 {
+		pinctrl_usdhc1_4900: tsusdhc1grp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_SD1_CMD__SD1_CMD	     0x17059
 				MX6QDL_PAD_SD1_CLK__SD1_CLK	     0x10059
@@ -317,7 +314,7 @@
 	};
 
 	usdhc2-4900 {
-		pinctrl_usdhc2_4900: usdhc2grp-2 {
+		pinctrl_usdhc2_4900: tsusdhc2grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD2_CMD__SD2_CMD    0x17059
 				MX6QDL_PAD_SD2_CLK__SD2_CLK    0x10059
@@ -330,7 +327,7 @@
 	};
 
 	ecspi2-4900 {
-		pinctrl_ecspi2_4900: ecspi2-1 {
+		pinctrl_ecspi2_4900: tsecspi2-1 {
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK    0x100b1
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI    0x100b1
@@ -342,7 +339,7 @@
 	};
 
 	ipu-4900 {
-		pinctrl_ipu_4900: ipu2grp-1 {
+		pinctrl_ipu_4900: tsipugrp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK      0x38
 				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15            0xe0 // DE
@@ -599,6 +596,5 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_enet_4900>;
 		phy-mode = "rgmii";
-		phy-autoneg = "enable";
 		status = "okay";	
 };
