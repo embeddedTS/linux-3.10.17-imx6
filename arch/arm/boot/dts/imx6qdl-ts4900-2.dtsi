@@ -172,8 +172,8 @@
 		touch: ads7843@0 {
 			compatible = "ti,ads7843";
 			reg = <0>;
-			//interrupt-parent = <&gpio3>;
-			//interrupts = <11 2>;
+			interrupt-parent = <&gpio3>;
+			interrupts = <11 2>;
 			vcc-supply = <&reg_3p3v>;
 			spi-max-frequency = <100000>;
 			pendown-gpio = <&gpio3 11 0>;
