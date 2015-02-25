@@ -150,6 +150,13 @@
 		wlen-gpio = <&gpio8 14 0>;
 		interrupts = <26 IRQ_TYPE_EDGE_FALLING>;
 	};
+
+	wlan_bt_rfkill {
+		compatible = "net,rfkill-gpio";
+		name = "wlan_bt_rfkill";
+		type = <2>;     /* bluetooth */
+		gpios = <&gpio8 13 0>;
+	};
 	
 	backlight_lcd {
 		compatible = "pwm-backlight";
