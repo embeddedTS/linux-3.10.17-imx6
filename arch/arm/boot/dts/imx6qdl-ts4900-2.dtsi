@@ -219,6 +219,14 @@
 		compatible = "st,n25q064";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
+		mtd0@00000000 {
+			label = "U-Boot";
+			reg = <0x0 0xfffff>;
+		};
+		mtd@00100000 {
+			label = "env";
+			reg = <0x100000 0x2000>;
+		};
 	};
 };
 
