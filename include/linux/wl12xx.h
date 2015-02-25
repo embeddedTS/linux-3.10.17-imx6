@@ -57,6 +57,7 @@ struct wl12xx_platform_data {
 	int board_tcxo_clock;
 	unsigned long platform_quirks;
 	bool pwr_in_suspend;
+	int wlen_gpio;
 };
 
 /* Platform does not support level trigger interrupts */
