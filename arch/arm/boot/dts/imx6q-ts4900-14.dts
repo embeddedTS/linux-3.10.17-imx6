@@ -19,6 +19,17 @@
 	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
 };
 
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu1-di0";
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu1-di1";
+	};
+};
+
+
 &sata {
         status = "okay";
 };
