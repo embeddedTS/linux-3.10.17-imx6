@@ -45,6 +45,7 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
 		/* SuperH Linux logo */
 		logo = &logo_superh_mono;
 #endif
+printk(KERN_INFO "Here: %d\n", __LINE__);
 	}
 	
 	if (depth >= 4) {
@@ -60,6 +61,7 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
 		/* SuperH Linux logo */
 		logo = &logo_superh_vga16;
 #endif
+printk(KERN_INFO "Here: %d\n", __LINE__);
 	}
 	
 	if (depth >= 8) {
@@ -100,7 +102,15 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
 		/* M32R Linux logo */
 		logo = &logo_m32r_clut224;
 #endif
+printk(KERN_INFO "Here: %d\n", __LINE__);
+
+#ifdef CONFIG_LOGO_USER_CLUT224
+		logo = &logo_user_clut224;
+		printk(KERN_INFO "Here: %d\n", __LINE__);
+#endif
 	}
+
+
 	return logo;
 }
 EXPORT_SYMBOL_GPL(fb_find_logo);
