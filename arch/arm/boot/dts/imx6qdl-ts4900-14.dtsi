@@ -460,15 +460,19 @@
 		display-timings {
 			native-mode = <&timing0>;
 			timing0: hantronix-svga1 {
-				clock-frequency = <25000000>;
+				clock-frequency = <40000000>;
 				hactive = <800>;
 				vactive = <600>;
-				hback-porch = <50>;
-				hfront-porch = <70>;
-				vback-porch = <0>;
-				vfront-porch = <0>;
-				hsync-len = <50>;
-				vsync-len = <50>;
+				hback-porch = <46>;
+				hfront-porch = <210>;
+				vback-porch = <23>;
+				vfront-porch = <12>;
+				hsync-len = <20>;
+				vsync-len = <10>;
+				de-active = <1>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				pixelclk-active = <0>;
 			};
 		};
 	};
