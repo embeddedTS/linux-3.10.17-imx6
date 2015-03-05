@@ -48,7 +48,7 @@
 
 		en-speaker {
 			label = "en-speaker";
-			gpios = <&gpio5 30 0>;
+			gpios = <&gpio5 15 0>;
 			default-state = "on";
 		};
 	};
