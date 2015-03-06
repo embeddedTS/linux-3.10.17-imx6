@@ -176,7 +176,7 @@ struct ads7846 {
 #define	ADS_PD10_REF_ON		(2 << 0)	/* vREF on + penirq */
 #define	ADS_PD10_ALL_ON		(3 << 0)	/* ADC + vREF on */
 
-#define	MAX_12BIT	((1<<12)-1)
+#define	MAX_12BIT	((1<<13)-1)
 
 /* leave ADC powered up (disables penirq) between differential samples */
 #define	READ_12BIT_DFR(x, adc, vref) (ADS_START | ADS_A2A1A0_d_ ## x \
