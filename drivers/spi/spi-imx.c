@@ -1195,9 +1195,9 @@ static int spi_imx_probe(struct platform_device *pdev)
 	 * Only validated on i.mx6 now, can remove the constrain if validated on
 	 * other chips.
 	 */
-	if (spi_imx->devtype_data == &imx51_ecspi_devtype_data
+	/*if (spi_imx->devtype_data == &imx51_ecspi_devtype_data
 	    && spi_imx_sdma_init(&pdev->dev, spi_imx, master, res))
-		dev_err(&pdev->dev, "dma setup error,use pio instead\n");
+		dev_err(&pdev->dev, "dma setup error,use pio instead\n");*/
 
 	spi_imx->devtype_data->reset(spi_imx);
 
