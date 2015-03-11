@@ -19,7 +19,6 @@
  */
 #include <linux/types.h>
 #include <linux/hwmon.h>
-#include <linux/init.h>
 #include <linux/err.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
@@ -27,6 +26,9 @@
 #include <linux/interrupt.h>
 #include <linux/slab.h>
 #include <linux/pm.h>
+#include <linux/of.h>
+#include <linux/of_gpio.h>
+#include <linux/of_device.h>
 #include <linux/gpio.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/ads7846.h>
@@ -98,8 +100,7 @@ struct ads7846 {
 	struct spi_device	*spi;
 	struct regulator	*reg;
 
-#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
-	struct attribute_group	*attr_group;
+#if IS_ENABLED(CONFIG_HWMON)
 	struct device		*hwmon;
 #endif
 
@@ -175,7 +176,7 @@ struct ads7846 {
 #define	ADS_PD10_REF_ON		(2 << 0)	/* vREF on + penirq */
 #define	ADS_PD10_ALL_ON		(3 << 0)	/* ADC + vREF on */
 
-#define	MAX_12BIT	((1<<12)-1)
+#define	MAX_12BIT	((1<<13)-1)
 
 /* leave ADC powered up (disables penirq) between differential samples */
 #define	READ_12BIT_DFR(x, adc, vref) (ADS_START | ADS_A2A1A0_d_ ## x \
@@ -418,160 +419,6 @@ static int ads7845_read12_ser(struct device *dev, unsigned command)
 	return status;
 }
 
-#if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
-
-#define SHOW(name, var, adjust) static ssize_t \
-name ## _show(struct device *dev, struct device_attribute *attr, char *buf) \
-{ \
-	struct ads7846 *ts = dev_get_drvdata(dev); \
-	ssize_t v = ads7846_read12_ser(dev, \
-			READ_12BIT_SER(var)); \
-	if (v < 0) \
-		return v; \
-	return sprintf(buf, "%u\n", adjust(ts, v)); \
-} \
-static DEVICE_ATTR(name, S_IRUGO, name ## _show, NULL);
-
-
-/* Sysfs conventions report temperatures in millidegrees Celsius.
- * ADS7846 could use the low-accuracy two-sample scheme, but can't do the high
- * accuracy scheme without calibration data.  For now we won't try either;
- * userspace sees raw sensor values, and must scale/calibrate appropriately.
- */
-static inline unsigned null_adjust(struct ads7846 *ts, ssize_t v)
-{
-	return v;
-}
-
-SHOW(temp0, temp0, null_adjust)		/* temp1_input */
-SHOW(temp1, temp1, null_adjust)		/* temp2_input */
-
-
-/* sysfs conventions report voltages in millivolts.  We can convert voltages
- * if we know vREF.  userspace may need to scale vAUX to match the board's
- * external resistors; we assume that vBATT only uses the internal ones.
- */
-static inline unsigned vaux_adjust(struct ads7846 *ts, ssize_t v)
-{
-	unsigned retval = v;
-
-	/* external resistors may scale vAUX into 0..vREF */
-	retval *= ts->vref_mv;
-	retval = retval >> 12;
-
-	return retval;
-}
-
-static inline unsigned vbatt_adjust(struct ads7846 *ts, ssize_t v)
-{
-	unsigned retval = vaux_adjust(ts, v);
-
-	/* ads7846 has a resistor ladder to scale this signal down */
-	if (ts->model == 7846)
-		retval *= 4;
-
-	return retval;
-}
-
-SHOW(in0_input, vaux, vaux_adjust)
-SHOW(in1_input, vbatt, vbatt_adjust)
-
-static struct attribute *ads7846_attributes[] = {
-	&dev_attr_temp0.attr,
-	&dev_attr_temp1.attr,
-	&dev_attr_in0_input.attr,
-	&dev_attr_in1_input.attr,
-	NULL,
-};
-
-static struct attribute_group ads7846_attr_group = {
-	.attrs = ads7846_attributes,
-};
-
-static struct attribute *ads7843_attributes[] = {
-	&dev_attr_in0_input.attr,
-	&dev_attr_in1_input.attr,
-	NULL,
-};
-
-static struct attribute_group ads7843_attr_group = {
-	.attrs = ads7843_attributes,
-};
-
-static struct attribute *ads7845_attributes[] = {
-	&dev_attr_in0_input.attr,
-	NULL,
-};
-
-static struct attribute_group ads7845_attr_group = {
-	.attrs = ads7845_attributes,
-};
-
-static int ads784x_hwmon_register(struct spi_device *spi, struct ads7846 *ts)
-{
-	struct device *hwmon;
-	int err;
-
-	/* hwmon sensors need a reference voltage */
-	switch (ts->model) {
-	case 7846:
-		if (!ts->vref_mv) {
-			dev_dbg(&spi->dev, "assuming 2.5V internal vREF\n");
-			ts->vref_mv = 2500;
-			ts->use_internal = true;
-		}
-		break;
-	case 7845:
-	case 7843:
-		if (!ts->vref_mv) {
-			dev_warn(&spi->dev,
-				"external vREF for ADS%d not specified\n",
-				ts->model);
-			return 0;
-		}
-		break;
-	}
-
-	/* different chips have different sensor groups */
-	switch (ts->model) {
-	case 7846:
-		ts->attr_group = &ads7846_attr_group;
-		break;
-	case 7845:
-		ts->attr_group = &ads7845_attr_group;
-		break;
-	case 7843:
-		ts->attr_group = &ads7843_attr_group;
-		break;
-	default:
-		dev_dbg(&spi->dev, "ADS%d not recognized\n", ts->model);
-		return 0;
-	}
-
-	err = sysfs_create_group(&spi->dev.kobj, ts->attr_group);
-	if (err)
-		return err;
-
-	hwmon = hwmon_device_register(&spi->dev);
-	if (IS_ERR(hwmon)) {
-		sysfs_remove_group(&spi->dev.kobj, ts->attr_group);
-		return PTR_ERR(hwmon);
-	}
-
-	ts->hwmon = hwmon;
-	return 0;
-}
-
-static void ads784x_hwmon_unregister(struct spi_device *spi,
-				     struct ads7846 *ts)
-{
-	if (ts->hwmon) {
-		sysfs_remove_group(&spi->dev.kobj, ts->attr_group);
-		hwmon_device_unregister(ts->hwmon);
-	}
-}
-
-#else
 static inline int ads784x_hwmon_register(struct spi_device *spi,
 					 struct ads7846 *ts)
 {
@@ -582,7 +429,6 @@ static inline void ads784x_hwmon_unregister(struct spi_device *spi,
 					    struct ads7846 *ts)
 {
 }
-#endif
 
 static ssize_t ads7846_pen_down_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
@@ -961,9 +807,9 @@ static int ads7846_resume(struct device *dev)
 static SIMPLE_DEV_PM_OPS(ads7846_pm, ads7846_suspend, ads7846_resume);
 
 static int ads7846_setup_pendown(struct spi_device *spi,
-					   struct ads7846 *ts)
+				 struct ads7846 *ts,
+				 const struct ads7846_platform_data *pdata)
 {
-	struct ads7846_platform_data *pdata = spi->dev.platform_data;
 	int err;
 
 	/*
@@ -1003,7 +849,7 @@ static int ads7846_setup_pendown(struct spi_device *spi,
  * use formula #2 for pressure, not #3.
  */
 static void ads7846_setup_spi_msg(struct ads7846 *ts,
-				const struct ads7846_platform_data *pdata)
+				  const struct ads7846_platform_data *pdata)
 {
 	struct spi_message *m = &ts->msg[0];
 	struct spi_transfer *x = ts->xfer;
@@ -1201,33 +1047,107 @@ static void ads7846_setup_spi_msg(struct ads7846 *ts,
 	spi_message_add_tail(x, m);
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id ads7846_dt_ids[] = {
+	{ .compatible = "ti,tsc2046",	.data = (void *) 7846 },
+	{ .compatible = "ti,ads7843",	.data = (void *) 7843 },
+	{ .compatible = "ti,ads7845",	.data = (void *) 7845 },
+	{ .compatible = "ti,ads7846",	.data = (void *) 7846 },
+	{ .compatible = "ti,ads7873",	.data = (void *) 7873 },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, ads7846_dt_ids);
+
+static const struct ads7846_platform_data *ads7846_probe_dt(struct device *dev)
+{
+	struct ads7846_platform_data *pdata;
+	struct device_node *node = dev->of_node;
+	const struct of_device_id *match;
+
+	if (!node) {
+		dev_err(dev, "Device does not have associated DT data\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	match = of_match_device(ads7846_dt_ids, dev);
+	if (!match) {
+		dev_err(dev, "Unknown device model\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	pdata->model = (unsigned long)match->data;
+
+	of_property_read_u16(node, "ti,vref-delay-usecs",
+			     &pdata->vref_delay_usecs);
+	of_property_read_u16(node, "ti,vref-mv", &pdata->vref_mv);
+	pdata->keep_vref_on = of_property_read_bool(node, "ti,keep-vref-on");
+
+	pdata->swap_xy = of_property_read_bool(node, "ti,swap-xy");
+
+	of_property_read_u16(node, "ti,settle-delay-usec",
+			     &pdata->settle_delay_usecs);
+	of_property_read_u16(node, "ti,penirq-recheck-delay-usecs",
+			     &pdata->penirq_recheck_delay_usecs);
+
+	of_property_read_u16(node, "ti,x-plate-ohms", &pdata->x_plate_ohms);
+	of_property_read_u16(node, "ti,y-plate-ohms", &pdata->y_plate_ohms);
+
+	of_property_read_u16(node, "ti,x-min", &pdata->x_min);
+	of_property_read_u16(node, "ti,y-min", &pdata->y_min);
+	of_property_read_u16(node, "ti,x-max", &pdata->x_max);
+	of_property_read_u16(node, "ti,y-max", &pdata->y_max);
+
+	of_property_read_u16(node, "ti,pressure-min", &pdata->pressure_min);
+	of_property_read_u16(node, "ti,pressure-max", &pdata->pressure_max);
+
+	of_property_read_u16(node, "ti,debounce-max", &pdata->debounce_max);
+	of_property_read_u16(node, "ti,debounce-tol", &pdata->debounce_tol);
+	of_property_read_u16(node, "ti,debounce-rep", &pdata->debounce_rep);
+
+	of_property_read_u32(node, "ti,pendown-gpio-debounce",
+			     &pdata->gpio_pendown_debounce);
+
+	pdata->wakeup = of_property_read_bool(node, "linux,wakeup");
+
+	pdata->gpio_pendown = of_get_named_gpio(dev->of_node, "pendown-gpio", 0);
+
+	return pdata;
+}
+#else
+static const struct ads7846_platform_data *ads7846_probe_dt(struct device *dev)
+{
+	dev_err(dev, "no platform data defined\n");
+	return ERR_PTR(-EINVAL);
+}
+#endif
+
 static int ads7846_probe(struct spi_device *spi)
 {
+	const struct ads7846_platform_data *pdata;
 	struct ads7846 *ts;
 	struct ads7846_packet *packet;
 	struct input_dev *input_dev;
-	struct ads7846_platform_data *pdata = spi->dev.platform_data;
 	unsigned long irq_flags;
 	int err;
 
 	if (!spi->irq) {
 		dev_dbg(&spi->dev, "no IRQ?\n");
-		return -ENODEV;
-	}
-
-	if (!pdata) {
-		dev_dbg(&spi->dev, "no platform data?\n");
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	/* don't exceed max specified sample rate */
 	if (spi->max_speed_hz > (125000 * SAMPLE_BITS)) {
-		dev_dbg(&spi->dev, "f(sample) %d KHz?\n",
+		dev_err(&spi->dev, "f(sample) %d KHz?\n",
 				(spi->max_speed_hz/SAMPLE_BITS)/1000);
 		return -EINVAL;
 	}
 
-	/* We'd set TX word size 8 bits and RX word size to 13 bits ... except
+	/*
+	 * We'd set TX word size 8 bits and RX word size to 13 bits ... except
 	 * that even if the hardware can do that, the SPI controller driver
 	 * may not.  So we stick to very-portable 8 bit words, both RX and TX.
 	 */
@@ -1250,16 +1170,24 @@ static int ads7846_probe(struct spi_device *spi)
 	ts->packet = packet;
 	ts->spi = spi;
 	ts->input = input_dev;
-	ts->vref_mv = pdata->vref_mv;
-	ts->swap_xy = pdata->swap_xy;
 
 	mutex_init(&ts->lock);
 	init_waitqueue_head(&ts->wait);
+
+	pdata = dev_get_platdata(&spi->dev);
+	if (!pdata) {
+		pdata = ads7846_probe_dt(&spi->dev);
+		if (IS_ERR(pdata))
+			return PTR_ERR(pdata);
+	}
 
 	ts->model = pdata->model ? : 7846;
 	ts->vref_delay_usecs = pdata->vref_delay_usecs ? : 100;
 	ts->x_plate_ohms = pdata->x_plate_ohms ? : 400;
 	ts->pressure_max = pdata->pressure_max ? : ~0;
+
+	ts->vref_mv = pdata->vref_mv;
+	ts->swap_xy = pdata->swap_xy;
 
 	if (pdata->filter != NULL) {
 		if (pdata->filter_init != NULL) {
@@ -1281,7 +1209,7 @@ static int ads7846_probe(struct spi_device *spi)
 		ts->filter = ads7846_no_filter;
 	}
 
-	err = ads7846_setup_pendown(spi, ts);
+	err = ads7846_setup_pendown(spi, ts, pdata);
 	if (err)
 		goto err_cleanup_filter;
 
@@ -1370,6 +1298,13 @@ static int ads7846_probe(struct spi_device *spi)
 
 	device_init_wakeup(&spi->dev, pdata->wakeup);
 
+	/*
+	 * If device does not carry platform data we must have allocated it
+	 * when parsing DT data.
+	 */
+	if (!dev_get_platdata(&spi->dev))
+		devm_kfree(&spi->dev, (void *)pdata);
+
 	return 0;
 
  err_remove_attr_group:
@@ -1437,6 +1372,7 @@ static struct spi_driver ads7846_driver = {
 		.name	= "ads7846",
 		.owner	= THIS_MODULE,
 		.pm	= &ads7846_pm,
+		.of_match_table = of_match_ptr(ads7846_dt_ids),
 	},
 	.probe		= ads7846_probe,
 	.remove		= ads7846_remove,
