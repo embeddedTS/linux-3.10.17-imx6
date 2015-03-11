@@ -50,6 +50,9 @@
 #include <linux/freezer.h>
 #include <linux/tty.h>
 #include <linux/tty_flip.h>
+#include <linux/of.h>
+#include <linux/of_gpio.h>
+#include <linux/of_device.h>
 
 #include <linux/serial_max3100.h>
 
@@ -611,7 +614,7 @@ static int max3100_startup(struct uart_port *port)
 	INIT_WORK(&s->work, max3100_work);
 
 	if (request_irq(s->irq, max3100_irq,
-			IRQF_TRIGGER_FALLING, "max3100", s) < 0) {
+			IRQF_TRIGGER_FALLING | IRQF_SHARED, "max3100", s) < 0) {
 		dev_warn(&s->spi->dev, "cannot allocate irq %d\n", s->irq);
 		s->irq = 0;
 		destroy_workqueue(s->workqueue);
@@ -741,6 +744,53 @@ static struct uart_driver max3100_uart_driver = {
 };
 static int uart_driver_registered;
 
+#ifdef CONFIG_OF
+static const struct of_device_id max3100_dt_ids[] = {
+	{ .compatible = "max3100" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, max3100_dt_ids);
+
+static struct plat_max3100 *max3100_probe_dt(struct device *dev)
+{
+	struct plat_max3100 *pdata;
+	struct device_node *node = dev->of_node;
+	const struct of_device_id *match;
+
+	if (!node) {
+		dev_err(dev, "Device does not have associated DT data\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	match = of_match_device(max3100_dt_ids, dev);
+	if (!match) {
+		dev_err(dev, "Unknown device model\n");
+		return ERR_PTR(-EINVAL);
+	}
+
+	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	// Force MAX310 into loopback
+	of_property_read_u32(node, "loopback", &pdata->loopback);
+	// Crystal <1 = 3.6864MHz> <0 = 1.8432MHz>
+	of_property_read_u32(node, "crystal", &pdata->crystal);
+	// Poll time in ms, 0 disables CTS, 100 typical
+	of_property_read_u32(node, "poll-time", &pdata->poll_time);
+	return pdata;
+}
+
+#else 
+
+static const struct plat_max3100 *max3100_probe_dt(struct device *dev)
+{
+	dev_err(dev, "no platform data defined\n");
+	return ERR_PTR(-EINVAL);
+}
+
+#endif
+
 static int max3100_probe(struct spi_device *spi)
 {
 	int i, retval;
@@ -775,11 +825,19 @@ static int max3100_probe(struct spi_device *spi)
 		mutex_unlock(&max3100s_lock);
 		return -ENOMEM;
 	}
+
 	max3100s[i]->spi = spi;
 	max3100s[i]->irq = spi->irq;
 	spin_lock_init(&max3100s[i]->conf_lock);
 	spi_set_drvdata(spi, max3100s[i]);
-	pdata = spi->dev.platform_data;
+
+	pdata = dev_get_platdata(&spi->dev);
+	if (!pdata) {
+		pdata = max3100_probe_dt(&spi->dev);
+		if (IS_ERR(pdata))
+			return PTR_ERR(pdata);
+	}
+
 	max3100s[i]->crystal = pdata->crystal;
 	max3100s[i]->loopback = pdata->loopback;
 	max3100s[i]->poll_time = pdata->poll_time * HZ / 1000;
@@ -791,7 +849,7 @@ static int max3100_probe(struct spi_device *spi)
 	max3100s[i]->timer.function = max3100_timeout;
 	max3100s[i]->timer.data = (unsigned long) max3100s[i];
 
-	dev_dbg(&spi->dev, "%s: adding port %d\n", __func__, i);
+	dev_info(&spi->dev, "%s: adding port %d\n", __func__, i);
 	max3100s[i]->port.irq = max3100s[i]->irq;
 	max3100s[i]->port.uartclk = max3100s[i]->crystal ? 3686400 : 1843200;
 	max3100s[i]->port.fifosize = 16;
@@ -829,6 +887,7 @@ static int max3100_remove(struct spi_device *spi)
 		if (max3100s[i] == s) {
 			dev_dbg(&spi->dev, "%s: removing port %d\n", __func__, i);
 			uart_remove_one_port(&max3100_uart_driver, &max3100s[i]->port);
+
 			kfree(max3100s[i]);
 			max3100s[i] = NULL;
 			break;
