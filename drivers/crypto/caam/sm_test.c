@@ -74,9 +74,9 @@ static void key_display(struct device *dev, u8 *label, u16 size, u8 *key)
 {
 	unsigned i;
 
-	dev_info(dev, label);
+	dev_dbg(dev, label);
 	for (i = 0; i < size; i += 8)
-		dev_info(dev,
+		dev_dbg(dev,
 			 "[%04d] %02x %02x %02x %02x %02x %02x %02x %02x\n",
 			 i, key[i], key[i + 1], key[i + 2], key[i + 3],
 			 key[i + 4], key[i + 5], key[i + 6], key[i + 7]);
