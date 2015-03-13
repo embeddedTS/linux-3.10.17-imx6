@@ -105,6 +105,21 @@
 		compatible = "st,n25q064";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		uboot@0 {
+			label = "U-Boot";
+			reg = <0x0000000 0x0100000>;
+		};
+		ubootenv@0100000 {
+			label = "env";
+			reg = <0x0100000 0x0020000>;
+		};
+		user@0400000 {
+			label = "user-data";
+			reg = <0x0400000 0x0400000>;
+		};
 	};
 };
 
