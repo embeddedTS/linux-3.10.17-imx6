@@ -97,6 +97,8 @@ static int ts4900_set_gpio_direction(struct i2c_client *client,
 
 	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n", 
 		__func__, gpio, is_input);
+
+	reg = gpio_ts4900_read(client, gpio);
 	
 	if(is_input) reg &= 0x6;
 	else reg |= 0x1;
@@ -112,6 +114,8 @@ static int ts4900_set_gpio_dataout(struct i2c_client *client, int gpio, int enab
 
 	dev_dbg(&client->dev, "%s setting gpio %d to output=%d\n", 
 		__func__, gpio, enable);
+
+	reg = gpio_ts4900_read(client, gpio);
 	
 	if(enable) reg |= 0x2;
 	else reg &= 0x5;
