@@ -122,14 +122,19 @@
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio5 29 0>;
+	cs-gpios = <&gpio6 2 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_4900>;
 	status = "okay";
-	spidev: spi@0 {
-		compatible = "spidev";
+	serial1: max3100-1@0 {
+		compatible = "max3100";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <4 2>;
+		spi-max-frequency = <15000000>;
+		loopback = <0>;
+		crystal = <1>;
+		poll-time = <100>;
 	};
 };
 
@@ -448,6 +453,5 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_enet_4900>;
 		phy-mode = "rgmii";
-		phy-autoneg = "enable";
 		status = "okay";	
 };
