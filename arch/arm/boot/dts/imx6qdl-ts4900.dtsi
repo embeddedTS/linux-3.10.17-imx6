@@ -451,8 +451,6 @@
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		uart2en;
-		uart4en;
 	};
 };
 

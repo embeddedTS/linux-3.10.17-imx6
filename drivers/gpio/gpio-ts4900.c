@@ -231,12 +231,6 @@ static const struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device 
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);
 
-	pdata->bbclk12 = of_property_read_bool(node, "bbclk12");
-	pdata->bbclk14 = of_property_read_bool(node, "bbclk14");
-	pdata->bbclk24 = of_property_read_bool(node, "bbclk24");
-	pdata->uart2en = of_property_read_bool(node, "uart2en");
-	pdata->uart4en = of_property_read_bool(node, "uart4en");
-
 	return pdata;
 }
 #else
@@ -284,27 +278,6 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 		dev_err(&client->dev, "could not register gpiochip, %d\n", ret);
 		priv->gpio_chip.ngpio = 0;
 	}
-	if(pdata->bbclk12) {
-		printk(KERN_INFO "Enabling 12MHz baseboard clock on CN1-87\n");
-		gpio_ts4900_write(client, 47, 0x1);
-	}
-	if(pdata->bbclk14) {
-		printk(KERN_INFO "Enabling 14.3MHz baseboard clock on CN1-87\n");
-		gpio_ts4900_write(client, 48, 0x1);	
-	} 
-	if(pdata->bbclk24) {
-		printk(KERN_ERR "Enabling 24MHz baseboard clock on CN1-87\n");
-		gpio_ts4900_write(client, 47, 0x1);
-		gpio_ts4900_write(client, 52, 0x1);
-	} 
-	if(pdata->uart2en) {
-		printk(KERN_INFO "Mapping ttymxc1 to CN2-78/CN2-80\n");
-		gpio_ts4900_write(client, 49, 0x1);
-	}
-	if(pdata->uart4en){
-		printk(KERN_INFO "Mapping ttymxc3 to CN2-86/CN2-88\n");
-		gpio_ts4900_write(client, 50, 0x1);
-	} 
 
 	return ret;
 }

@@ -530,9 +530,6 @@
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		bbclk25;
-		uart2en;
-		uart4en;
 	};
 };
 

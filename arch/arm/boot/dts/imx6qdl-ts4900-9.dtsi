@@ -444,9 +444,6 @@
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		bbclk14;
-		uart2en;
-		uart4en;
 	};
 };
 
