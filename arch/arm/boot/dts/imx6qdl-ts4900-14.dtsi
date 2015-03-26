@@ -165,9 +165,9 @@
 };
 
 &pwm3 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_pwm3_1>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3_1>;
+	status = "okay";
 };
 
 &ecspi1 {
@@ -200,41 +200,30 @@
 };
 
 &ecspi2 {
-	fsl,spi-num-chipselects = <3>;
-	cs-gpios = <&gpio6 2 0>, <&gpio5 2 0>, <&gpio5 29 0>;
+	fsl,spi-num-chipselects = <2>;
+	cs-gpios = <&gpio6 2 0>, <&gpio5 29 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_4900>;
 	status = "okay";
 
-	serial0: max3100@0 {
+	serial1: max3100@0 {
 		compatible = "max3100";
 		reg = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 2>;
-		spi-max-frequency = <4000000>;
+		spi-max-frequency = <15000000>;
 		loopback = <0>;
-		crystal = <0>;
+		crystal = <1>;
 		poll-time = <100>;
 	};
 
-	serial1: max3100@1 {
-		compatible = "max3100";
-		reg = <1>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <4 2>;
-		spi-max-frequency = <4000000>;
-		loopback = <0>;
-		crystal = <0>;
-		poll-time = <100>;
-	};
-
-	touch: ads7843@2 {
+	touch: ads7843@1 {
 		compatible = "ti,ads7843";
-		reg = <2>;
+		reg = <1>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <26 2>;
 		vcc-supply = <&reg_3p3v>;
-		spi-max-frequency = <10000>;
+		spi-max-frequency = <2000000>;
 		pendown-gpio = <&gpio4 26 0>;
 		ti,penirq-recheck-delay-usecs = /bits/ 16 <5000>;
 		ti,vref-mv = <3300>;
@@ -242,10 +231,9 @@
 		ti,keep-vref-on;
 		ti,settle-delay-usec = /bits/ 16 <5000>;
 		ti,vref-delay-usecs = /bits/ 16 <0>;
-		ti,x-plate-ohms = /bits/ 16 <400>;
-		ti,y-plate-ohms = /bits/ 16 <400>;
-		ti,pressure-max = /bits/ 16 <15000>;
-		ti,debounce-rep = /bits/ 16 <2>;
+		ti,x-plate-ohms = /bits/ 16 <715>;
+		ti,y-plate-ohms = /bits/ 16 <325>;
+		ti,debounce-rep = /bits/ 16 <3>;
 		ti,debounce-tol = /bits/ 16 <65535>;
 		ti,debounce-max = /bits/ 16 <0>;
 		ti,pendown-gpio-debounce = <100000>;
@@ -253,10 +241,9 @@
 	};
 };
 
-
 &ssi1 {
-        fsl,mode = "i2s-slave";
-        status = "okay";
+	fsl,mode = "i2s-slave";
+	status = "okay";
 };
 
 &iomuxc {
@@ -344,8 +331,8 @@
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK    0x100b1
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI    0x100b1
 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO   0x100b1
-				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29    0x100b1 // Offboard CS0#
-				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02    0x100b1 // FPGA CS1#
+				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29    0x180b1 // Offboard CS0#
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02    0x180b1 // FPGA CS1#
 			>;
 		};
 	};
