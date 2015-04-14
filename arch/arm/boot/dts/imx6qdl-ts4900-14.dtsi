@@ -154,20 +154,12 @@
 		brightness-levels = <0 128 140 160 180 200 220 240 255>;
 		default-brightness-level = <8>;
 	};
-
-	adc-i2c {
-		compatible = "i2c-gpio";
-		gpios = <&gpio2 20 0>, /* sda */
-				<&gpio6 31 0>; /* scl */
-		#address-cells = <1>;
-		#size-cells = <0>;
-	};
 };
 
 &pwm3 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_pwm3_1>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3_1>;
+	status = "okay";
 };
 
 &ecspi1 {
@@ -176,59 +168,54 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi1_1>;
 	status = "okay";
+
 	flash: n25q064@0 {
 		compatible = "st,n25q064";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		mtd0@00000000 {
+
+		uboot@0 {
 			label = "U-Boot";
-			reg = <0x0 0xfffff>;
+			reg = <0x0000000 0x0100000>;
 		};
-		mtd@00100000 {
+		ubootenv@0100000 {
 			label = "env";
-			reg = <0x100000 0x2000>;
+			reg = <0x0100000 0x0020000>;
+		};
+		user@0400000 {
+			label = "user-data";
+			reg = <0x0400000 0x0400000>;
 		};
 	};
 };
 
 &ecspi2 {
-	fsl,spi-num-chipselects = <3>;
-	cs-gpios = <&gpio6 2 0>, <&gpio5 2 0>, <&gpio5 29 0>;
+	fsl,spi-num-chipselects = <2>;
+	cs-gpios = <&gpio6 2 0>, <&gpio5 29 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_4900>;
 	status = "okay";
 
-	serial0: max3100@0 {
+	serial1: max3100@0 {
 		compatible = "max3100";
 		reg = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 2>;
-		spi-max-frequency = <4000000>;
+		spi-max-frequency = <15000000>;
 		loopback = <0>;
-		crystal = <0>;
+		crystal = <1>;
 		poll-time = <100>;
 	};
 
-	serial1: max3100@1 {
-		compatible = "max3100";
-		reg = <1>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <4 2>;
-		spi-max-frequency = <4000000>;
-		loopback = <0>;
-		crystal = <0>;
-		poll-time = <100>;
-	};
-
-	touch: ads7843@2 {
+	touch: ads7843@1 {
 		compatible = "ti,ads7843";
-		reg = <2>;
+		reg = <1>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <26 2>;
 		vcc-supply = <&reg_3p3v>;
-		spi-max-frequency = <10000>;
+		spi-max-frequency = <2000000>;
 		pendown-gpio = <&gpio4 26 0>;
 		ti,penirq-recheck-delay-usecs = /bits/ 16 <5000>;
 		ti,vref-mv = <3300>;
@@ -236,10 +223,9 @@
 		ti,keep-vref-on;
 		ti,settle-delay-usec = /bits/ 16 <5000>;
 		ti,vref-delay-usecs = /bits/ 16 <0>;
-		ti,x-plate-ohms = /bits/ 16 <400>;
-		ti,y-plate-ohms = /bits/ 16 <400>;
-		ti,pressure-max = /bits/ 16 <15000>;
-		ti,debounce-rep = /bits/ 16 <2>;
+		ti,x-plate-ohms = /bits/ 16 <715>;
+		ti,y-plate-ohms = /bits/ 16 <325>;
+		ti,debounce-rep = /bits/ 16 <3>;
 		ti,debounce-tol = /bits/ 16 <65535>;
 		ti,debounce-max = /bits/ 16 <0>;
 		ti,pendown-gpio-debounce = <100000>;
@@ -247,10 +233,9 @@
 	};
 };
 
-
 &ssi1 {
-        fsl,mode = "i2s-slave";
-        status = "okay";
+	fsl,mode = "i2s-slave";
+	status = "okay";
 };
 
 &iomuxc {
@@ -272,7 +257,7 @@
 				MX6QDL_PAD_GPIO_7__UART2_TX_DATA	0x1b0b1
 				MX6QDL_PAD_GPIO_8__UART2_RX_DATA	0x1b0b1
 				MX6QDL_PAD_SD4_DAT6__UART2_CTS_B    0x1b0b1
-				MX6QDL_PAD_SD4_DAT5__UART2_RTS_B    0x1b0b1
+				MX6QDL_PAD_SD4_DAT5__UART2_RTS_B    0x130B1
 			>;
 		};
 	};
@@ -338,8 +323,8 @@
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK    0x100b1
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI    0x100b1
 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO   0x100b1
-				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29    0x100b1 // Offboard CS0#
-				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02    0x100b1 // FPGA CS1#
+				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29    0x180b1 // Offboard CS0#
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02    0x180b1 // FPGA CS1#
 			>;
 		};
 	};
@@ -597,8 +582,6 @@
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		uart2en;
-		uart4en;
 	};
 };
 
@@ -634,22 +617,4 @@
 		pinctrl-0 = <&pinctrl_enet_4900>;
 		phy-mode = "rgmii";
 		status = "okay";	
-};
-
-&gpc {
-	fsl,cpu_pupscr_sw2iso = <0xf>;
-	fsl,cpu_pupscr_sw = <0xf>;
-	fsl,cpu_pdnscr_iso2sw = <0x1>;
-	fsl,cpu_pdnscr_iso = <0x1>;
-	fsl,ldo-bypass = <1>; /* use ldo-bypass, u-boot will check it and configure */
-	fsl,wdog-reset = <1>; /* watchdog select of reset source */
-	pu-supply = <&pu_dummy>; /* ldo-bypass:use pu_dummy if VDDSOC share with VDDPU */
-};
-
-&gpu {
-	pu-supply = <&pu_dummy>; /* ldo-bypass:use pu_dummy if VDDSOC share with VDDPU */
-};
-
-&vpu {
-	pu-supply = <&pu_dummy>; /* ldo-bypass:use pu_dummy if VDDSOC share with VDDPU */
 };

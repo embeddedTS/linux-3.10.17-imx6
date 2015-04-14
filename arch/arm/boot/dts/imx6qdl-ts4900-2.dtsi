@@ -226,35 +226,41 @@
 		compatible = "st,n25q064";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
-		mtd0@00000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		uboot@0 {
 			label = "U-Boot";
-			reg = <0x0 0xfffff>;
+			reg = <0x0000000 0x0100000>;
 		};
-		mtd@00100000 {
+		ubootenv@0100000 {
 			label = "env";
-			reg = <0x100000 0x2000>;
+			reg = <0x0100000 0x0020000>;
+		};
+		user@0400000 {
+			label = "user-data";
+			reg = <0x0400000 0x0400000>;
 		};
 	};
 };
 
 &ecspi2 {
-	fsl,spi-num-chipselects = <2>;
-	cs-gpios = <&gpio5 29 0>, <&gpio5 31 0>;
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio6 2 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_4900>;
 	status = "okay";
-	spidev1: spi@0 {
-		compatible = "spidev";
+	serial1: max3100-1@0 {
+		compatible = "max3100";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
-	};	
-	spidev2: spi@1 {
-		compatible = "spidev";
-		reg = <1>;
-		spi-max-frequency = <25000000>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <4 2>;
+		spi-max-frequency = <15000000>;
+		loopback = <0>;
+		crystal = <1>;
+		poll-time = <100>;
 	};
 };
-
 
 &ssi1 {
 	fsl,mode = "i2s-slave";
@@ -299,7 +305,6 @@
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
-				MX6QDL_PAD_CSI0_DAT17__UART4_CTS_B  0x1b0b1
 			>;
 		};
 	};
@@ -575,8 +580,6 @@
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		uart2en;
-		uart4en;
 	};
 };
 
