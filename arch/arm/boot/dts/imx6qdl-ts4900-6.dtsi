@@ -126,8 +126,9 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_4900>;
 	status = "okay";
+
 	serial1: max3100-1@0 {
-		compatible = "max3100";
+		compatible = "max3100-ts";
 		reg = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 2>;
