@@ -719,14 +719,12 @@ static void ads7846_report_state(struct ads7846 *ts)
 			yscale
 			yoffset
 			delta */
-		printk(KERN_INFO "BEFORE X: %d, Y: %d\n", x, y);
  		if(ts->calib[6] != 0) {
  			x = (ts->calib[0] * x + ts->calib[1] * y + ts->calib[2]) / ts->calib[6];
  			if(x < 0) x = 0;
  			y = (ts->calib[3] * x + ts->calib[4] * y + ts->calib[5]) / ts->calib[6];
  			if(y < 0) y = 0;
  		}
- 		printk(KERN_INFO "AFTER X: %d, Y: %d\n", x, y);
 
 		input_report_abs(input, ABS_X, x);
 		input_report_abs(input, ABS_Y, y);
@@ -1083,7 +1081,6 @@ static const struct ads7846_platform_data *ads7846_probe_dt(struct device *dev)
 	struct ads7846_platform_data *pdata;
 	struct device_node *node = dev->of_node;
 	const struct of_device_id *match;
-	int i;
 
 	if (!node) {
 		dev_err(dev, "Device does not have associated DT data\n");
@@ -1130,11 +1127,6 @@ static const struct ads7846_platform_data *ads7846_probe_dt(struct device *dev)
 	of_property_read_u16(node, "ti,debounce-rep", &pdata->debounce_rep);
 
 	of_property_read_u32_array(node, "ti,calib", pdata->calib, 7);
-
-	for (i = 0; i < 7; i++)
-	{
-		printk(KERN_INFO "CALIB %d: %d\n", i, pdata->calib[i]);
-	}
 
 	of_property_read_u32(node, "ti,pendown-gpio-debounce",
 			     &pdata->gpio_pendown_debounce);
