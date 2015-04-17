@@ -341,52 +341,51 @@ static void max3100_port_work(struct work_struct *w)
 			rxchars += max3100_handlerx(s, rx);
 		}
 
-         x = 0;
-			if (s->port.x_char) {
-				tx = s->port.x_char;
-				x=1;
-			} else if (!uart_circ_empty(xmit) &&
-				   !uart_tx_stopped(&s->port)) {
-				tx = xmit->buf[xmit->tail];			
-			   x=2;
-			}
-			if (x) {                /* we have something to send, so send it! */
-				max3100_calc_parity(s, &tx);
-				tx |= MAX3100_WD | (s->rts ? MAX3100_RTS : 0);
-				max3100_sr(s, tx, &rx);
-				rxchars += max3100_handlerx(s, rx);
+      x = 0;
+      if (s->port.x_char) {
+         tx = s->port.x_char;
+         x=1;
+      } else if (!uart_circ_empty(xmit) &&
+            !uart_tx_stopped(&s->port)) {
+         tx = xmit->buf[xmit->tail];
+         x=2;
+      }
+      if (x) {                /* we have something to send, so send it! */
+         max3100_calc_parity(s, &tx);
+         tx |= MAX3100_WD | (s->rts ? MAX3100_RTS : 0);
+         max3100_sr(s, tx, &rx);
+         rxchars += max3100_handlerx(s, rx);
 
-				if (rx & MAX3100_T) {/* Tx buffer is/was empty, so tx was sent */
-				   if (x == 1) {
-				      s->port.icount.tx++;
-				      s->port.x_char = 0;
-				   } else if (x == 2) {
-				      xmit->tail = (xmit->tail + 1) &
-					      (UART_XMIT_SIZE - 1);
-					   s->port.icount.tx++;
-					}
-				}
-			} else {
-			   max3100_sr(s, MAX3100_RD, &rx);
-			   rxchars += max3100_handlerx(s, rx);
-			}
+         if (rx & MAX3100_T) {/* Tx buffer is/was empty, so tx was sent */
+            if (x == 1) {
+               s->port.icount.tx++;
+               s->port.x_char = 0;
+            } else if (x == 2) {
+               xmit->tail = (xmit->tail + 1) &
+                  (UART_XMIT_SIZE - 1);
+               s->port.icount.tx++;
+            }
+         }
+      } else {
+         max3100_sr(s, MAX3100_RD, &rx);
+         rxchars += max3100_handlerx(s, rx);
+      }
 
-		if (rxchars > 16) {
-			tty_flip_buffer_push(&s->port.state->port);
-			rxchars = 0;
-		}
-		if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
-			uart_write_wakeup(&s->port);
-		
-	} while (!s->force_end_work &&
-		 !freezing(current) &&
-		 ((rx & MAX3100_R) ||
-		  (!uart_circ_empty(xmit) &&
-		   !uart_tx_stopped(&s->port))));
+      if (rxchars > 16) {
+         tty_flip_buffer_push(&s->port.state->port);
+         rxchars = 0;
+      }
+      if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
+         uart_write_wakeup(&s->port);
 
-	if (rxchars > 0)
-		tty_flip_buffer_push(&s->port.state->port);
+   } while (!s->force_end_work &&
+      !freezing(current) &&
+         ((rx & MAX3100_R) ||
+         (!uart_circ_empty(xmit) &&
+         !uart_tx_stopped(&s->port))));
 
+   if (rxchars > 0)
+      tty_flip_buffer_push(&s->port.state->port);
 }
 
 
