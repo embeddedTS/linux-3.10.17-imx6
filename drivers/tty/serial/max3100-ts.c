@@ -316,7 +316,7 @@ static int max3100_handlerx(struct max3100ts_port *s, u16 rx)
 static void max3100_port_work(struct work_struct *w)
 {
 	struct max3100ts_port *s = container_of(w, struct max3100ts_port, work);
-	int rxchars;
+	int rxchars, x;
 	u16 tx, rx;
 	int conf, cconf, rts, crts;
 	struct circ_buf *xmit = &s->port.state->xmit;
@@ -325,7 +325,6 @@ static void max3100_port_work(struct work_struct *w)
 
 	rxchars = 0;
 	do {
-	   	   	   
 		spin_lock(&s->conf_lock);
 		conf = s->conf;
 		cconf = s->conf_commit;
@@ -342,29 +341,35 @@ static void max3100_port_work(struct work_struct *w)
 			rxchars += max3100_handlerx(s, rx);
 		}
 
-		max3100_sr(s, MAX3100_RD, &rx);
-		rxchars += max3100_handlerx(s, rx);
-
-		if (rx & MAX3100_T) {   /* Tx buffer is empty */
-			tx = 0xffff;
+         x = 0;
 			if (s->port.x_char) {
 				tx = s->port.x_char;
-				s->port.icount.tx++;
-				s->port.x_char = 0;
+				x=1;
 			} else if (!uart_circ_empty(xmit) &&
 				   !uart_tx_stopped(&s->port)) {
-				tx = xmit->buf[xmit->tail];
-				xmit->tail = (xmit->tail + 1) &
-					(UART_XMIT_SIZE - 1);
-				s->port.icount.tx++;
+				tx = xmit->buf[xmit->tail];			
+			   x=2;
 			}
-			if (tx != 0xffff) {
+			if (x) {                /* we have something to send, so send it! */
 				max3100_calc_parity(s, &tx);
 				tx |= MAX3100_WD | (s->rts ? MAX3100_RTS : 0);
 				max3100_sr(s, tx, &rx);
 				rxchars += max3100_handlerx(s, rx);
+
+				if (rx & MAX3100_T) {/* Tx buffer is/was empty, so tx was sent */
+				   if (x == 1) {
+				      s->port.icount.tx++;
+				      s->port.x_char = 0;
+				   } else if (x == 2) {
+				      xmit->tail = (xmit->tail + 1) &
+					      (UART_XMIT_SIZE - 1);
+					   s->port.icount.tx++;
+					}
+				}
+			} else {
+			   max3100_sr(s, MAX3100_RD, &rx);
+			   rxchars += max3100_handlerx(s, rx);
 			}
-		}
 
 		if (rxchars > 16) {
 			tty_flip_buffer_push(&s->port.state->port);
@@ -381,7 +386,7 @@ static void max3100_port_work(struct work_struct *w)
 
 	if (rxchars > 0)
 		tty_flip_buffer_push(&s->port.state->port);
-			
+
 }
 
 
