@@ -209,8 +209,8 @@
 		poll-time = <100>;
 	};
 
-	touch: ads7843@1 {
-		compatible = "ti,ads7843";
+	touch: tsc2046@1 {
+		compatible = "ti,tsc2046";
 		reg = <1>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <26 2>;
@@ -231,7 +231,7 @@
 		ti,pendown-gpio-debounce = <100000>;
 		ti,x-max = /bits/ 16 <800>;
 		ti,y-max = /bits/ 16 <600>;
-		ti,calib = <(-13272) (-27) (53774452) (-13) (-10322) (40696088) (65536)>;
+		ti,calib = <(-13431) (-41) (109091654) (22) (-10546) (83909875) (65536)>;
 		linux,wakeup;
 	};
 };
