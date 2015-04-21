@@ -197,6 +197,9 @@
 			ti,debounce-tol = /bits/ 16 <65535>;
 			ti,debounce-max = /bits/ 16 <0>;
 			ti,pendown-gpio-debounce = <100000>;
+			ti,x-max = /bits/ 16 <800>;
+			ti,y-max = /bits/ 16 <480>;
+			ti,calib = <(-13539) (-1) (54285380) (-58) (-8619) (33778843) (65536)>;
 			linux,wakeup;
 		};
 	};
