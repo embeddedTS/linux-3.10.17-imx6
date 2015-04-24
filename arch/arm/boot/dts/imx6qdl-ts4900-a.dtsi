@@ -16,7 +16,7 @@
 	aliases {
 		mxcfb0 = &mxcfb0;
 	};
-	
+
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -130,21 +130,21 @@
     mxcfb0: fb@0 {
             compatible = "fsl,mxc_sdc_fb";
             disp_dev = "lcd";
-            interface_pix_fmt = "RGB24";            
-            mode_str ="HANTRONIX-SVGA";            
+            interface_pix_fmt = "RGB24";
+            mode_str ="HANTRONIX-SVGA";
             default_bpp = <16>;
             int_clk = <0>;
             late_init = <0>;
             status = "okay";
     };
-    
+
 	lcd@0 {
 		compatible = "fsl,lcd";
 		ipu_id = <0>;
 		disp_id = <0>;
 		default_ifmt = "RGB24";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu_4900>;		
+		pinctrl-0 = <&pinctrl_ipu_4900>;
 		status = "okay";
 	};
 
@@ -276,7 +276,7 @@
 				MX6QDL_PAD_SD1_DAT1__SD1_DATA1	 0x17059
 				MX6QDL_PAD_SD1_DAT2__SD1_DATA2	 0x17059
 				MX6QDL_PAD_SD1_DAT3__SD1_DATA3	 0x17059
-				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ								
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ
 			>;
 		};
 	};
@@ -340,7 +340,7 @@
 			>;
 		};
 	};
-	
+
 	enet-4900 {
 		pinctrl_enet_4900: enet-4900 {
 			fsl,pins = <
@@ -365,7 +365,7 @@
 			>;
 		};
 	};
-	
+
 	misc {
 		pinctrl_misc: misc {
 			fsl,pins = <
@@ -445,7 +445,7 @@
 };
 
 // WIFI
-&usdhc1 { 
+&usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1_4900>;
 	vmmc-supply = <&wl12xx_vmmc>;
@@ -462,7 +462,7 @@
 	bus-width = <4>;
 	status = "okay";
 	//fsl,cd-controller;
-	fsl,wp-controller;	
+	fsl,wp-controller;
 };
 
 // eMMC
@@ -474,7 +474,7 @@
 	status = "okay";
 	fsl,wp-controller;
 	non-removable;
-}; 
+};
 
 &audmux {
 	status = "okay";
@@ -564,5 +564,5 @@
 		pinctrl-0 = <&pinctrl_enet_4900>;
 		phy-mode = "rgmii";
 		phy-autoneg = "enable";
-		status = "okay";	
+		status = "okay";
 };

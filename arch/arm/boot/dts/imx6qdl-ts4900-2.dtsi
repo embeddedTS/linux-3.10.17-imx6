@@ -16,7 +16,7 @@
 	aliases {
 		mxcfb0 = &mxcfb0;
 	};
-	
+
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -157,7 +157,7 @@
 		type = <2>;     /* bluetooth */
 		gpios = <&gpio8 13 0>;
 	};
-	
+
 	backlight_lcd {
 		compatible = "pwm-backlight";
 		pwms = <&pwm3 0 5000000>;
@@ -419,7 +419,7 @@
 			>;
 		};
 	};
-	
+
 	misc {
 		pinctrl_misc: misc {
 			fsl,pins = <
@@ -498,7 +498,7 @@
 };
 
 // WIFI
-&usdhc1 { 
+&usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1_4900>;
 	vmmc-supply = <&wl12xx_vmmc>;
@@ -515,7 +515,7 @@
 	vmmc-supply = <&reg_3p3v>;
 	bus-width = <4>;
 	status = "okay";
-	fsl,wp-controller;	
+	fsl,wp-controller;
 };
 
 // eMMC
@@ -527,7 +527,7 @@
 	status = "okay";
 	fsl,wp-controller;
 	non-removable;
-}; 
+};
 
 &audmux {
 	status = "okay";

@@ -28,7 +28,7 @@
 			gpios = <&gpio1 2 1>;
 			default-state = "off";
 		};
-		
+
 		en-usb-5v {
 			label = "en-usb-5v";
 			gpios = <&gpio2 22 1>;
@@ -205,7 +205,7 @@
 				MX6QDL_PAD_SD1_DAT1__SD1_DATA1	 0x17059
 				MX6QDL_PAD_SD1_DAT2__SD1_DATA2	 0x17059
 				MX6QDL_PAD_SD1_DAT3__SD1_DATA3	 0x17059
-				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ								
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ
 			>;
 		};
 	};
@@ -259,7 +259,7 @@
 			>;
 		};
 	};
-	
+
 	misc {
 		pinctrl_misc: misc {
 			fsl,pins = <
@@ -333,19 +333,19 @@
 	#address-cells = <2>;
 	#size-cells = <1>;
     pc104@0,0 {
-    	reg = <0 0 0x02000000>;
+	reg = <0 0 0x02000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		bank-width = <2>;
 		//   EIM_CS0GCR1, EIM_CS0GCR2, EIM_CS0RCR1,
 		// EIM_CS0RCR2, EIM_CS0WCR1, EIM_CS0WCR2
-    	fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
-    			0x00000000 0x1C092480 0x00000000>;
+	fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
+			0x00000000 0x1C092480 0x00000000>;
     };
 };
 
 // WIFI
-&usdhc1 { 
+&usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1_4900>;
 	vmmc-supply = <&wl12xx_vmmc>;
@@ -366,7 +366,7 @@
 	bus-width = <4>;
 	status = "okay";
 	//fsl,cd-controller;
-	fsl,wp-controller;	
+	fsl,wp-controller;
 };
 
 // eMMC
@@ -378,7 +378,7 @@
 	status = "okay";
 	fsl,wp-controller;
 	non-removable;
-}; 
+};
 
 &uart1 {
 	status = "okay";
@@ -453,5 +453,5 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_enet_4900>;
 		phy-mode = "rgmii";
-		status = "okay";	
+		status = "okay";
 };
