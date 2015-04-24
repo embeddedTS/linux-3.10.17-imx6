@@ -11,7 +11,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c/ts4900gpio.h>
 
-/* See register documentation at 
+/* See register documentation at
  * http://wiki.embeddedarm.com/wiki/TS-4900#FPGA
  */
 
@@ -29,7 +29,8 @@ static inline struct gpio_ts4900_priv *to_gpio_ts4900(struct gpio_chip *chip)
 /*
  * To configure ts4900 GPIO module registers
  */
-static inline int gpio_ts4900_write(struct i2c_client *client, u16 addr, u8 data)
+static inline int gpio_ts4900_write(struct i2c_client *client,
+				    u16 addr, u8 data)
 {
 	u8 out[3];
 	int ret;
@@ -44,7 +45,8 @@ static inline int gpio_ts4900_write(struct i2c_client *client, u16 addr, u8 data
 	msg.len = 3;
 	msg.buf = out;
 
-	dev_dbg(&client->dev, "%s Writing 0x%X to 0x%X\n", __func__, data, addr);
+	dev_dbg(&client->dev,
+		"%s Writing 0x%X to 0x%X\n", __func__, data, addr);
 
 	ret = i2c_transfer(client->adapter, &msg, 1);
 	if (ret != 1) {
@@ -85,7 +87,8 @@ static inline int gpio_ts4900_read(struct i2c_client *client, u16 addr)
 			__func__, ret);
 		return -EIO;
 	}
-	dev_dbg(&client->dev, "%s read 0x%X from 0x%X\n", __func__, data[0], addr);
+	dev_dbg(&client->dev, "%s read 0x%X from 0x%X\n",
+		    __func__, data[0], addr);
 
 	return data[0];
 }
@@ -95,30 +98,35 @@ static int ts4900_set_gpio_direction(struct i2c_client *client,
 {
 	u8 reg = 0;
 
-	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n", 
+	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n",
 		__func__, gpio, is_input);
 
 	reg = gpio_ts4900_read(client, gpio);
-	
-	if(is_input) reg &= 0x6;
-	else reg |= 0x1;
+
+	if (is_input)
+		reg &= 0x6;
+	else
+		reg |= 0x1;
 
 	gpio_ts4900_write(client, gpio, reg);
 
 	return 0;
 }
 
-static int ts4900_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
+static int ts4900_set_gpio_dataout(struct i2c_client *client,
+				   int gpio, int enable)
 {
 	u8 reg = 0;
 
-	dev_dbg(&client->dev, "%s setting gpio %d to output=%d\n", 
+	dev_dbg(&client->dev, "%s setting gpio %d to output=%d\n",
 		__func__, gpio, enable);
 
 	reg = gpio_ts4900_read(client, gpio);
-	
-	if(enable) reg |= 0x2;
-	else reg &= 0x5;
+
+	if (enable)
+		reg |= 0x2;
+	else
+		reg &= 0x5;
 
 	return gpio_ts4900_write(client, gpio, reg);
 }
@@ -126,14 +134,14 @@ static int ts4900_set_gpio_dataout(struct i2c_client *client, int gpio, int enab
 static int ts4900_get_gpio_datain(struct i2c_client *client, int gpio)
 {
 	u8 reg, addr;
-	
+
 	dev_dbg(&client->dev, "%s Getting GPIO %d Input\n", __func__, gpio);
 
 	addr = gpio;
 
 	reg = gpio_ts4900_read(client, addr);
 
-	return ((reg & 0x4) ? 1 : 0);
+	return (reg & 0x4) ? 1 : 0;
 }
 
 static int ts_direction_in(struct gpio_chip *chip, unsigned offset)
@@ -168,7 +176,8 @@ static void ts_set(struct gpio_chip *chip, unsigned offset, int value)
 	mutex_unlock(&priv->mutex);
 }
 
-static int ts_direction_out(struct gpio_chip *chip, unsigned offset, int value)
+static int ts_direction_out(struct gpio_chip *chip,
+			    unsigned offset, int value)
 {
 	struct gpio_ts4900_priv *priv = to_gpio_ts4900(chip);
 
@@ -195,7 +204,7 @@ static struct gpio_chip template_chip = {
 
 static int gpio_ts4900_remove(struct i2c_client *client)
 {
-	struct gpio_ts4900_priv *priv = 
+	struct gpio_ts4900_priv *priv =
 		(struct gpio_ts4900_priv *)i2c_get_clientdata(client);
 	int status;
 
@@ -208,13 +217,14 @@ static int gpio_ts4900_remove(struct i2c_client *client)
 
 #ifdef CONFIG_OF
 static const struct of_device_id ts4900gpio_ids[] = {
-        { .compatible = "ts4900gpio", },
-        {},
+	{ .compatible = "ts4900gpio", },
+	{},
 };
 
 MODULE_DEVICE_TABLE(of, ts4900gpio_ids);
 
-static const struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
+static const
+struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
 {
 	struct ts4900gpio_platform_data *pdata;
 	struct device_node *node = dev->of_node;
@@ -238,7 +248,8 @@ static const struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device 
 	return pdata;
 }
 #else
-static const struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
+static const
+struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
 {
 	dev_err(dev, "no platform data defined\n");
 	return ERR_PTR(-EINVAL);
@@ -246,7 +257,7 @@ static const struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device 
 #endif
 
 static int gpio_ts4900_probe(struct i2c_client *client,
-                         const struct i2c_device_id *id)
+			     const struct i2c_device_id *id)
 {
 	struct gpio_ts4900_priv *priv;
 	const struct ts4900gpio_platform_data *pdata;
@@ -264,7 +275,9 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 			return PTR_ERR(pdata);
 	}
 
-	priv = devm_kzalloc(&client->dev, sizeof(struct gpio_ts4900_priv), GFP_KERNEL);
+	priv = devm_kzalloc(&client->dev,
+			    sizeof(struct gpio_ts4900_priv),
+			    GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
@@ -279,7 +292,8 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 
 	ret = gpiochip_add(&priv->gpio_chip);
 	if (ret < 0) {
-		dev_err(&client->dev, "could not register gpiochip, %d\n", ret);
+		dev_err(&client->dev, "could not register gpiochip, %d\n",
+			ret);
 		priv->gpio_chip.ngpio = 0;
 	}
 
@@ -304,7 +318,7 @@ static struct i2c_driver gpio_ts4900_driver = {
 	},
 	.probe		= gpio_ts4900_probe,
 	.remove		= gpio_ts4900_remove,
-	.id_table 	= ts4900gpio_id,
+	.id_table	= ts4900gpio_id,
 };
 
 static int __init gpio_ts4900_init(void)
