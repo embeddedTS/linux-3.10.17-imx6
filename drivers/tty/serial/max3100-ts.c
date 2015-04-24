@@ -656,7 +656,7 @@ static int max3100_startup(struct uart_port *port)
 		
 	dev_dbg(&max3100ts_common.spi->dev, "%s\n", __func__);
 
-	s->conf = MAX3100_RM;
+	s->conf = MAX3100_RM | MAX3100_TM;
 	s->baud = s->crystal ? 230400 : 115200;
 	s->rx_enabled = 1;
 
