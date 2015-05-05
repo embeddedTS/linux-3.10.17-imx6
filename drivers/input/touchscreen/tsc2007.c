@@ -83,6 +83,9 @@ struct tsc2007 {
 
 	unsigned		gpio;
 	int			irq;
+	int			calib[7];
+	u16			x_max;
+	u16			y_max;
 
 	wait_queue_head_t	wait;
 	bool			stopped;
@@ -198,6 +201,21 @@ static irqreturn_t tsc2007_soft_irq(int irq, void *handle)
 			dev_dbg(&ts->client->dev,
 				"DOWN point(%4d,%4d), pressure (%4u)\n",
 				tc.x, tc.y, rt);
+
+			/* calib[7]  from tslib:
+			xscale
+			ymix
+			xoffset
+			ymix
+			yscale
+			yoffset
+			delta */
+	 		if(ts->calib[6] != 0) {
+	 			tc.x = (ts->calib[0] * tc.x + ts->calib[1] * tc.y + ts->calib[2]) / ts->calib[6];
+	 			if(tc.x < 0) tc.x = 0;
+	 			tc.y = (ts->calib[3] * tc.x + ts->calib[4] * tc.y + ts->calib[5]) / ts->calib[6];
+	 			if(tc.y < 0) tc.y = 0;
+	 		}
 
 			input_report_key(input, BTN_TOUCH, 1);
 			input_report_abs(input, ABS_X, tc.x);
@@ -319,6 +337,11 @@ static int tsc2007_probe_dt(struct i2c_client *client, struct tsc2007 *ts)
 	else
 		ts->poll_period = 1;
 
+	if (!of_property_read_u32_array(np, "ti,calib", ts->calib, 7))
+		printk(KERN_INFO "Using hardcoded calibration");
+	of_property_read_u16(np, "ti,x-max", &ts->x_max);
+	of_property_read_u16(np, "ti,y-max", &ts->y_max);
+
 	if (!of_property_read_u32(np, "ti,x-plate-ohms", &val32)) {
 		ts->x_plate_ohms = val32;
 	} else {
@@ -418,8 +441,8 @@ static int tsc2007_probe(struct i2c_client *client,
 	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
 	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
 
-	input_set_abs_params(input_dev, ABS_X, 0, MAX_12BIT, ts->fuzzx, 0);
-	input_set_abs_params(input_dev, ABS_Y, 0, MAX_12BIT, ts->fuzzy, 0);
+	input_set_abs_params(input_dev, ABS_X, 0, ts->x_max, ts->fuzzx, 0);
+	input_set_abs_params(input_dev, ABS_Y, 0, ts->y_max, ts->fuzzy, 0);
 	input_set_abs_params(input_dev, ABS_PRESSURE, 0, MAX_12BIT,
 			     ts->fuzzz, 0);
 
