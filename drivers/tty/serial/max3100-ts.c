@@ -48,10 +48,10 @@
 #define MAX3100_MAJOR 204
 #define MAX3100_MINOR 209
  /* 
-   One max3100ts contains three uarts.
+   One max3100ts may contain up to 64 uarts.
    This driver supports only one max3100ts
  */
-#define MAX_MAX3100 3
+#define MAX_MAX3100 64
 
 #include <linux/delay.h>
 #include <linux/slab.h>
@@ -168,6 +168,7 @@ static struct s_max3100ts_common {
    struct spi_device *spi; /* all our uarts are on one spi */
    int irq;		/* single irq assigned to the max3100-ts */
    int uart_idx;   /* index into max3100ts[ ] */
+   int uart_count;   /* number of uarts detected */
 } max3100ts_common;
 
 
@@ -395,7 +396,7 @@ static irqreturn_t max3100_irq(int irqno, void *dev_id)
 
 	dev_dbg(&max3100ts_common.spi->dev, "%s\n", __func__);
 
-	for (i = 0; i < MAX_MAX3100; i++) {	   
+	for (i = 0; i < max3100ts_common.uart_count; i++) {
 	   struct max3100ts_port *s = max3100ts_common.max3100ts[i];	   
 	   if (s && s->workqueue && !s->force_end_work && !s->suspending)
 	      queue_work(s->workqueue, &s->work);	   
@@ -861,14 +862,14 @@ static int max3100_probe(struct spi_device *spi)
 	max3100ts_common.spi = spi;
 	max3100ts_common.irq = spi->irq;
 	max3100ts_common.uart_idx = -1;
-	
+	max3100ts_common.uart_count = 0;
+
 	if (request_irq(spi->irq, max3100_irq,
 		   	IRQF_TRIGGER_FALLING, "max3100-ts", &max3100ts_common) < 0) {
 		   dev_warn(&spi->dev, "cannot allocate irq %d\n", spi->irq);
    }
       
-	for (i = 0; i < MAX_MAX3100; i++) {	   	   
-	   
+	for (i = 0; i < MAX_MAX3100; i++) {
 	   max3100ts_common.max3100ts[i] = kzalloc(sizeof(struct max3100ts_port), GFP_KERNEL);
 	   if (!max3100ts_common.max3100ts[i]) {
 	      dev_warn(&spi->dev,
@@ -876,17 +877,29 @@ static int max3100_probe(struct spi_device *spi)
 	      mutex_unlock(&max3100ts_common.max3100ts_lock);
 	      return -ENOMEM;
 	   }	   
-	   
+
 	   spin_lock_init(&max3100ts_common.max3100ts[i]->conf_lock);
 	   spi_set_drvdata(spi, max3100ts_common.max3100ts[i]);
-		   
+
+	   max3100ts_common.max3100ts[i]->minor = i;
+
+	   tx = MAX3100_WC | MAX3100_SHDN | 5;
+	   max3100_sr(max3100ts_common.max3100ts[i], tx, &rx);
+	   tx = MAX3100_RC;
+	   rx = 0;
+	   max3100_sr(max3100ts_common.max3100ts[i], tx, &rx);
+	   if ((rx & MAX3100_BAUD) != 5) {
+	      kfree(max3100ts_common.max3100ts[i]);
+	      max3100ts_common.max3100ts[i] = NULL;
+	      break;
+	   } else max3100ts_common.uart_count++;
+
 	   max3100ts_common.max3100ts[i]->crystal = pdata->crystal;
 	   max3100ts_common.max3100ts[i]->loopback = pdata->loopback;
 	   max3100ts_common.max3100ts[i]->poll_time = pdata->poll_time * HZ / 1000;
 	   if (pdata->poll_time > 0 && max3100ts_common.max3100ts[i]->poll_time == 0)
 	      max3100ts_common.max3100ts[i]->poll_time = 1;
 	   max3100ts_common.max3100ts[i]->max3100_hw_suspend = pdata->max3100_hw_suspend;
-	   max3100ts_common.max3100ts[i]->minor = i;
 	   init_timer(&max3100ts_common.max3100ts[i]->timer);
 	   max3100ts_common.max3100ts[i]->timer.function = max3100_timeout;
 	   max3100ts_common.max3100ts[i]->timer.data = (unsigned long) max3100ts_common.max3100ts[i];
@@ -912,6 +925,7 @@ static int max3100_probe(struct spi_device *spi)
 	}
 
 	mutex_unlock(&max3100ts_common.max3100ts_lock);
+	dev_info(&spi->dev, "Detected %d uarts\n", max3100ts_common.uart_count);
 	return 0;
 }
 
