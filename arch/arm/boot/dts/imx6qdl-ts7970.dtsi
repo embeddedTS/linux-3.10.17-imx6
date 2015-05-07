@@ -16,7 +16,7 @@
 	aliases {
 		mxcfb0 = &mxcfb0;
 	};
-	
+
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -50,10 +50,11 @@
 
 		usb-hub-reset {
 			label = "usb-hub-reset";
-			gpios = <&gpio2 11 0>;
-			default-state = "off";
+			gpios = <&gpio2 11 1>;
+			default-state = "on";
 		};
 	};
+
 	regulators {
 		compatible = "simple-bus";
 
@@ -103,9 +104,9 @@
 	};
 
 	sound {
-		compatible = "fsl,imx6q-ts4900-sgtl5000",
+		compatible = "fsl,imx6q-ts7970-sgtl5000",
 			     "fsl,imx-audio-sgtl5000";
-		model = "imx6q-ts4900-sgtl5000";
+		model = "imx6q-ts7970-sgtl5000";
 		ssi-controller = <&ssi1>;
 		audio-codec = <&codec>;
 		audio-routing =
@@ -152,20 +153,42 @@
 		compatible = "st,n25q064";
 		spi-max-frequency = <25000000>;
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		uboot@0 {
+			label = "U-Boot";
+			reg = <0x0000000 0x0100000>;
+		};
+		ubootenv@0100000 {
+			label = "env";
+			reg = <0x0100000 0x0020000>;
+		};
+		user@0400000 {
+			label = "user-data";
+			reg = <0x0400000 0x0400000>;
+		};
 	};
 };
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio5 31 0>;
+	cs-gpios = <&gpio7 12 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_7900>;
 	status = "okay";
-	spidev: spi@0 {
-		compatible = "spidev";
+
+	/*serial1: max3100-1@0 {
+		compatible = "max3100-ts";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
-	};
+		interrupt-parent = <&gpio1>;
+		interrupts = <4 2>;
+		spi-max-frequency = <15000000>;
+		loopback = <0>;
+		crystal = <1>;
+		poll-time = <100>;
+		fifo-size = <16>;
+	};*/
 };
 
 &ssi1 {
@@ -177,8 +200,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_misc>;
 
-	uart1-4900 {
-		pinctrl_uart1_4900: uart1-grp-2 {
+	uart1-7970 {
+		pinctrl_uart1_7970: tsuart1-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA	0x1b0b1
 				MX6QDL_PAD_SD3_DAT6__UART1_RX_DATA	0x1b0b1
@@ -186,8 +209,8 @@
 		};
 	};
 
-	uart2-4900 {
-		pinctrl_uart2_4900: uart2-grp-2 {
+	uart2-7970 {
+		pinctrl_uart2_7970: tsuart2-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_7__UART2_TX_DATA	0x1b0b1
 				MX6QDL_PAD_GPIO_8__UART2_RX_DATA	0x1b0b1
@@ -197,17 +220,19 @@
 		};
 	};
 
-	uart3-4900 {
-		pinctrl_uart3_4900: uart3-grp-2 {
+	uart3-7970 {
+		pinctrl_uart3_7970: tsuart3-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
+				MX6QDL_PAD_EIM_D30__UART3_RTS_B     0x1b0b1
+				MX6QDL_PAD_EIM_D31__UART3_CTS_B     0x1b0b1
 			>;
 		};
 	};
 
-	uart4-4900 {
-		pinctrl_uart4_4900: uart4-grp-2 {
+	uart4-7970 {
+		pinctrl_uart4_7970: tsuart4-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
@@ -215,8 +240,8 @@
 		};
 	};
 
-	uart5-4900 {
-		pinctrl_uart5_4900: uart5-grp-2 {
+	uart5-7970 {
+		pinctrl_uart5_7970: tsuart5-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL1__UART5_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW1__UART5_RX_DATA	0x1b0b1
@@ -225,8 +250,8 @@
 	};
 
 	// TODO verify irq uses same pad settings
-	usdhc1-4900 {
-		pinctrl_usdhc1_4900: usdhc1grp-1 {
+	usdhc1-7970 {
+		pinctrl_usdhc1_7970: tsusdhc1grp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_SD1_CMD__SD1_CMD	     0x17059
 				MX6QDL_PAD_SD1_CLK__SD1_CLK	     0x10059
@@ -234,13 +259,13 @@
 				MX6QDL_PAD_SD1_DAT1__SD1_DATA1	 0x17059
 				MX6QDL_PAD_SD1_DAT2__SD1_DATA2	 0x17059
 				MX6QDL_PAD_SD1_DAT3__SD1_DATA3	 0x17059
-				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ								
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ
 			>;
 		};
 	};
 
-	usdhc2-4900 {
-		pinctrl_usdhc2_4900: usdhc2grp-2 {
+	usdhc2-7970 {
+		pinctrl_usdhc2_7970: tsusdhc2grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD2_CMD__SD2_CMD    0x17059
 				MX6QDL_PAD_SD2_CLK__SD2_CLK    0x10059
@@ -252,19 +277,20 @@
 		};
 	};
 
-	ecspi2-4900 {
-		pinctrl_ecspi2_7900: ecspi2-1 {
+	ecspi2-7970 {
+		pinctrl_ecspi2_7900: tsecspi2-1 {
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK    0x100b1
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI    0x100b1
 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO   0x100b1
-				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31    0x100b1 // FPGA CS1#
+				MX6QDL_PAD_GPIO_17__GPIO7_IO12       0x100b1 // FPGA_SPI_CS#
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18   0x100b1 // HD1_SPI_CS#
 			>;
 		};
 	};
 
-	enet-4900 {
-		pinctrl_enet_4900: enet-4900 {
+	enet-7970 {
+		pinctrl_enet_7970: enet-7970 {
 			fsl,pins = <
 				MX6QDL_PAD_ENET_MDIO__ENET_MDIO       0x1b0b0
 				MX6QDL_PAD_ENET_MDC__ENET_MDC         0x1b0b0
@@ -287,60 +313,48 @@
 			>;
 		};
 	};
-	
+
 	misc {
 		pinctrl_misc: misc {
 			fsl,pins = <
-				MX6QDL_PAD_SD3_RST__GPIO7_IO08         0x80000000 // EMMC_RESET#
-				MX6QDL_PAD_SD4_DAT1__GPIO2_IO09        0x80000000 // LCD_PWM
+				// Onboard
 				MX6QDL_PAD_SD4_DAT3__GPIO2_IO11        0x80000000 // USB_HUB_RESET#
-				MX6QDL_PAD_GPIO_0__CCM_CLKO1           0x130b0    // Audio CLK
+				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17     0x80000000 // SEL_DC_USB#
+				MX6QDL_PAD_EIM_A16__GPIO2_IO22         0x80000000 // EN_USB_5V#
+				MX6QDL_PAD_EIM_D27__GPIO3_IO27         0x80000000 // GREEN_LED#
 				MX6QDL_PAD_GPIO_2__GPIO1_IO02          0x80000000 // RED_LED#
-				MX6QDL_PAD_GPIO_3__XTALOSC_REF_CLK_24M 0x10       // FPGA 24MHZ
-				MX6QDL_PAD_GPIO_4__GPIO1_IO04          0x80000000 // FPGA_IRQ
-				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x80000000 // YELLOW_LED
-				MX6QDL_PAD_GPIO_17__GPIO7_IO12         0x80000000 // DIO_5
-				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18     0x80000000 // FPGA_RESET#
-				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20    0x80000000 // FPGA_DONE
-				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16    0x80000000 // LCD_CLK
-				MX6QDL_PAD_DI0_PIN2__GPIO4_IO18        0x80000000 // LCD_HSYNC
-				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19        0x80000000 // LCD_VSYNC
-				MX6QDL_PAD_DI0_PIN15__GPIO4_IO17       0x80000000 // LCD_DE
-				MX6QDL_PAD_DISP0_DAT0__GPIO4_IO21      0x80000000 // EN_CAN_1#
-				MX6QDL_PAD_DISP0_DAT2__GPIO4_IO23      0x80000000 // MIC_DET
+				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x80000000 // YEL_LED#
 				MX6QDL_PAD_DISP0_DAT4__GPIO4_IO25      0x80000000 // IMX6_BLUE_LED
-				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26      0x80000000 // EN_MODBUS_24V
-				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30      0x80000000 // LCD_D09
+				MX6QDL_PAD_GPIO_0__CCM_CLKO1           0x130b0    // Audio CLK
+				MX6QDL_PAD_GPIO_3__XTALOSC_REF_CLK_24M 0x10       // FPGA 24MHZ
+				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20    0x80000000 // FPGA_IRQ_0
+				MX6QDL_PAD_GPIO_4__GPIO1_IO04          0x80000000 // FPGA_IRQ_1
+				MX6QDL_PAD_DISP0_DAT14__GPIO5_IO08     0x80000000 // JTAG_FPGA_TMS
+				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11     0x80000000 // JTAG_FPGA_TCK
+				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12     0x80000000 // JTAG_FPGA_TDO
+				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16     0x80000000 // JTAG_FPGA_TDI
+				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14     0x80000000 // GYRO_INT
+				MX6QDL_PAD_EIM_OE__GPIO2_IO25          0x80000000 // MODBUS_FAULT
+				MX6QDL_PAD_EIM_RW__GPIO2_IO26          0x80000000 // BUS_DIR/JP_SD_BOOT#
+				MX6QDL_PAD_EIM_A19__GPIO2_IO19         0x80000000 // EN_MODBUS_24V#
+				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26      0x80000000 // EN_MODBUS_3V#
+				MX6QDL_PAD_EIM_D19__GPIO3_IO19 		   0x100b1    // SPI_1_CS1#
+				MX6QDL_PAD_EIM_A17__GPIO2_IO21         0x80000000 // I210_RESET#
+				MX6QDL_PAD_EIM_D23__GPIO3_IO23         0x80000000 // EN_RTC_PWR#
+				MX6QDL_PAD_DISP0_DAT0__GPIO4_IO21      0x80000000 // EN_CAN_1#
+				MX6QDL_PAD_EIM_BCLK__GPIO6_IO31        0x80000000 // EN_CAN_2#
+				MX6QDL_PAD_EIM_EB0__GPIO2_IO28         0x80000000 // EN_SD_POWER#
+
+				// Offboard
+				MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28      0x80000000 // LCD_D09
+				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30      0x80000000 // HD1_IRQ
 				MX6QDL_PAD_DISP0_DAT10__GPIO4_IO31     0x80000000 // LCD_D10
 				MX6QDL_PAD_DISP0_DAT11__GPIO5_IO05     0x80000000 // LCD_D11
-				MX6QDL_PAD_DISP0_DAT12__GPIO5_IO06     0x80000000 // LCD_D12
-				MX6QDL_PAD_DISP0_DAT13__GPIO5_IO07     0x80000000 // LCD_D13
-				MX6QDL_PAD_DISP0_DAT14__GPIO5_IO08     0x80000000 // LCD_D14
-				MX6QDL_PAD_DISP0_DAT15__GPIO5_IO09     0x80000000 // LCD_D15
-				MX6QDL_PAD_DISP0_DAT16__GPIO5_IO10     0x80000000 // LCD_D16
-				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11     0x80000000 // LCD_D17
-				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12     0x80000000 // LCD_D18
-				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13     0x80000000 // LCD_D19
-				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14     0x80000000 // LCD_D20
-				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17     0x80000000 // SEL_DC_USB#
 				MX6QDL_PAD_EIM_LBA__GPIO2_IO27         0x80000000 // BUS_ALE#
-				MX6QDL_PAD_EIM_RW__GPIO2_IO26          0x80000000 // JP_SD_BOOT#
 				MX6QDL_PAD_EIM_CS0__GPIO2_IO23         0x80000000 // BUS_CS#
-				MX6QDL_PAD_EIM_A16__GPIO2_IO22         0x80000000 // EN_USB_5V#
-				MX6QDL_PAD_EIM_A17__GPIO2_IO21         0x80000000 // I210_RESET#
-				MX6QDL_PAD_EIM_A18__GPIO2_IO20         0x80000000 // DIO_14
-				MX6QDL_PAD_EIM_A19__GPIO2_IO19         0x80000000 // EN_MODBUS_3V#
-				MX6QDL_PAD_EIM_A21__GPIO2_IO17         0x80000000 // DIO_12
 				MX6QDL_PAD_EIM_A24__GPIO5_IO04         0x80000000 // DIO_20
-				MX6QDL_PAD_EIM_D19__GPIO3_IO19         0x80000000 // SPI_1_CS#
-				MX6QDL_PAD_EIM_D25__GPIO3_IO25         0x80000000 // MODBUS_FAULT
-				MX6QDL_PAD_EIM_D27__GPIO3_IO27         0x80000000 // GREEN_LED#
-				MX6QDL_PAD_EIM_D31__GPIO3_IO31         0x80000000 // BUS_BHE#
-				MX6QDL_PAD_EIM_BCLK__GPIO6_IO31        0x80000000 // EN_CAN_2#
 				MX6QDL_PAD_EIM_WAIT__GPIO5_IO00        0x80000000 // BUS_WAIT#
-				MX6QDL_PAD_EIM_EB0__GPIO2_IO28         0x80000000 // EN_SD_POWER#
-				MX6QDL_PAD_EIM_EB1__GPIO2_IO29         0x80000000 // DIO_10
-				MX6QDL_PAD_EIM_DA0__GPIO3_IO00         0x80000000 // MUX_AD_00
+				MX6QDL_PAD_EIM_D31__GPIO3_IO31         0x80000000 // BUS_BHE#				MX6QDL_PAD_EIM_DA0__GPIO3_IO00         0x80000000 // MUX_AD_00
 				MX6QDL_PAD_EIM_DA1__GPIO3_IO01         0x80000000 // MUX_AD_01
 				MX6QDL_PAD_EIM_DA2__GPIO3_IO02         0x80000000 // MUX_AD_02
 				MX6QDL_PAD_EIM_DA3__GPIO3_IO03         0x80000000 // MUX_AD_03
@@ -356,6 +370,10 @@
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13        0x80000000 // MUX_AD_13
 				MX6QDL_PAD_EIM_DA14__GPIO3_IO14        0x80000000 // MUX_AD_14
 				MX6QDL_PAD_EIM_DA15__GPIO3_IO15        0x80000000 // MUX_AD_15
+
+				// Strapping only
+				MX6QDL_PAD_EIM_A18__GPIO2_IO20         0x80000000
+				MX6QDL_PAD_EIM_A21__GPIO2_IO17         0x80000000
 			>;
 		};
 	};
@@ -373,14 +391,10 @@
 	status = "okay";
 };
 
-&weim {
-    status = "disabled";
-};
-
 // WIFI
-&usdhc1 { 
+&usdhc1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc1_4900>;
+	pinctrl-0 = <&pinctrl_usdhc1_7970>;
 	vmmc-supply = <&wl12xx_vmmc>;
 	bus-width = <4>;
 	status = "okay";
@@ -395,12 +409,11 @@
 // SD
 &usdhc2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc2_4900>;
+	pinctrl-0 = <&pinctrl_usdhc2_7970>;
 	vmmc-supply = <&reg_3p3v>;
 	bus-width = <4>;
 	status = "okay";
-	//fsl,cd-controller;
-	fsl,wp-controller;	
+	fsl,wp-controller;
 };
 
 // eMMC
@@ -423,32 +436,32 @@
 &uart1 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1_4900>;
+	pinctrl-0 = <&pinctrl_uart1_7970>;
 };
 
 &uart2 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2_4900>;
+	pinctrl-0 = <&pinctrl_uart2_7970>;
 	fsl,uart-has-rtscts;
 };
 
 &uart3 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_4900>;
+	pinctrl-0 = <&pinctrl_uart3_7970>;
 };
 
 &uart4 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart4_4900>;
+	pinctrl-0 = <&pinctrl_uart4_7970>;
 };
 
 &uart5 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5_4900>;
+	pinctrl-0 = <&pinctrl_uart5_7970>;
 };
 
 &i2c1 {
@@ -467,8 +480,6 @@
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		uart2en;
-		uart4en;
 	};
 
 	codec: sgtl5000@0a {
@@ -496,22 +507,20 @@
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_flexcan1_1>;
         status = "okay";
-        trx-en-gpio = <&gpio4 21 1>;
 };
 
 &flexcan2 {
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_flexcan2_1>;
         status = "okay";
-        trx-en-gpio = <&gpio6 31 1>;
 };
 
 &fec {
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_enet_4900>;
+		pinctrl-0 = <&pinctrl_enet_7970>;
 		phy-mode = "rgmii";
 		phy-autoneg = "enable";
-		status = "okay";	
+		status = "okay";
 };
 
 &hdmi_audio {
@@ -532,5 +541,11 @@
 &hdmi_video {
 	fsl,phy_reg_vlev = <0x0294>;
 	fsl,phy_reg_cksymtx = <0x800d>;
+	status = "okay";
+};
+
+&dcic1 {
+	dcic_id = <0>;
+	dcic_mux = "dcic-hdmi";
 	status = "okay";
 };
