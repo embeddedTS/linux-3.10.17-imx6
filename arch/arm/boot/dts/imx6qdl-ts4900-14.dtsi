@@ -209,8 +209,8 @@
 		poll-time = <100>;
 	};
 
-	touch: ads7843@1 {
-		compatible = "ti,ads7843";
+	touch: tsc2046@1 {
+		compatible = "ti,tsc2046";
 		reg = <1>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <26 2>;
