@@ -490,13 +490,23 @@ static int pixcir_i2c_ts_probe(struct i2c_client *client,
 	if (!tsdata)
 		return -ENOMEM;
 
+	tsdata->client = client;
+
+	/* Always be in IDLE mode to save power, device supports auto wake */
+	error = pixcir_set_power_mode(tsdata, PIXCIR_POWER_IDLE);
+	if (error) {
+		dev_err(dev, "Failed to set IDLE mode\n");
+		devm_kfree(dev, tsdata);
+		return -EPROBE_DEFER;
+	}
+
 	input = devm_input_allocate_device(dev);
 	if (!input) {
 		dev_err(dev, "Failed to allocate input device\n");
+		devm_kfree(dev, tsdata);
 		return -ENOMEM;
 	}
 
-	tsdata->client = client;
 	tsdata->input = input;
 	tsdata->pdata = pdata;
 
@@ -545,12 +555,7 @@ static int pixcir_i2c_ts_probe(struct i2c_client *client,
 		return error;
 	}
 
-	/* Always be in IDLE mode to save power, device supports auto wake */
-	error = pixcir_set_power_mode(tsdata, PIXCIR_POWER_IDLE);
-	if (error) {
-		dev_err(dev, "Failed to set IDLE mode\n");
-		return error;
-	}
+
 
 	/* Stop device till opened */
 	error = pixcir_stop(tsdata);
