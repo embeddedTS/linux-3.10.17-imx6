@@ -141,11 +141,12 @@
 		wlen-gpio = <&gpio8 14 0>;
 	};
 
-	wlan_bt_rfkill {
-		compatible = "net,rfkill-gpio";
-		name = "wlan_bt_rfkill";
-		type = <2>;     /* bluetooth */
-		gpios = <&gpio8 13 0>;
+	kim {
+		compatible = "kim";
+		nshutdown_gpio = <&gpio8 13 0>;
+		dev_name = "/dev/ttymxc1";
+		flow_cntrl = <1>;
+		baud_rate = <3000000>;
 	};
 
 	backlight_lcd {
@@ -213,10 +214,10 @@
 		compatible = "ti,tsc2046";
 		reg = <1>;
 		interrupt-parent = <&gpio4>;
-		interrupts = <26 2>;
+		interrupts = <25 2>;
 		vcc-supply = <&reg_3p3v>;
 		spi-max-frequency = <2000000>;
-		pendown-gpio = <&gpio4 26 0>;
+		pendown-gpio = <&gpio4 25 0>;
 		ti,penirq-recheck-delay-usecs = /bits/ 16 <5000>;
 		ti,vref-mv = <3300>;
 		ti,swap-xy;
@@ -368,7 +369,7 @@
 				MX6QDL_PAD_GPIO_2__GPIO1_IO02          0x80000000 // RED_LED#
 				MX6QDL_PAD_EIM_CS1__GPIO2_IO24         0x80000000 // GREEN_LED#
 
-				MX6QDL_PAD_DISP0_DAT8__GPIO4_IO29      0x80000000 // DIO_6
+				MX6QDL_PAD_DISP0_DAT8__GPIO4_IO29      0x80000000 // R130 (Opt res)
 				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30      0x80000000 // DIO_7
 				MX6QDL_PAD_DISP0_DAT10__GPIO4_IO31     0x80000000 // DIO_8
 				MX6QDL_PAD_DISP0_DAT11__GPIO5_IO05     0x80000000 // DIO_9
@@ -376,31 +377,32 @@
 				MX6QDL_PAD_DISP0_DAT13__GPIO5_IO07     0x80000000 // DIO_11
 				MX6QDL_PAD_DISP0_DAT14__GPIO5_IO08     0x80000000 // DIO_12
 				MX6QDL_PAD_DISP0_DAT15__GPIO5_IO09     0x80000000 // IRQ9
+				MX6QDL_PAD_DISP0_DAT16__GPIO5_IO10     0x80000000 // PUSH_SW_2#
 				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11     0x80000000 // GPS_PPS
 				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12     0x80000000 // i.MX6_CS2#
 				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13     0x80000000 // USER_JMP_1#
-				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14     0x80000000 // USER_JMP_2#
-				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16    0x80000000 // MSATA_DET#
-				MX6QDL_PAD_DI0_PIN2__GPIO4_IO18        0x80000000 // PCIE_DET#
-				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19        0x80000000 // LCD_INT
+				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14     0x80000000 // SPARE_2
+				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16    0x80000000 // PUSH_SW_1#
+				MX6QDL_PAD_DI0_PIN2__GPIO4_IO18        0x80000000 // PCIE_SEL#
+				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19        0x80000000 // R131 (OPT RES)
+				MX6QDL_PAD_DI0_PIN15__GPIO4_IO17       0x80000000 // R132 (OPT RES)
 				MX6QDL_PAD_EIM_OE__GPIO2_IO25          0x80000000 // BD_ID_DATA
 				MX6QDL_PAD_EIM_A20__GPIO2_IO18         0x80000000 // XBEE_CTS#
 				MX6QDL_PAD_EIM_A22__GPIO2_IO16         0x80000000 // IRQ7
 				MX6QDL_PAD_EIM_A23__GPIO6_IO06         0x80000000 // IRQ6
 				MX6QDL_PAD_EIM_A24__GPIO5_IO04         0x80000000 // IRQ5
 				MX6QDL_PAD_DISP0_DAT1__GPIO4_IO22      0x80000000 // EN_USB_5V
+				MX6QDL_PAD_DISP0_DAT2__GPIO4_IO23      0x80000000 // SPARE_1
 				MX6QDL_PAD_DISP0_DAT3__GPIO4_IO24      0x80000000 // EN_GPS_3.3V#
-				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26      0x80000000 // TOUCH_WAKE#
-				//MX6QDL_PAD_DISP0_DAT6__ECSPI3_SS3      0x80000000 // SPI_CS2#
+				MX6QDL_PAD_DISP0_DAT4__GPIO4_IO25      0x80000000 // TOUCH_WAKE#
 				MX6QDL_PAD_DISP0_DAT6__GPIO4_IO27      0x80000000 // SPI_CS2#
-				MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28      0x80000000 // HP_DETECT
+				MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28      0x80000000 // PWR_FAIL#
 				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15     0x80000000 // EN_SPKR
 				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16     0x80000000 // CAN_EN#
-				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17     0x80000000 // GYRO_INT
+				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17     0x80000000 // ACCEL_INT
 				MX6QDL_PAD_EIM_A19__GPIO2_IO19         0x80000000 // EN_LCD_3.3V
 
-
-				// MUXBUS pins
+				// EIM bus pins
 				MX6QDL_PAD_EIM_DA0__EIM_AD00           0x80000000 // MUX_AD_00
 				MX6QDL_PAD_EIM_DA1__EIM_AD01           0x80000000 // MUX_AD_01
 				MX6QDL_PAD_EIM_DA2__EIM_AD02           0x80000000 // MUX_AD_02
@@ -422,9 +424,7 @@
 				MX6QDL_PAD_EIM_RW__EIM_RW              0x80000000 // BUS_DIR
 				MX6QDL_PAD_EIM_CS0__EIM_CS0_B          0x80000000 // BUS_CS#
 				MX6QDL_PAD_EIM_WAIT__EIM_DTACK_B        0x80000000 // BUS_WAIT#
-				// On REV A this is CN1_99, on REV C CN1_65
 				MX6QDL_PAD_EIM_D31__GPIO3_IO31         0x80000000 // D31/GPIO
-				// On REV A this is CN1_65, on REV C CN1_99
 				MX6QDL_PAD_EIM_EB1__EIM_EB1_B          0x80000000 // BUS_BHE#
 				MX6QDL_PAD_CSI0_DATA_EN__EIM_DATA00    0x80000000 //
 			>;
@@ -482,19 +482,19 @@
 };
 
 &weim {
-    status = "okay";
+	status = "okay";
 	#address-cells = <2>;
 	#size-cells = <1>;
-    pc104@0,0 {
-	reg = <0 0 0x02000000>;
+	pc104@0,0 {
+		reg = <0 0 0x02000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		bank-width = <2>;
 		//   EIM_CS0GCR1, EIM_CS0GCR2, EIM_CS0RCR1,
 		// EIM_CS0RCR2, EIM_CS0WCR1, EIM_CS0WCR2
-	fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
-			0x00000000 0x1C092480 0x00000000>;
-    };
+		fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
+							  0x00000000 0x1C092480 0x00000000>;
+	};
 };
 
 // WIFI
@@ -598,23 +598,34 @@
 		VDDA-supply = <&reg_3p3v>;
 		VDDIO-supply = <&reg_3p3v>;
 	};
+
+	mma8451@1c {
+		compatible = "fsl,mma8451";
+		reg = <0x1c>;
+		position = <0>;
+		vdd-supply = <&reg_3p3v>;
+		vddio-supply = <&reg_3p3v>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <17 8>;
+		interrupt-route = <1>;
+	};
 };
 
 &flexcan1 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_flexcan1_1>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan1_1>;
+	status = "okay";
 };
 
 &flexcan2 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_flexcan2_1>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan2_1>;
+	status = "okay";
 };
 
 &fec {
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_enet_4900>;
-		phy-mode = "rgmii";
-		status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_enet_4900>;
+	phy-mode = "rgmii";
+	status = "okay";
 };
