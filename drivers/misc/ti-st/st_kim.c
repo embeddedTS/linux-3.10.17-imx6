@@ -38,6 +38,7 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/of_gpio.h>
 
 #define MAX_ST_DEVICES	3	/* Imagine 1 on each UART for now */
 static struct platform_device *st_kim_devices[MAX_ST_DEVICES];
@@ -755,8 +756,8 @@ static struct ti_st_plat_data *get_platform_data(struct device *dev)
 	dt_property = of_get_property(np, "dev_name", &len);
 	if (dt_property)
 		memcpy(&dt_pdata->dev_name, dt_property, len);
-	of_property_read_u32(np, "nshutdown_gpio",
-			     (u32 *)&dt_pdata->nshutdown_gpio);
+
+	dt_pdata->nshutdown_gpio = of_get_named_gpio(np, "nshutdown_gpio", 0);
 	of_property_read_u32(np, "flow_cntrl", (u32 *)&dt_pdata->flow_cntrl);
 	of_property_read_u32(np, "baud_rate", (u32 *)&dt_pdata->baud_rate);
 
