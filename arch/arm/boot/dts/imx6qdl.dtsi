@@ -12,6 +12,7 @@
 
 #include "skeleton.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	aliases {
@@ -140,7 +141,9 @@
 
 		pcie: pcie@0x01000000 {
 			compatible = "fsl,imx6q-pcie", "snps,dw-pcie";
-			reg = <0x01ffc000 0x4000>; /* DBI */
+			reg = <0x01ffc000 0x04000>,
+			      <0x01f00000 0x80000>;
+			reg-names = "dbi", "config";
 			#address-cells = <3>;
 			#size-cells = <2>;
 			device_type = "pci";
@@ -148,9 +151,16 @@
 				  0x81000000 0 0          0x01f80000 0 0x00010000 /* downstream I/O */
 				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
 			num-lanes = <1>;
-			interrupts = <0 123 0x04>;
+			interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "msi";
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 0x7>;
+			interrupt-map = <0 0 0 1 &intc 0 123 IRQ_TYPE_LEVEL_HIGH>,
+			                <0 0 0 2 &intc 0 122 IRQ_TYPE_LEVEL_HIGH>,
+			                <0 0 0 3 &intc 0 121 IRQ_TYPE_LEVEL_HIGH>,
+			                <0 0 0 4 &intc 0 120 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clks 189>, <&clks 187>, <&clks 144>, <&clks 212>;
-			clock-names = "pcie_ref_125m", "sata_ref_100m", "pcie_axi", "lvds_gate";
+			clock-names = "pcie_phy", "ref_100m", "pcie_bus", "pcie";
 			status = "disabled";
 		};
 
