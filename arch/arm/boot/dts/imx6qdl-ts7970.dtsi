@@ -15,6 +15,8 @@
 / {
 	aliases {
 		mxcfb0 = &mxcfb0;
+		spi1 = &ecspi1;
+		spi2 = &ecspi2;
 	};
 
 	memory {
@@ -48,10 +50,19 @@
 			default-state = "off";
 		};
 
-		usb-hub-reset {
-			label = "usb-hub-reset";
-			gpios = <&gpio2 11 1>;
-			default-state = "on";
+		// These are intended as userspace controlled IO.  In this kernel
+		// version LEDs are the best interface I can find to allow both
+		// userspace control and a default value.
+		en-usb-5v {
+			label = "en-usb-5v";
+			gpios = <&gpio2 22 1>;
+			default-state = "off";
+		};
+
+		sel_dc_usb {
+			label = "sel_dc_usb";
+			gpios = <&gpio5 17 0>;
+			default-state = "off";
 		};
 	};
 
@@ -101,13 +112,22 @@
 			enable-active-high;
 			regulator-boot-on;
 		};
+
+		usb-hub-reset {
+			label = "usb-hub-reset";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpios = <&gpio2 11 0>;
+			enable-active-high;
+			startup-delay-us = <200>;
+		};
 	};
 
 	sound {
 		compatible = "fsl,imx6q-ts7970-sgtl5000",
 			     "fsl,imx-audio-sgtl5000";
 		model = "imx6q-ts7970-sgtl5000";
-		ssi-controller = <&ssi1>;
+		cpu-dai = <&ssi1>;
 		audio-codec = <&codec>;
 		audio-routing =
 			"MIC_IN", "Mic Jack",
@@ -172,23 +192,35 @@
 };
 
 &ecspi2 {
-	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio7 12 0>;
+	fsl,spi-num-chipselects = <3>;
+	cs-gpios = <&gpio5 31 0>, <&gpio7 12 0>, <&gpio5 18 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_7900>;
 	status = "okay";
 
-	/*serial1: max3100-1@0 {
+	serial1: max3100-1@0 {
 		compatible = "max3100-ts";
 		reg = <0>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <4 2>;
-		spi-max-frequency = <15000000>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <20 2>;
+		spi-max-frequency = <1000000>;
 		loopback = <0>;
 		crystal = <1>;
 		poll-time = <100>;
 		fifo-size = <16>;
-	};*/
+	};
+
+	spidevfpga: spi@1 {
+		compatible = "spidev";
+		reg = <1>;
+		spi-max-frequency = <15000000>;
+	};
+
+	spidevhd1: spi@2 {
+		compatible = "spidev";
+		reg = <2>;
+		spi-max-frequency = <1000000>;
+	};
 };
 
 &ssi1 {
@@ -283,7 +315,8 @@
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK    0x100b1
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI    0x100b1
 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO   0x100b1
-				MX6QDL_PAD_GPIO_17__GPIO7_IO12       0x100b1 // FPGA_SPI_CS#
+				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31    0x100b1 // FPGA_SPI_CS0#
+				MX6QDL_PAD_GPIO_17__GPIO7_IO12       0x100b1 // FPGA_SPI_CS1#
 				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18   0x100b1 // HD1_SPI_CS#
 			>;
 		};
@@ -353,8 +386,8 @@
 				MX6QDL_PAD_EIM_LBA__GPIO2_IO27         0x80000000 // BUS_ALE#
 				MX6QDL_PAD_EIM_CS0__GPIO2_IO23         0x80000000 // BUS_CS#
 				MX6QDL_PAD_EIM_A24__GPIO5_IO04         0x80000000 // DIO_20
-				MX6QDL_PAD_EIM_WAIT__GPIO5_IO00        0x80000000 // BUS_WAIT#
-				MX6QDL_PAD_EIM_D31__GPIO3_IO31         0x80000000 // BUS_BHE#				MX6QDL_PAD_EIM_DA0__GPIO3_IO00         0x80000000 // MUX_AD_00
+				MX6QDL_PAD_EIM_WAIT__GPIO5_IO00        0x80000000 // BUS_WAIT
+				MX6QDL_PAD_EIM_DA0__GPIO3_IO00         0x80000000 // MUX_AD_00
 				MX6QDL_PAD_EIM_DA1__GPIO3_IO01         0x80000000 // MUX_AD_01
 				MX6QDL_PAD_EIM_DA2__GPIO3_IO02         0x80000000 // MUX_AD_02
 				MX6QDL_PAD_EIM_DA3__GPIO3_IO03         0x80000000 // MUX_AD_03
