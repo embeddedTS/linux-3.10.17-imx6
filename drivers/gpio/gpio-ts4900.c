@@ -96,17 +96,30 @@ static inline int gpio_ts4900_read(struct i2c_client *client, u16 addr)
 static int ts4900_set_gpio_direction(struct i2c_client *client,
 	int gpio, int is_input)
 {
+	struct ts4900gpio_platform_data *pdata = client->dev.platform_data;
 	u8 reg = 0;
 
 	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n",
 		__func__, gpio, is_input);
 
-	reg = gpio_ts4900_read(client, gpio);
-
-	if (is_input)
-		reg &= 0x6;
-	else
-		reg |= 0x1;
+	if (pdata->model == 7970) {
+		if (is_input) {
+			reg = 0x0;
+		} else {
+			/* Since this board doesn't have seperate input/output
+			* data regs, initialize to the last output value if
+			* it has beenset before, or start with 0 on first
+			* use */
+			int oldval = (pdata->bank >> gpio) & 1;
+			reg = TSGPIO_OE | (oldval << 2);
+		}
+	} else {
+		reg = gpio_ts4900_read(client, gpio);
+		if (is_input)
+			reg &= (TSGPIO_OD | TSGPIO_ID);
+		else
+			reg |= TSGPIO_OE;
+	}
 
 	gpio_ts4900_write(client, gpio, reg);
 
@@ -116,6 +129,7 @@ static int ts4900_set_gpio_direction(struct i2c_client *client,
 static int ts4900_set_gpio_dataout(struct i2c_client *client,
 				   int gpio, int enable)
 {
+	struct ts4900gpio_platform_data *pdata = client->dev.platform_data;
 	u8 reg = 0;
 
 	dev_dbg(&client->dev, "%s setting gpio %d to output=%d\n",
@@ -123,25 +137,38 @@ static int ts4900_set_gpio_dataout(struct i2c_client *client,
 
 	reg = gpio_ts4900_read(client, gpio);
 
+	WARN_ON(pdata == NULL);
+
 	if (enable)
-		reg |= 0x2;
+		pdata->bank |= 1 << gpio;
 	else
-		reg &= 0x5;
+		pdata->bank &= ~(1 << gpio);
+
+	if (enable)
+		reg |= TSGPIO_OD;
+	else
+		reg &= (TSGPIO_ID | TSGPIO_OE);
 
 	return gpio_ts4900_write(client, gpio, reg);
 }
 
 static int ts4900_get_gpio_datain(struct i2c_client *client, int gpio)
 {
+	struct ts4900gpio_platform_data *pdata = client->dev.platform_data;
 	u8 reg, addr;
+	int ret;
 
 	dev_dbg(&client->dev, "%s Getting GPIO %d Input\n", __func__, gpio);
 
 	addr = gpio;
-
 	reg = gpio_ts4900_read(client, addr);
 
-	return (reg & 0x4) ? 1 : 0;
+	if (pdata->model == 7970)
+		ret = reg & TSGPIO_OE;
+	else
+		ret = (reg & TSGPIO_ID) ? 1 : 0;
+
+	return ret;
 }
 
 static int ts_direction_in(struct gpio_chip *chip, unsigned offset)
@@ -217,7 +244,8 @@ static int gpio_ts4900_remove(struct i2c_client *client)
 
 #ifdef CONFIG_OF
 static const struct of_device_id ts4900gpio_ids[] = {
-	{ .compatible = "ts4900gpio", },
+	{ .compatible = "ts4900gpio",	.data = (void *) 4900 },
+	{ .compatible = "ts7970gpio",	.data = (void *) 7970 },
 	{},
 };
 
@@ -245,6 +273,8 @@ struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);
 
+	pdata->model = (unsigned long)match->data;
+
 	return pdata;
 }
 #else
@@ -260,7 +290,7 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 			     const struct i2c_device_id *id)
 {
 	struct gpio_ts4900_priv *priv;
-	const struct ts4900gpio_platform_data *pdata;
+	struct ts4900gpio_platform_data *pdata;
 
 	int ret;
 
@@ -274,6 +304,7 @@ static int gpio_ts4900_probe(struct i2c_client *client,
 		if (IS_ERR(pdata))
 			return PTR_ERR(pdata);
 	}
+	client->dev.platform_data = pdata;
 
 	priv = devm_kzalloc(&client->dev,
 			    sizeof(struct gpio_ts4900_priv),
