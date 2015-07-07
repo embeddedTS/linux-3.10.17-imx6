@@ -661,6 +661,23 @@ static s32 igb_pool_flash_update_done_i210(struct e1000_hw *hw)
 }
 
 /**
+ *  igb_get_flash_presence_i210 - Check if flash device is detected.
+ *  @hw: pointer to the HW structure
+ *
+ **/
+bool igb_get_flash_presence_i210(struct e1000_hw *hw)
+{
+	u32 eec = 0;
+	bool ret_val = false;
+
+	eec = rd32(E1000_EECD);
+	if (eec & E1000_EECD_FLASH_DETECTED_I210)
+		ret_val = true;
+
+	return ret_val;
+}
+
+/**
  *  igb_update_flash_i210 - Commit EEPROM to the flash
  *  @hw: pointer to the HW structure
  *

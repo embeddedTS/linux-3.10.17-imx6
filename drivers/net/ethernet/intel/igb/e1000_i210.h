@@ -40,6 +40,7 @@ extern s32 igb_acquire_swfw_sync_i210(struct e1000_hw *hw, u16 mask);
 extern void igb_release_swfw_sync_i210(struct e1000_hw *hw, u16 mask);
 extern s32 igb_acquire_nvm_i210(struct e1000_hw *hw);
 extern void igb_release_nvm_i210(struct e1000_hw *hw);
+extern bool igb_get_flash_presence_i210(struct e1000_hw *hw);
 extern s32 igb_valid_led_default_i210(struct e1000_hw *hw, u16 *data);
 extern s32 igb_read_nvm_i211(struct e1000_hw *hw, u16 offset, u16 words,
 			       u16 *data);
