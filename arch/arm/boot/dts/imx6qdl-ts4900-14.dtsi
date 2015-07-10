@@ -497,6 +497,10 @@
 	};
 };
 
+&pcie {
+	status = "okay";
+};
+
 // WIFI
 &usdhc1 {
 	pinctrl-names = "default";
