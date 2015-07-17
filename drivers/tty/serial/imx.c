@@ -69,9 +69,10 @@
 #define UBIR  0xa4 /* BRM Incremental Register */
 #define UBMR  0xa8 /* BRM Modulator Register */
 #define UBRC  0xac /* Baud Rate Count Register */
-#define IMX21_ONEMS 0xb0 /* One Millisecond register */
+#define UMCR  0xb8 /* UART RS-485 Mode Control Register */
 #define IMX1_UTS 0xd0 /* UART Test Register on i.mx1 */
 #define IMX21_UTS 0xb4 /* UART Test Register on all other i.mx*/
+#define IMX21_ONEMS 0xb0 /* One Millisecond register */
 
 /* UART Control Register Bit Fields.*/
 #define URXD_CHARRDY	(1<<15)
@@ -171,6 +172,10 @@
 #define UTS_RXFULL	 (1<<3)	 /* RxFIFO full */
 #define UTS_SOFTRST	 (1<<0)	 /* Software reset */
 
+#define UMCR_MDEN 1
+#define UMCR_TXB8 (1<<2) /* Transmit RS-485 9th bit */
+
+
 /* We've been assigned a range on the "Low-density serial ports" major */
 #define SERIAL_IMX_MAJOR	207
 #define MINOR_START		16
@@ -250,6 +255,7 @@ struct imx_port {
 	unsigned int            saved_reg[11];
 #define DMA_TX_IS_WORKING 1
 	unsigned long		flags;
+	int char_is_bit9;
 };
 
 struct imx_port_ucrs {
@@ -489,15 +495,40 @@ static void imx_enable_ms(struct uart_port *port)
 static inline void imx_transmit_buffer(struct imx_port *sport)
 {
 	struct circ_buf *xmit = &sport->port.state->xmit;
+	unsigned long umcr = readl(sport->port.membase + UMCR);
 
-	while (!uart_circ_empty(xmit) &&
+   if (umcr & UMCR_MDEN) { /* 9th-bit is enabled */
+      while (!uart_circ_empty(xmit) &&
 			!(readl(sport->port.membase + uts_reg(sport))
 				& UTS_TXFULL)) {
-		/* send xmit->buf[xmit->tail]
-		 * out the port here */
-		writel(xmit->buf[xmit->tail], sport->port.membase + URTX0);
-		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
-		sport->port.icount.tx++;
+		   if (sport->char_is_bit9) {
+		      /* the next byte in the queue is actually the 9th bit */
+		      if (xmit->buf[xmit->tail] & 1)
+		         umcr |= UMCR_TXB8;
+		      else
+		         umcr &= ~UMCR_TXB8;
+		      writel(umcr, sport->port.membase + UMCR);
+		      xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
+		      sport->char_is_bit9 = 0;
+		   } else {
+		      /* send xmit->buf[xmit->tail]
+		       * out the port here */
+		      writel(xmit->buf[xmit->tail], sport->port.membase + URTX0);
+		      xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
+		      sport->port.icount.tx++;
+		      sport->char_is_bit9 = 1;
+		   }
+      }
+	} else {
+	   while (!uart_circ_empty(xmit) &&
+			!(readl(sport->port.membase + uts_reg(sport))
+				& UTS_TXFULL)) {
+		   /* send xmit->buf[xmit->tail]
+		    * out the port here */
+		   writel(xmit->buf[xmit->tail], sport->port.membase + URTX0);
+		   xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
+		   sport->port.icount.tx++;
+      }
 	}
 
 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
@@ -674,7 +705,24 @@ static irqreturn_t imx_txint(int irq, void *dev_id)
 	spin_lock_irqsave(&sport->port.lock, flags);
 	if (sport->port.x_char) {
 		/* Send next char */
-		writel(sport->port.x_char, sport->port.membase + URTX0);
+
+		unsigned long umcr = readl(sport->port.membase + UMCR);
+
+      if (umcr & UMCR_MDEN) { /* 9th-bit is enabled */
+         if (sport->char_is_bit9) {
+            if (sport->port.x_char & 1)
+		         umcr |= UMCR_TXB8;
+		      else
+		         umcr &= ~UMCR_TXB8;
+		      writel(umcr, sport->port.membase + UMCR);
+		      sport->char_is_bit9 = 0;
+         } else {
+            writel(sport->port.x_char, sport->port.membase + URTX0);
+            sport->char_is_bit9 = 1;
+         }
+      } else
+		   writel(sport->port.x_char, sport->port.membase + URTX0);
+
 		goto out;
 	}
 
@@ -718,6 +766,15 @@ static irqreturn_t imx_rxint(int irq, void *dev_id)
 		if (uart_handle_sysrq_char(&sport->port, (unsigned char)rx))
 			continue;
 
+		if (readl(sport->port.membase + UMCR) & UMCR_MDEN) {
+		   unsigned short ch;
+		   sport->port.icount.rx++;
+         ch = (rx & URXD_PRERR)? 1:0;
+         ch |= ((rx & 0xff) << 8);
+         tty_insert_flip_string(port, (const unsigned char *)&ch, sizeof(ch)); 
+         continue;
+		}
+
 		if (unlikely(rx & URXD_ERR)) {
 			if (rx & URXD_BRK)
 				sport->port.icount.brk++;
@@ -727,7 +784,6 @@ static irqreturn_t imx_rxint(int irq, void *dev_id)
 				sport->port.icount.frame++;
 			if (rx & URXD_OVRRUN)
 				sport->port.icount.overrun++;
-
 			if (rx & sport->port.ignore_status_mask) {
 				if (++ignored > 100)
 					goto out;
@@ -739,7 +795,7 @@ static irqreturn_t imx_rxint(int irq, void *dev_id)
 			if (rx & URXD_BRK)
 				flg = TTY_BREAK;
 			else if (rx & URXD_PRERR)
-				flg = TTY_PARITY;
+            flg = TTY_PARITY;
 			else if (rx & URXD_FRMERR)
 				flg = TTY_FRAME;
 			if (rx & URXD_OVRRUN)
@@ -1211,9 +1267,10 @@ static int imx_startup(struct uart_port *port)
 		}
 	}
 
-	/* Can we enable the DMA support? */
+	/* Can we enable the DMA support? */ 
 	if (is_imx6q_uart(sport) && !uart_console(port)
-		&& !sport->dma_is_inited)
+		&& !sport->dma_is_inited
+		&& !(sport->port.flags & UPF_LOW_LATENCY))
 		imx_uart_dma_init(sport);
 
 	if (sport->dma_is_inited) {
@@ -1226,6 +1283,14 @@ static int imx_startup(struct uart_port *port)
 	 * Finally, clear and enable interrupts
 	 */
 	writel(USR1_RTSD, sport->port.membase + USR1);
+
+	if (is_imx6q_uart(sport) &&
+	   (sport->port.flags & UPF_BUGGY_UART) &&
+	   !uart_console(port)) {
+	   temp = readl(sport->port.membase + UMCR) | UMCR_MDEN;
+	   sport->char_is_bit9 = 1;
+	   writel(temp, sport->port.membase + UMCR);
+	}
 
 	temp = readl(sport->port.membase + UCR1);
 	if (!sport->dma_is_inited)
