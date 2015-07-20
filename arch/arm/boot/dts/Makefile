@@ -173,13 +173,19 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	imx6dl-ts4900-a.dtb \
 	imx6dl-ts4900-14.dtb \
 	imx6dl-ts4900-8395.dtb \
+	imx6dl-ts7990-lxd.dtb \
+	imx6dl-ts7990-okaya.dtb \
+	imx6dl-ts7990-microtips.dtb \
 	imx6q-ts4900.dtb \
 	imx6q-ts4900-2.dtb \
 	imx6q-ts4900-6.dtb \
 	imx6q-ts4900-9.dtb \
 	imx6q-ts4900-a.dtb \
 	imx6q-ts4900-14.dtb \
-	imx6q-ts4900-8395.dtb
+	imx6q-ts4900-8395.dtb \
+	imx6q-ts7990-lxd.dtb \
+	imx6q-ts7990-okaya.dtb \
+	imx6q-ts7990-microtips.dtb
 dtb-$(CONFIG_ARCH_MXS) += imx23-evk.dtb \
 	imx23-olinuxino.dtb \
 	imx23-stmp378x_devb.dtb \
