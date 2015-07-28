@@ -122,12 +122,12 @@ static int isl12022_get_datetime(struct i2c_client *client, struct rtc_time *tm)
 	if (ret)
 		return ret;
 
-	if (buf[ISL12022_REG_SR] & (ISL12022_SR_LBAT85 | ISL12022_SR_LBAT75)) {
+	/*if (buf[ISL12022_REG_SR] & (ISL12022_SR_LBAT85 | ISL12022_SR_LBAT75)) {
 		dev_warn(&client->dev,
 			 "voltage dropped below %u%%, "
 			 "date and time is not reliable.\n",
 			 buf[ISL12022_REG_SR] & ISL12022_SR_LBAT85 ? 85 : 75);
-	}
+	}*/
 
 	dev_dbg(&client->dev,
 		"%s: raw data is sec=%02x, min=%02x, hr=%02x, "
