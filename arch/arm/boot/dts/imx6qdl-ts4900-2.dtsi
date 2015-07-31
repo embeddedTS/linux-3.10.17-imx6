@@ -76,8 +76,8 @@
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 			gpio = <&gpio2 19 0>;
+			enable-active-high;
 			startup-delay-us = <60000>;
-			regulator-boot-on;
 		};
 
 		reg_1p8v: 1p8v {
@@ -142,6 +142,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ipu_4900>;
 		status = "okay";
+		display-supply = <&reg_lcd3p3v>;
 	};
 
 	wlan {

@@ -19,6 +19,7 @@
 #include <linux/of_device.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
+#include <linux/regulator/driver.h>
 
 #include "mxc_dispdrv.h"
 
@@ -31,6 +32,7 @@ struct mxc_lcd_platform_data {
 struct mxc_lcdif_data {
 	struct platform_device *pdev;
 	struct mxc_dispdrv_handle *disp_lcdif;
+	struct regulator *display_supply;
 };
 
 #define DISPDRV_LCD	"lcd"
@@ -167,7 +169,7 @@ static int lcd_get_of_property(struct platform_device *pdev,
 
 static int mxc_lcdif_probe(struct platform_device *pdev)
 {
-	int ret;
+	int ret, reg;
 	struct pinctrl *pinctrl;
 	struct mxc_lcdif_data *lcdif;
 	struct mxc_lcd_platform_data *plat_data;
@@ -188,6 +190,18 @@ static int mxc_lcdif_probe(struct platform_device *pdev)
 	if (ret < 0) {
 		dev_err(&pdev->dev, "get lcd of property fail\n");
 		return ret;
+	}
+
+	lcdif->display_supply = devm_regulator_get(&pdev->dev, "display");
+	if (PTR_ERR(lcdif->display_supply) == -EPROBE_DEFER) {
+		return -EPROBE_DEFER;
+	} else if (IS_ERR(lcdif->display_supply)){
+		dev_info(&pdev->dev, "No LCD regulator attached\n");
+		lcdif->display_supply = NULL;
+	}
+
+	if(lcdif->display_supply != NULL) {
+		reg = regulator_enable(lcdif->display_supply);	
 	}
 
 	pinctrl = devm_pinctrl_get_select_default(&pdev->dev);
