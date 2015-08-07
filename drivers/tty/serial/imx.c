@@ -173,6 +173,7 @@
 #define UTS_SOFTRST	 (1<<0)	 /* Software reset */
 
 #define UMCR_MDEN 1
+#define UMCR_SLAM (1<<1) /* Slave address detection mode bit */
 #define UMCR_TXB8 (1<<2) /* Transmit RS-485 9th bit */
 
 
@@ -256,6 +257,7 @@ struct imx_port {
 #define DMA_TX_IS_WORKING 1
 	unsigned long		flags;
 	int char_is_bit9;
+	int nine_bit_enabled;
 };
 
 struct imx_port_ucrs {
@@ -308,6 +310,9 @@ static struct of_device_id imx_uart_dt_ids[] = {
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, imx_uart_dt_ids);
+
+static unsigned int imx_tx_empty(struct uart_port *port);
+
 
 static inline unsigned uts_reg(struct imx_port *sport)
 {
@@ -497,11 +502,16 @@ static inline void imx_transmit_buffer(struct imx_port *sport)
 	struct circ_buf *xmit = &sport->port.state->xmit;
 	unsigned long umcr = readl(sport->port.membase + UMCR);
 
-   if (umcr & UMCR_MDEN) { /* 9th-bit is enabled */
+   if (sport->nine_bit_enabled) { 
       while (!uart_circ_empty(xmit) &&
 			!(readl(sport->port.membase + uts_reg(sport))
 				& UTS_TXFULL)) {
 		   if (sport->char_is_bit9) {
+		      /* we need to wait for the current 9 bits to clear the 
+		         transmitter before we modify UMCR_TXB8, so wait
+		         for USR2_TXDC == 1
+		       */
+		      while (!(readl(sport->port.membase + USR2) & USR2_TXDC));
 		      /* the next byte in the queue is actually the 9th bit */
 		      if (xmit->buf[xmit->tail] & 1)
 		         umcr |= UMCR_TXB8;
@@ -705,24 +715,7 @@ static irqreturn_t imx_txint(int irq, void *dev_id)
 	spin_lock_irqsave(&sport->port.lock, flags);
 	if (sport->port.x_char) {
 		/* Send next char */
-
-		unsigned long umcr = readl(sport->port.membase + UMCR);
-
-      if (umcr & UMCR_MDEN) { /* 9th-bit is enabled */
-         if (sport->char_is_bit9) {
-            if (sport->port.x_char & 1)
-		         umcr |= UMCR_TXB8;
-		      else
-		         umcr &= ~UMCR_TXB8;
-		      writel(umcr, sport->port.membase + UMCR);
-		      sport->char_is_bit9 = 0;
-         } else {
-            writel(sport->port.x_char, sport->port.membase + URTX0);
-            sport->char_is_bit9 = 1;
-         }
-      } else
-		   writel(sport->port.x_char, sport->port.membase + URTX0);
-
+	   writel(sport->port.x_char, sport->port.membase + URTX0);
 		goto out;
 	}
 
@@ -756,6 +749,15 @@ static irqreturn_t imx_rxint(int irq, void *dev_id)
 
 		rx = readl(sport->port.membase + URXD0);
 
+		if (sport->nine_bit_enabled) {
+		   unsigned short ch;
+		   sport->port.icount.rx++;
+         ch = (rx & URXD_PRERR)? 1:0;
+         ch |= ((rx & 0xff) << 8);
+         tty_insert_flip_string(port, (const unsigned char *)&ch, sizeof(ch));
+         continue;
+		}
+
 		temp = readl(sport->port.membase + USR2);
 		if (temp & USR2_BRCD) {
 			writel(USR2_BRCD, sport->port.membase + USR2);
@@ -763,17 +765,8 @@ static irqreturn_t imx_rxint(int irq, void *dev_id)
 				continue;
 		}
 
-		if (uart_handle_sysrq_char(&sport->port, (unsigned char)rx))
+	   if (uart_handle_sysrq_char(&sport->port, (unsigned char)rx))
 			continue;
-
-		if (readl(sport->port.membase + UMCR) & UMCR_MDEN) {
-		   unsigned short ch;
-		   sport->port.icount.rx++;
-         ch = (rx & URXD_PRERR)? 1:0;
-         ch |= ((rx & 0xff) << 8);
-         tty_insert_flip_string(port, (const unsigned char *)&ch, sizeof(ch)); 
-         continue;
-		}
 
 		if (unlikely(rx & URXD_ERR)) {
 			if (rx & URXD_BRK)
@@ -1279,18 +1272,25 @@ static int imx_startup(struct uart_port *port)
 	}
 
 	spin_lock_irqsave(&sport->port.lock, flags);
+
+	if (is_imx6q_uart(sport) &&
+	   ((sport->port.flags & (ASYNC_LOW_LATENCY | UPF_BUGGY_UART)) ==
+	      (ASYNC_LOW_LATENCY | UPF_BUGGY_UART))
+	   && !uart_console(port)) {
+	   temp = readl(sport->port.membase + UMCR) & ~UMCR_SLAM;
+	   sport->char_is_bit9 =
+	   sport->nine_bit_enabled = 1;
+	   writel(temp | UMCR_MDEN, sport->port.membase + UMCR);
+	} else {
+	   sport->char_is_bit9 =
+	   sport->nine_bit_enabled = 0;
+      writel(0, sport->port.membase + UMCR);
+	}
+
 	/*
 	 * Finally, clear and enable interrupts
 	 */
 	writel(USR1_RTSD, sport->port.membase + USR1);
-
-	if (is_imx6q_uart(sport) &&
-	   (sport->port.flags & UPF_BUGGY_UART) &&
-	   !uart_console(port)) {
-	   temp = readl(sport->port.membase + UMCR) | UMCR_MDEN;
-	   sport->char_is_bit9 = 1;
-	   writel(temp, sport->port.membase + UMCR);
-	}
 
 	temp = readl(sport->port.membase + UCR1);
 	if (!sport->dma_is_inited)
@@ -1432,7 +1432,6 @@ static void imx_shutdown(struct uart_port *port)
 	/*
 	 * Disable all interrupts, port and break condition.
 	 */
-
 	spin_lock_irqsave(&sport->port.lock, flags);
 	temp = readl(sport->port.membase + UCR1);
 	temp &= ~(UCR1_TXMPTYEN | UCR1_RRDYEN | UCR1_RTSDEN | UCR1_UARTEN);
@@ -1440,6 +1439,13 @@ static void imx_shutdown(struct uart_port *port)
 		temp &= ~(UCR1_IREN);
 
 	writel(temp, sport->port.membase + UCR1);
+
+	temp = readl(sport->port.membase + UMCR) & ~UMCR_MDEN;
+	writel(temp, sport->port.membase + UMCR);
+
+	sport->char_is_bit9 =
+      sport->nine_bit_enabled = 0;
+
 	spin_unlock_irqrestore(&sport->port.lock, flags);
 
 	clk_disable_unprepare(sport->clk_per);
@@ -1535,7 +1541,7 @@ imx_set_termios(struct uart_port *port, struct ktermios *termios,
 		ucr2 |= UCR2_STPB;
 	if (termios->c_cflag & PARENB) {
 		ucr2 |= UCR2_PREN;
-		if (termios->c_cflag & PARODD)
+	if (termios->c_cflag & PARODD)
 			ucr2 |= UCR2_PROE;
 	}
 
