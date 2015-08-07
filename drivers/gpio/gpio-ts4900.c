@@ -1,3 +1,5 @@
+#define DEBUG
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -102,19 +104,19 @@ static int ts4900_set_gpio_direction(struct i2c_client *client,
 	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n",
 		__func__, gpio, is_input);
 
+	reg = gpio_ts4900_read(client, gpio);
 	if (pdata->model == 7970) {
 		if (is_input) {
-			reg = 0x0;
+			reg &= ~(TSGPIO_OE);
 		} else {
 			/* Since this board doesn't have seperate input/output
 			* data regs, initialize to the last output value if
 			* it has beenset before, or start with 0 on first
 			* use */
 			int oldval = (pdata->bank >> gpio) & 1;
-			reg = TSGPIO_OE | (oldval << 2);
+			reg |= TSGPIO_OE | (oldval << 1);
 		}
 	} else {
-		reg = gpio_ts4900_read(client, gpio);
 		if (is_input)
 			reg &= (TSGPIO_OD | TSGPIO_ID);
 		else
@@ -251,7 +253,7 @@ static const struct of_device_id ts4900gpio_ids[] = {
 
 MODULE_DEVICE_TABLE(of, ts4900gpio_ids);
 
-static const
+static
 struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
 {
 	struct ts4900gpio_platform_data *pdata;
@@ -278,8 +280,7 @@ struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
 	return pdata;
 }
 #else
-static const
-struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
+static struct ts4900gpio_platform_data *ts4900gpio_probe_dt(struct device *dev)
 {
 	dev_err(dev, "no platform data defined\n");
 	return ERR_PTR(-EINVAL);
