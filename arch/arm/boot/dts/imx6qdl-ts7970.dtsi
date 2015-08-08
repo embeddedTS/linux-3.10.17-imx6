@@ -201,8 +201,8 @@
 	serial1: max3100-1@0 {
 		compatible = "max3100-ts";
 		reg = <0>;
-		interrupt-parent = <&gpio5>;
-		interrupts = <20 2>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <4 IRQ_TYPE_LEVEL_LOW>;
 		spi-max-frequency = <1000000>;
 		loopback = <0>;
 		crystal = <1>;
@@ -213,7 +213,7 @@
 	spidevfpga: spi@1 {
 		compatible = "spidev";
 		reg = <1>;
-		spi-max-frequency = <15000000>;
+		spi-max-frequency = <1000000>;
 	};
 
 	spidevhd1: spi@2 {
