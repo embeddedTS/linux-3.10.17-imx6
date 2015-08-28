@@ -33,6 +33,10 @@
 	};
 };
 
+&captouch {
+	status = "okay";
+};
+
 &ldb {
 	status = "okay";
 	lvds-channel@0 {
