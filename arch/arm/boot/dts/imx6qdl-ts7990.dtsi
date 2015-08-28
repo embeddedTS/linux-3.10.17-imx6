@@ -103,6 +103,17 @@
 			enable-active-high;
 			regulator-boot-on;
 		};
+
+		// Only for the P1
+		backlite: en_backlite {
+			compatible = "regulator-fixed";
+			regulator-name = "en_backlite";
+			regulator-min-microvolt = <3400000>;
+			regulator-max-microvolt = <3400000>;
+			gpio = <&gpio8 24 0>;
+			enable-active-high;
+			regulator-boot-on;
+		};
 	};
 
 	sound {
@@ -533,6 +544,17 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1_1>;
 
+	captouch: pixcir_ts@5c {
+		compatible = "pixcir,pixcir_tangoc";
+		reg = <0x5c>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <12 0>;
+		attb-gpio = <&gpio3 12 0>;
+		touchscreen-size-x = <1024>;
+		touchscreen-size-y = <600>;
+		status="okay";
+	};
+
 	rtc: isl12022@6f {
 		compatible = "isl,isl12022";
 		reg = <0x6f>;
@@ -557,8 +579,8 @@
 		interrupt-route = <1>;
 	};
 
-	gpio8: ts4900gpio@28 {
-		compatible = "ts4900gpio";
+	gpio8: tsgpio@28 {
+		compatible = "ts7970gpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
