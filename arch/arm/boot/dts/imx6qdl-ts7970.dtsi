@@ -121,6 +121,22 @@
 			enable-active-high;
 			startup-delay-us = <200>;
 		};
+
+		reg_can1_3v3: reg_can1_3v3 {
+			compatible = "regulator-fixed";
+			regulator-name = "reg_can1_3v3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&gpio4 21 0>;
+		};
+
+		reg_can2_3v3: en-reg_can2_3v3 {
+			compatible = "regulator-fixed";
+			regulator-name = "reg_can2_3v3";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&gpio6 31 0>;
+		};
 	};
 
 	sound {
@@ -540,12 +556,14 @@
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_flexcan1_1>;
         status = "okay";
+        xceiver-supply = <&reg_can1_3v3>;
 };
 
 &flexcan2 {
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_flexcan2_1>;
         status = "okay";
+        xceiver-supply = <&reg_can2_3v3>;
 };
 
 &fec {

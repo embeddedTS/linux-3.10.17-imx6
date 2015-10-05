@@ -24,7 +24,6 @@
 #include <linux/can/dev.h>
 #include <linux/can/error.h>
 #include <linux/can/led.h>
-#include <linux/can/platform/flexcan.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/if_arp.h>
@@ -39,6 +38,7 @@
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/platform_device.h>
+#include <linux/regulator/consumer.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/regmap.h>
 
@@ -225,6 +225,7 @@ struct flexcan_priv {
 	struct clk *clk_per;
 	struct flexcan_platform_data *pdata;
 	const struct flexcan_devtype_data *devtype_data;
+	struct regulator *reg_xceiver;
 	struct flexcan_stop_mode stm;
 	int id;
 };
@@ -288,15 +289,6 @@ static inline void flexcan_exit_stop_mode(struct flexcan_priv *priv)
 	if (priv->devtype_data->features & FLEXCAN_HAS_V10_FEATURES)
 		regmap_update_bits(priv->stm.gpr, priv->stm.req_gpr,
 			1 << priv->stm.req_bit, 0);
-}
-
-/*
- * Swtich transceiver on or off
- */
-static void flexcan_transceiver_switch(const struct flexcan_priv *priv, int on)
-{
-	if (priv->pdata && priv->pdata->transceiver_switch)
-		priv->pdata->transceiver_switch(on);
 }
 
 static inline int flexcan_has_and_handle_berr(const struct flexcan_priv *priv,
@@ -834,7 +826,11 @@ static int flexcan_chip_start(struct net_device *dev)
 	if (priv->devtype_data->features & FLEXCAN_HAS_V10_FEATURES)
 		flexcan_write(0x0, &regs->rxfgmask);
 
-	flexcan_transceiver_switch(priv, 1);
+	if (priv->reg_xceiver)	{
+		err = regulator_enable(priv->reg_xceiver);
+		if (err)
+			goto out;
+	}
 
 	/* synchronize with the can bus */
 	reg_mcr = flexcan_read(&regs->mcr);
@@ -877,7 +873,9 @@ static void flexcan_chip_stop(struct net_device *dev)
 	reg |= FLEXCAN_MCR_MDIS | FLEXCAN_MCR_HALT;
 	flexcan_write(reg, &regs->mcr);
 
-	flexcan_transceiver_switch(priv, 0);
+	if (priv->reg_xceiver){
+		regulator_disable(priv->reg_xceiver);
+	}
 	priv->can.state = CAN_STATE_STOPPED;
 
 	return;
@@ -1088,6 +1086,7 @@ static int flexcan_probe(struct platform_device *pdev)
 	const struct flexcan_devtype_data *devtype_data;
 	struct net_device *dev;
 	struct flexcan_priv *priv;
+	struct regulator *reg_xceiver;	
 	struct resource *mem;
 	struct clk *clk_ipg = NULL, *clk_per = NULL;
 	struct pinctrl *pinctrl;
@@ -1100,6 +1099,12 @@ static int flexcan_probe(struct platform_device *pdev)
 	pinctrl = devm_pinctrl_get_select_default(&pdev->dev);
 	if (IS_ERR(pinctrl))
 		return PTR_ERR(pinctrl);
+
+	reg_xceiver = devm_regulator_get(&pdev->dev, "xceiver");
+	if (PTR_ERR(reg_xceiver) == -EPROBE_DEFER)
+		return -EPROBE_DEFER;
+	else if (IS_ERR(reg_xceiver))
+		reg_xceiver = NULL;
 
 	if (pdev->dev.of_node)
 		of_property_read_u32(pdev->dev.of_node,
@@ -1177,6 +1182,8 @@ static int flexcan_probe(struct platform_device *pdev)
 	priv->clk_per = clk_per;
 	priv->pdata = pdev->dev.platform_data;
 	priv->devtype_data = devtype_data;
+
+	priv->reg_xceiver = reg_xceiver;
 
 	netif_napi_add(dev, &priv->napi, flexcan_poll, FLEXCAN_NAPI_WEIGHT);
 

@@ -29,6 +29,8 @@ Below are gpios for tranceiver:
 - trx_nerr_gpio : NERR gpio
 - trx_wakeup_gpio : local wakeup gpio
 
+- xceiver-supply: Regulator that powers the CAN transceiver
+
 Example:
 
 	can@1c000 {
