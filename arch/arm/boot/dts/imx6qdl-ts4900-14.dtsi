@@ -581,11 +581,12 @@
 		reg = <0x6f>;
 	};
 
-	gpio8: ts4900gpio@28 {
-		compatible = "ts4900gpio";
+	gpio8: tsgpio@28 {
+		compatible = "tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
+		base = <224>;
 	};
 };
 

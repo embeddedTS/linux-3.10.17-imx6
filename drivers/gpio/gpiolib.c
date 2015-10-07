@@ -1,3 +1,5 @@
+#define DEBUG
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
@@ -188,6 +190,8 @@ static int gpiochip_find_base(int ngpio)
 {
 	struct gpio_chip *chip;
 	int base = ARCH_NR_GPIOS - ngpio;
+
+	printk(KERN_INFO "NGPIO: %d, ARCH_NR_GPIOS: %d, base, %d\n", ngpio, ARCH_NR_GPIOS, base);
 
 	list_for_each_entry_reverse(chip, &gpio_chips, list) {
 		/* found a free space? */
