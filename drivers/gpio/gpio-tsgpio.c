@@ -1,3 +1,4 @@
+#define DEBUG
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -141,9 +142,9 @@ static int ts_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
 	WARN_ON(pdata == NULL);
 
 	if (enable)
-		reg |= TSGPIO_OD; /* set data output bit */
+		reg |= TSGPIO_OD;
 	else
-		reg &= TSGPIO_OE;
+		reg &= TSGPIO_OD;
 
 	reg &= (TSGPIO_OD | TSGPIO_OE);
 	return gpio_ts_write(client, gpio, reg);
