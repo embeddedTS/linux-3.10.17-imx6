@@ -76,6 +76,10 @@ static bool turbo_mode = true;
 module_param(turbo_mode, bool, 0644);
 MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
 
+static char *macaddr = ":";
+MODULE_PARM_DESC(macaddr, "MAC address");
+module_param(macaddr, charp, 0);
+
 static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
 					    u32 *data, int in_pm)
 {
@@ -765,6 +769,37 @@ static int smsc95xx_ioctl(struct net_device *netdev, struct ifreq *rq, int cmd)
 	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
 }
 
+static void get_mac_addr(struct net_device *net, u8 *mac)
+{
+	int i;
+	int j;
+	int got_num;
+	int num;
+
+	i = j = num = got_num = 0;
+	while (j < ETH_ALEN) {
+		if (macaddr[i]) {
+			int digit;
+
+			got_num = 1;
+			digit = hex_to_bin(macaddr[i]);
+			if (digit >= 0)
+				num = num * 16 + digit;
+			else if (':' == macaddr[i])
+				got_num = 2;
+			else
+				break;
+		} else if (got_num)
+			got_num = 2;
+		else
+			break;
+		if (2 == got_num) {
+			net->dev_addr[j++] = num;
+		}
+		i++;
+	}
+}
+
 static void smsc95xx_init_mac_address(struct usbnet *dev)
 {
 	/* try reading mac address from EEPROM */
@@ -775,6 +810,12 @@ static void smsc95xx_init_mac_address(struct usbnet *dev)
 			netif_dbg(dev, ifup, dev->net, "MAC address read from EEPROM\n");
 			return;
 		}
+	}
+
+	if (macaddr[0] != ':'){
+		get_mac_addr(dev->net, macaddr);
+		if (is_valid_ether_addr(dev->net->dev_addr))
+			return;
 	}
 
 	/* no eeprom, or eeprom values are invalid. generate random MAC */
