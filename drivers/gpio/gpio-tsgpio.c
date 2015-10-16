@@ -323,8 +323,6 @@ static int gpio_ts_probe(struct i2c_client *client,
 
 	mutex_init(&priv->mutex);
 
-	ts_set_gpio_dataout(client, 14, 1);
-
 	ret = gpiochip_add(&priv->gpio_chip);
 	if (ret < 0) {
 		dev_err(&client->dev, "could not register gpiochip, %d\n", ret);
