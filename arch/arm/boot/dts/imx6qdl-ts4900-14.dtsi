@@ -16,7 +16,7 @@
 	aliases {
 		mxcfb0 = &mxcfb0;
 	};
-	
+
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -148,7 +148,7 @@
 		flow_cntrl = <1>;
 		baud_rate = <3000000>;
 	};
-	
+
 	backlight_lcd {
 		compatible = "pwm-backlight";
 		pwms = <&pwm3 0 5000000>;
@@ -200,7 +200,7 @@
 	status = "okay";
 
 	serial1: max3100@0 {
-		compatible = "max3100";
+		compatible = "max3100-ts";
 		reg = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 2>;
@@ -230,9 +230,6 @@
 		ti,debounce-tol = /bits/ 16 <65535>;
 		ti,debounce-max = /bits/ 16 <0>;
 		ti,pendown-gpio-debounce = <100000>;
-		ti,x-max = /bits/ 16 <800>;
-		ti,y-max = /bits/ 16 <600>;
-		ti,calib = <(-13431) (-41) (109091654) (22) (-10546) (83909875) (65536)>;
 		linux,wakeup;
 	};
 };
@@ -303,7 +300,7 @@
 				MX6QDL_PAD_SD1_DAT1__SD1_DATA1	 0x17059
 				MX6QDL_PAD_SD1_DAT2__SD1_DATA2	 0x17059
 				MX6QDL_PAD_SD1_DAT3__SD1_DATA3	 0x17059
-				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ								
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ
 			>;
 		};
 	};
@@ -357,7 +354,7 @@
 			>;
 		};
 	};
-	
+
 	misc {
 		pinctrl_misc: tsmisc {
 			fsl,pins = <
@@ -485,23 +482,27 @@
 };
 
 &weim {
-    status = "okay";
+	status = "okay";
 	#address-cells = <2>;
 	#size-cells = <1>;
-    pc104@0,0 {
-    	reg = <0 0 0x02000000>;
+	pc104@0,0 {
+		reg = <0 0 0x02000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		bank-width = <2>;
 		//   EIM_CS0GCR1, EIM_CS0GCR2, EIM_CS0RCR1,
 		// EIM_CS0RCR2, EIM_CS0WCR1, EIM_CS0WCR2
-    	fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
-    			0x00000000 0x1C092480 0x00000000>;
-    };
+		fsl,weim-cs-timing = <0x00710089 0x000011F2 0x1C022000
+							  0x00000000 0x1C092480 0x00000000>;
+	};
+};
+
+&pcie {
+	status = "okay";
 };
 
 // WIFI
-&usdhc1 { 
+&usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1_4900>;
 	vmmc-supply = <&wl12xx_vmmc>;
@@ -518,7 +519,7 @@
 	bus-width = <4>;
 	status = "okay";
 	//fsl,cd-controller;
-	fsl,wp-controller;	
+	fsl,wp-controller;
 };
 
 // eMMC
@@ -530,7 +531,7 @@
 	status = "okay";
 	fsl,wp-controller;
 	non-removable;
-}; 
+};
 
 &audmux {
 	status = "okay";
@@ -580,11 +581,12 @@
 		reg = <0x6f>;
 	};
 
-	gpio8: ts4900gpio@28 {
-		compatible = "ts4900gpio";
+	gpio8: tsgpio@28 {
+		compatible = "tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
+		base = <224>;
 	};
 };
 
@@ -615,20 +617,20 @@
 };
 
 &flexcan1 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_flexcan1_1>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan1_1>;
+	status = "okay";
 };
 
 &flexcan2 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_flexcan2_1>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan2_1>;
+	status = "okay";
 };
 
 &fec {
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_enet_4900>;
-		phy-mode = "rgmii";
-		status = "okay";	
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_enet_4900>;
+	phy-mode = "rgmii";
+	status = "okay";
 };

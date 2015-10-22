@@ -16,7 +16,7 @@
 	aliases {
 		mxcfb0 = &mxcfb0;
 	};
-	
+
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -76,8 +76,8 @@
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
 			gpio = <&gpio2 19 0>;
+			enable-active-high;
 			startup-delay-us = <60000>;
-			regulator-boot-on;
 		};
 
 		reg_1p8v: 1p8v {
@@ -142,6 +142,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ipu_4900>;
 		status = "okay";
+		display-supply = <&reg_lcd3p3v>;
 	};
 
 	wlan {
@@ -198,9 +199,6 @@
 			ti,debounce-tol = /bits/ 16 <65535>;
 			ti,debounce-max = /bits/ 16 <0>;
 			ti,pendown-gpio-debounce = <100000>;
-			ti,x-max = /bits/ 16 <800>;
-			ti,y-max = /bits/ 16 <480>;
-			ti,calib = <(-13539) (-1) (54285380) (-58) (-8619) (33778843) (65536)>;
 			linux,wakeup;
 		};
 	};
@@ -254,8 +252,9 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2_4900>;
 	status = "okay";
+
 	serial1: max3100-1@0 {
-		compatible = "max3100";
+		compatible = "max3100-ts";
 		reg = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 2>;
@@ -263,6 +262,7 @@
 		loopback = <0>;
 		crystal = <1>;
 		poll-time = <100>;
+		fifo-size = <16>;
 	};
 };
 
@@ -421,7 +421,7 @@
 			>;
 		};
 	};
-	
+
 	misc {
 		pinctrl_misc: misc {
 			fsl,pins = <
@@ -430,13 +430,20 @@
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1           0x130b0    // Audio CLK
 				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21      0x80000000 // FPGA_RESET#
 				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20    0x80000000 // FPGA_DONE
-				MX6QDL_PAD_SD3_RST__GPIO7_IO08         0x80000000 // EMMC_RESET#
 				MX6QDL_PAD_GPIO_2__GPIO1_IO02          0x80000000 // RED_LED#
 				MX6QDL_PAD_GPIO_3__XTALOSC_REF_CLK_24M 0x10       // FPGA 24MHZ
 				MX6QDL_PAD_GPIO_4__GPIO1_IO04          0x80000000 // FPGA_IRQ
+
+				// REV A
 				MX6QDL_PAD_GPIO_5__GPIO1_IO05          0x80000000 // DIO_1
 				MX6QDL_PAD_GPIO_6__GPIO1_IO06          0x80000000 // DIO_2
 				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x80000000 // DIO_3
+
+				// REV C
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03      0x80000000 // DIO_1
+				MX6QDL_PAD_SD4_DAT7__GPIO2_IO15        0x80000000 // DIO_2
+				MX6QDL_PAD_SD3_RST__GPIO7_IO08         0x80000000 // DIO_3
+
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11         0x80000000 // DIO_4
 				MX6QDL_PAD_GPIO_17__GPIO7_IO12         0x80000000 // DIO_5
 				MX6QDL_PAD_GPIO_19__GPIO4_IO05         0x80000000 // DIO_7
@@ -500,7 +507,7 @@
 };
 
 // WIFI
-&usdhc1 { 
+&usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1_4900>;
 	vmmc-supply = <&wl12xx_vmmc>;
@@ -517,7 +524,7 @@
 	vmmc-supply = <&reg_3p3v>;
 	bus-width = <4>;
 	status = "okay";
-	fsl,wp-controller;	
+	fsl,wp-controller;
 };
 
 // eMMC
@@ -529,7 +536,7 @@
 	status = "okay";
 	fsl,wp-controller;
 	non-removable;
-}; 
+};
 
 &audmux {
 	status = "okay";
@@ -579,11 +586,12 @@
 		reg = <0x6f>;
 	};
 
-	gpio8: ts4900gpio@28 {
-		compatible = "ts4900gpio";
+	gpio8: tsgpio@28 {
+		compatible = "tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
+		base = <224>;
 	};
 };
 

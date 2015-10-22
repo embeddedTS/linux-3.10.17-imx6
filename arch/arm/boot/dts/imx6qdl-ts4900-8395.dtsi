@@ -110,6 +110,20 @@
 		};
 	};
 
+	sound {
+		compatible = "fsl,imx6q-ts4900-sgtl5000",
+			     "fsl,imx-audio-sgtl5000";
+		model = "imx6q-ts4900-sgtl5000";
+		cpu-dai = <&ssi1>;
+		audio-codec = <&codec>;
+		audio-routing =
+			"MIC_IN", "Mic Jack",
+			"Mic Jack", "Mic Bias",
+			"Headphone Jack", "HP_OUT";
+		mux-int-port = <1>;
+		mux-ext-port = <3>;
+	};
+
 	mxcfb0: fb@0 {
 		compatible = "fsl,mxc_sdc_fb";
 		disp_dev = "ldb";
@@ -195,6 +209,7 @@
 		crystal = <1>;
 		poll-time = <100>;
 	};
+
 };
 
 &ssi1 {
@@ -542,11 +557,12 @@
 		reg = <0x6f>;
 	};
 
-	gpio8: ts4900gpio@28 {
-		compatible = "ts4900gpio";
+	gpio8: tsgpio@28 {
+		compatible = "tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
+		base = <224>;
 	};
 };
 
@@ -564,6 +580,14 @@
 		attb-gpio = <&gpio3 14 0>;
 		touchscreen-size-x = <1024>;
 		touchscreen-size-y = <600>;
+	};
+
+	codec: sgtl5000@0a {
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		clocks = <&clks 201>;
+		VDDA-supply = <&reg_3p3v>;
+		VDDIO-supply = <&reg_3p3v>;
 	};
 };
 
