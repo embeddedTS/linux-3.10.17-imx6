@@ -1,3 +1,5 @@
+#define DEBUG
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
@@ -136,7 +138,7 @@ static struct gpio_desc *gpio_to_desc(unsigned gpio)
  */
 static int desc_to_gpio(const struct gpio_desc *desc)
 {
-	return desc - &gpio_desc[0];
+	return desc->chip->base + gpio_chip_hwgpio(desc);
 }
 
 
@@ -188,6 +190,8 @@ static int gpiochip_find_base(int ngpio)
 {
 	struct gpio_chip *chip;
 	int base = ARCH_NR_GPIOS - ngpio;
+
+	printk(KERN_INFO "NGPIO: %d, ARCH_NR_GPIOS: %d, base, %d\n", ngpio, ARCH_NR_GPIOS, base);
 
 	list_for_each_entry_reverse(chip, &gpio_chips, list) {
 		/* found a free space? */
@@ -1214,13 +1218,14 @@ int gpiochip_add(struct gpio_chip *chip)
 		}
 	}
 
-	spin_unlock_irqrestore(&gpio_lock, flags);
-
 #ifdef CONFIG_PINCTRL
 	INIT_LIST_HEAD(&chip->pin_ranges);
 #endif
 
 	of_gpiochip_add(chip);
+
+unlock:
+	spin_unlock_irqrestore(&gpio_lock, flags);
 
 	if (status)
 		goto fail;
@@ -1234,9 +1239,6 @@ int gpiochip_add(struct gpio_chip *chip)
 		chip->label ? : "generic");
 
 	return 0;
-
-unlock:
-	spin_unlock_irqrestore(&gpio_lock, flags);
 fail:
 	/* failures here can mean systems won't boot... */
 	pr_err("gpiochip_add: gpios %d..%d (%s) failed to register\n",
