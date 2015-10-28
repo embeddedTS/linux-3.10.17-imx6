@@ -109,8 +109,6 @@
 			regulator-max-microvolt = <1800000>;
 			gpio = <&gpio8 14 0>;
 			startup-delay-us = <100000>;
-			enable-active-high;
-			regulator-boot-on;
 		};
 
 		usb-hub-reset {
