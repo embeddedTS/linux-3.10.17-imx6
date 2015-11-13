@@ -56,6 +56,11 @@ static struct fb_videomode lcdif_modedb[] = {
 	FB_VMODE_NONINTERLACED,
 	0,},
 	{
+	"MICROTIPS-WVGA", 60, 800, 480, 30030, 46, 210, 23, 22, 1, 1,
+	0,
+	FB_VMODE_NONINTERLACED,
+	0,},
+	{
 	"HANTRONIX-SVGA", 60, 800, 600, 25000, 50, 70, 0, 0, 50, 50,
 	0,
 	FB_VMODE_NONINTERLACED,
