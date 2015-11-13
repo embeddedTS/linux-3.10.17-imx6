@@ -66,16 +66,6 @@
 			regulator-always-on;
 		};
 
-		reg_lcd3p3v: lcd3p3v {
-			compatible = "regulator-fixed";
-			regulator-name = "LCD3P3V";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio2 19 0>;
-			startup-delay-us = <60000>;
-			regulator-boot-on;
-		};
-
 		reg_1p8v: 1p8v {
 			compatible = "regulator-fixed";
 			regulator-name = "1P8V";
@@ -104,16 +94,6 @@
 			regulator-boot-on;
 		};
 
-		// Only for the P1
-		backlite: en_backlite {
-			compatible = "regulator-fixed";
-			regulator-name = "en_backlite";
-			regulator-min-microvolt = <3400000>;
-			regulator-max-microvolt = <3400000>;
-			gpio = <&gpio8 24 0>;
-			enable-active-high;
-			regulator-boot-on;
-		};
 	};
 
 	sound {
@@ -154,9 +134,16 @@
 		gpios = <&gpio8 13 0>;
 	};
 
-	backlight_lcd {
+	backlight_local_lcd {
 		compatible = "pwm-backlight";
 		pwms = <&pwm3 0 5000000>;
+		brightness-levels = <0 128 140 160 180 200 220 240 255>;
+		default-brightness-level = <8>;
+	};
+
+	backlight_rem_lcd {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1 0 5000000>;
 		brightness-levels = <0 128 140 160 180 200 220 240 255>;
 		default-brightness-level = <8>;
 	};
@@ -196,6 +183,12 @@
 			linux,wakeup;
 		};
 	};
+};
+
+&pwm1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm_rem>;
+	status = "okay";
 };
 
 &pwm3 {
@@ -353,7 +346,18 @@
 				MX6QDL_PAD_EIM_EB0__GPIO2_IO28         0x80000000 // FPGA_IRQ_2
 				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31      0x80000000 // FPGA_SPI_CS0#
 				MX6QDL_PAD_GPIO_6__GPIO1_IO06          0x80000000 // FPGA_SPI_CS1#
-				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x80000000 // FPGA_SPI_CS2#
+			>;
+		};
+	};
+
+	spi-gpio-rem {
+		pinctrl_spigpio_rem: spigpio_rem {
+			fsl,pins = <
+				MX6QDL_PAD_SD3_RST__GPIO7_IO08			0x80000000 // SPI_REM_CS#
+				MX6QDL_PAD_SD4_DAT7__GPIO2_IO15         0x100b1    // SPI_REM_MOSI
+				MX6QDL_PAD_EIM_DA11__GPIO3_IO11         0x100b1    // SPI_REM_MISO
+				MX6QDL_PAD_EIM_DA0__GPIO3_IO00			0x80000000 // TOUCH_REM_IRQ
+				MX6QDL_PAD_EIM_DA2__GPIO3_IO02          0x100b1    // SPI_REM_CLK
 			>;
 		};
 	};
@@ -381,6 +385,14 @@
 				MX6QDL_PAD_DISP0_DAT21__IPU1_DISP0_DATA21       0xe0 // LCD_D21
 				MX6QDL_PAD_DISP0_DAT22__IPU1_DISP0_DATA22       0xe0 // LCD_D22
 				MX6QDL_PAD_DISP0_DAT23__IPU1_DISP0_DATA23       0xe0 // LCD_D23
+			>;
+		};
+	};
+
+	pwm-rem {
+		pinctrl_pwm_rem: rem_pwm {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_9__PWM1_OUT            0x1b0b1   // PWM_REM_LCD
 			>;
 		};
 	};
@@ -555,9 +567,9 @@
 		status="disabled";
 	};
 
-	rtc: isl12022@6f {
-		compatible = "isl,isl12022";
-		reg = <0x6f>;
+	rtc: m41t00s@68 {
+		compatible = "m41t00";
+		reg = <0x68>;
 	};
 
 	codec: sgtl5000@0a {
