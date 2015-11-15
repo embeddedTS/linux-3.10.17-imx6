@@ -154,7 +154,7 @@
 		gpio-sck = <&gpio2 20 0>;
 		gpio-mosi = <&gpio2 18 0>;
 		gpio-miso = <&gpio2 17 0>;
-		cs-gpios = <&gpio2 19 1>;
+		cs-gpios = <&gpio2 19 0>;
 		num-chipselects = <1>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -175,7 +175,6 @@
 			ti,vref-delay-usecs = /bits/ 16 <0>;
 			ti,x-plate-ohms = /bits/ 16 <400>;
 			ti,y-plate-ohms = /bits/ 16 <400>;
-			ti,pressure-max = /bits/ 16 <15000>;
 			ti,debounce-rep = /bits/ 16 <2>;
 			ti,debounce-tol = /bits/ 16 <65535>;
 			ti,debounce-max = /bits/ 16 <0>;
@@ -366,7 +365,7 @@
 		pinctrl_ipu_4900: tsipugrp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK      0x38 // LCD_PIX_CLK
-				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15            0xe0 // LCD_DE
+				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15            0xf0 // LCD_DE
 				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02        0xe0 // LCD_D02
 				MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03        0xe0 // LCD_D03
 				MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04        0xe0 // LCD_D04
@@ -438,11 +437,11 @@
 				MX6QDL_PAD_EIM_RW__GPIO2_IO26          0x80000000 // JP_SD_BOOT#
 				MX6QDL_PAD_EIM_CS0__GPIO2_IO23         0x80000000 // ACCEL_INT
 				MX6QDL_PAD_EIM_A16__GPIO2_IO22         0x80000000 // EN_USB_5V
-				MX6QDL_PAD_EIM_A18__GPIO2_IO20         0x80000000 // TOUCH_SPI_CLK
-				MX6QDL_PAD_EIM_A19__GPIO2_IO19         0x80000000 // TOUCH_SPI_CS#
-				MX6QDL_PAD_EIM_A20__GPIO2_IO18         0x80000000 // TOUCH_SPI_MOSI
-				MX6QDL_PAD_EIM_A21__GPIO2_IO17         0x80000000 // TOUCH_SPI_MISO
-				MX6QDL_PAD_EIM_DA12__GPIO3_IO12        0x80000000 // TOUCH_IRQ
+				MX6QDL_PAD_EIM_A18__GPIO2_IO20         0x100b1 // TOUCH_SPI_CLK
+				MX6QDL_PAD_EIM_A19__GPIO2_IO19         0x180b1 // TOUCH_SPI_CS#
+				MX6QDL_PAD_EIM_A20__GPIO2_IO18         0x100b1 // TOUCH_SPI_MOSI
+				MX6QDL_PAD_EIM_A21__GPIO2_IO17         0x100b1 // TOUCH_SPI_MISO
+				MX6QDL_PAD_EIM_DA12__GPIO3_IO12        0x180b1 // TOUCH_IRQ
 				MX6QDL_PAD_EIM_D19__GPIO3_IO19         0x80000000 // BOOT_SPI_1_CS1#
 				MX6QDL_PAD_EIM_D23__GPIO3_IO23         0x80000000 // EN_RTC_PWR#
 				MX6QDL_PAD_EIM_BCLK__GPIO6_IO31        0x80000000 // EN_CAN#
