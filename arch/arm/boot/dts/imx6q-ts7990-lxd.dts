@@ -75,5 +75,5 @@
 };
 
 &sata {
-        status = "okay";
+	status = "okay";
 };
