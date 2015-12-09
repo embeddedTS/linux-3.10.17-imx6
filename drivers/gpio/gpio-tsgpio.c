@@ -92,35 +92,18 @@ static inline int gpio_ts_read(struct i2c_client *client, u16 addr)
 	return data[0];
 }
 
-static int ts_set_gpio_direction(struct i2c_client *client,
-	int gpio, int is_input)
+static int ts_set_gpio_input(struct i2c_client *client,
+	int gpio)
 {
-	struct tsgpio_platform_data *pdata = client->dev.platform_data;
 	u8 reg;
 
-	dev_dbg(&client->dev, "%s setting gpio %d to is_input=%d\n",
+	dev_dbg(&client->dev, "%s setting gpio %d to input\n",
 		__func__,
-		gpio,
-		is_input);
+		gpio);
 
 	reg = gpio_ts_read(client, gpio);
-
-	if (pdata->twobit)
-		if (is_input)
-			reg = 0x0;
-		else
-			reg |= TSGPIO_OE;
-	else
-		if (is_input)
-			reg &= TSGPIO_OD;
-		else
-			reg |= TSGPIO_OE;
-
-	/* Clear all but lower 2 bits.  The upper bits include the IO function
-	 * which should be written 0 so we don't risk a race condition with
-	 * userspace setting the crossbar and this rewriting the old values */
-	reg &= (TSGPIO_OD | TSGPIO_OE);
-
+	// This will clear the data enable, the other bits are NC when this is cleared
+	reg = 0x0;
 	gpio_ts_write(client, gpio, reg);
 
 	return 0;
@@ -136,16 +119,13 @@ static int ts_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
 		gpio,
 		enable);
 
-	reg = gpio_ts_read(client, gpio);
-
 	WARN_ON(pdata == NULL);
 
 	if (enable)
-		reg |= TSGPIO_OD;
+		reg |= TSGPIO_OD | TSGPIO_OE;
 	else
-		reg &= TSGPIO_OD;
+		reg |= TSGPIO_OE;
 
-	reg &= (TSGPIO_OD | TSGPIO_OE);
 	return gpio_ts_write(client, gpio, reg);
 }
 
@@ -175,7 +155,7 @@ static int ts_direction_in(struct gpio_chip *chip, unsigned offset)
 	int ret;
 
 	mutex_lock(&priv->mutex);
-	ret = ts_set_gpio_direction(priv->client, offset, 1);
+	ret = ts_set_gpio_input(priv->client, offset);
 	mutex_unlock(&priv->mutex);
 
 	return ret;
@@ -206,7 +186,6 @@ static int ts_direction_out(struct gpio_chip *chip, unsigned offset, int value)
 	struct gpio_ts_priv *priv = to_gpio_ts(chip);
 
 	mutex_lock(&priv->mutex);
-	ts_set_gpio_direction(priv->client, offset, 0);
 	ts_set_gpio_dataout(priv->client, offset, value);
 	mutex_unlock(&priv->mutex);
 
