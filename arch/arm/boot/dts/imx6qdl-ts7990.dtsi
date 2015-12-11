@@ -217,6 +217,10 @@
 			label = "env";
 			reg = <0x0100000 0x0020000>;
 		};
+		ubootenv@0200000 {
+			label = "splash";
+			reg = <0x0200000 0x0100000>;
+		};
 		user@0400000 {
 			label = "user-data";
 			reg = <0x0400000 0x0400000>;
