@@ -15,6 +15,10 @@
 / {
 	aliases {
 		mxcfb0 = &mxcfb0;
+		spi1 = &ecspi1;
+		spi2 = &ecspi2;
+		ethernet0 = &fec;
+		ethernet1 = &usbeth;
 	};
 
 	memory {
@@ -154,6 +158,10 @@
 		pwms = <&pwm3 0 5000000>;
 		brightness-levels = <0 128 140 160 180 200 220 240 255>;
 		default-brightness-level = <8>;
+	};
+
+	usbeth: smsc95xx {
+		status = "okay";
 	};
 };
 

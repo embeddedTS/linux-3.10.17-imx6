@@ -31,6 +31,7 @@
 #include <linux/crc32.h>
 #include <linux/usb/usbnet.h>
 #include <linux/slab.h>
+#include <linux/of_device.h>
 #include "smsc95xx.h"
 
 #define SMSC_CHIPNAME			"smsc95xx"
@@ -802,6 +803,22 @@ static void get_mac_addr(struct net_device *net, u8 *mac)
 
 static void smsc95xx_init_mac_address(struct usbnet *dev)
 {
+#ifdef CONFIG_OF
+	const void *address;
+	struct device_node *np;
+
+	/* try the device tree */
+	np = of_find_node_by_name(NULL, "smsc95xx");
+	if (np) {
+		address = of_get_property(np, "local-mac-address", NULL);
+		if (address) {
+			memcpy(dev->net->dev_addr, address, ETH_ALEN);
+			netif_dbg(dev, ifup, dev->net, "MAC address read from device tree\n");
+			return;
+		}
+	}
+#endif
+
 	/* try reading mac address from EEPROM */
 	if (smsc95xx_read_eeprom(dev, EEPROM_MAC_OFFSET, ETH_ALEN,
 			dev->net->dev_addr) == 0) {
@@ -815,7 +832,10 @@ static void smsc95xx_init_mac_address(struct usbnet *dev)
 	if (macaddr[0] != ':'){
 		get_mac_addr(dev->net, macaddr);
 		if (is_valid_ether_addr(dev->net->dev_addr))
+		{
+			netif_dbg(dev, ifup, dev->net, "MAC address read from parameter\n");
 			return;
+		}
 	}
 
 	/* no eeprom, or eeprom values are invalid. generate random MAC */

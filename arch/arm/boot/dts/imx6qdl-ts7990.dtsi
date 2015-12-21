@@ -13,6 +13,14 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
+	aliases {
+		mxcfb0 = &mxcfb0;
+		spi1 = &ecspi1;
+		spi2 = &ecspi2;
+		ethernet0 = &fec;
+		ethernet1 = &usbeth;
+	};
+
 	memory {
 		reg = <0x10000000 0x40000000>;
 	};
@@ -116,7 +124,7 @@
 		disp_id = <0>;
 		default_ifmt = "RGB24";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_ipu_4900>;
+		pinctrl-0 = <&pinctrl_ipu_7990>;
 		status = "okay";
 	};
 
@@ -182,6 +190,10 @@
 			linux,wakeup;
 		};
 	};
+
+	usbeth: smsc95xx {
+		status = "okay";
+	};
 };
 
 &pwm1 {
@@ -229,22 +241,34 @@
 };
 
 &ecspi2 {
-	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio6 2 0>;
+	fsl,spi-num-chipselects = <3>;
+	cs-gpios = <&gpio5 31 0>, <&gpio1 6 0>, <&gpio5 18 0>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi2_4900>;
+	pinctrl-0 = <&pinctrl_ecspi2_7990>;
 	status = "okay";
 
-	serial1: max3100-1@0 {
+	serial1: max3100-0@0 {
 		compatible = "max3100-ts";
 		reg = <0>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <4 2>;
+		interrupt-parent = <&gpio5>;
+		interrupts = <20 2>;
 		spi-max-frequency = <15000000>;
 		loopback = <0>;
 		crystal = <1>;
 		poll-time = <100>;
 		fifo-size = <16>;
+	};
+
+	spidevfpga: spi@1 {
+		compatible = "spidev";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+	};
+
+	spidevdc1: spi@2 {
+		compatible = "spidev";
+		reg = <2>;
+		spi-max-frequency = <1000000>;
 	};
 };
 
@@ -257,8 +281,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_misc>;
 
-	uart1-4900 {
-		pinctrl_uart1_4900: tsuart1-grp-2 {
+	uart1-7990 {
+		pinctrl_uart1_7990: tsuart1-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA	0x1b0b1
 				MX6QDL_PAD_SD3_DAT6__UART1_RX_DATA	0x1b0b1
@@ -266,8 +290,8 @@
 		};
 	};
 
-	uart2-4900 {
-		pinctrl_uart2_4900: tsuart2-grp-2 {
+	uart2-7990 {
+		pinctrl_uart2_7990: tsuart2-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_7__UART2_TX_DATA	0x1b0b1
 				MX6QDL_PAD_GPIO_8__UART2_RX_DATA	0x1b0b1
@@ -277,8 +301,8 @@
 		};
 	};
 
-	uart3-4900 {
-		pinctrl_uart3_4900: tsuart3-grp-2 {
+	uart3-7990 {
+		pinctrl_uart3_7990: tsuart3-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
@@ -288,8 +312,8 @@
 		};
 	};
 
-	uart4-4900 {
-		pinctrl_uart4_4900: tsuart4-grp-2 {
+	uart4-7990 {
+		pinctrl_uart4_7990: tsuart4-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
@@ -297,8 +321,8 @@
 		};
 	};
 
-	uart5-4900 {
-		pinctrl_uart5_4900: tsuart5-grp-2 {
+	uart5-7990 {
+		pinctrl_uart5_7990: tsuart5-grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL1__UART5_TX_DATA	0x1b0b1
 				MX6QDL_PAD_KEY_ROW1__UART5_RX_DATA	0x1b0b1
@@ -307,8 +331,8 @@
 	};
 
 	// TODO verify irq uses same pad settings
-	usdhc1-4900 {
-		pinctrl_usdhc1_4900: tsusdhc1grp-1 {
+	usdhc1-7990 {
+		pinctrl_usdhc1_7990: tsusdhc1grp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_SD1_CMD__SD1_CMD	     0x17059
 				MX6QDL_PAD_SD1_CLK__SD1_CLK	     0x10059
@@ -321,8 +345,8 @@
 		};
 	};
 
-	usdhc2-4900 {
-		pinctrl_usdhc2_4900: tsusdhc2grp-2 {
+	usdhc2-7990 {
+		pinctrl_usdhc2_7990: tsusdhc2grp-2 {
 			fsl,pins = <
 				MX6QDL_PAD_SD2_CMD__SD2_CMD    0x17059
 				MX6QDL_PAD_SD2_CLK__SD2_CLK    0x10059
@@ -334,21 +358,21 @@
 		};
 	};
 
-	ecspi2-4900 {
-		pinctrl_ecspi2_4900: tsecspi2-1 {
+	ecspi2-7990 {
+		pinctrl_ecspi2_7990: tsecspi2-1 {
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK      0x100b1    // FPGA_SPI_CLK
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI      0x100b1    // FPGA_SPI_MOSI
 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO     0x100b1    // FPGA_SPI_MISO
-				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29      0x100b1    // Offboard CS0#
+				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29      0x1c0b1    // Offboard CS0#
 				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02      0x100b1    // FPGA CS0#
 				MX6QDL_PAD_GPIO_3__XTALOSC_REF_CLK_24M 0x10       // FPGA 24MHZ
-				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18     0x80000000 // DC_SPI_CS#
 				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20    0x80000000 // FPGA_IRQ_0
 				MX6QDL_PAD_GPIO_4__GPIO1_IO04          0x80000000 // FPGA_IRQ_1
 				MX6QDL_PAD_EIM_EB0__GPIO2_IO28         0x80000000 // FPGA_IRQ_2
-				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31      0x80000000 // FPGA_SPI_CS0#
-				MX6QDL_PAD_GPIO_6__GPIO1_IO06          0x80000000 // FPGA_SPI_CS1#
+				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31      0x1c0b1 // FPGA_SPI_CS0#
+				MX6QDL_PAD_GPIO_6__GPIO1_IO06          0x1c0b1 // FPGA_SPI_CS1#
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18     0x1c0b1 // DC_SPI_CS#
 			>;
 		};
 	};
@@ -365,8 +389,8 @@
 		};
 	};
 
-	ipu-4900 {
-		pinctrl_ipu_4900: tsipugrp-1 {
+	ipu-7990 {
+		pinctrl_ipu_7990: tsipugrp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK      0x38 // LCD_PIX_CLK
 				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15            0xf0 // LCD_DE
@@ -400,8 +424,8 @@
 		};
 	};
 
-	enet-4900 {
-		pinctrl_enet_4900: enet-4900 {
+	enet-7990 {
+		pinctrl_enet_7990: enet-7990 {
 			fsl,pins = <
 				MX6QDL_PAD_ENET_MDIO__ENET_MDIO       0x1b0b0
 				MX6QDL_PAD_ENET_MDC__ENET_MDC         0x1b0b0
@@ -487,7 +511,7 @@
 // WIFI
 &usdhc1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc1_4900>;
+	pinctrl-0 = <&pinctrl_usdhc1_7990>;
 	vmmc-supply = <&wl12xx_vmmc>;
 	bus-width = <4>;
 	status = "okay";
@@ -498,7 +522,7 @@
 // SD
 &usdhc2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc2_4900>;
+	pinctrl-0 = <&pinctrl_usdhc2_7990>;
 	vmmc-supply = <&reg_3p3v>;
 	bus-width = <4>;
 	status = "okay";
@@ -525,32 +549,32 @@
 &uart1 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1_4900>;
+	pinctrl-0 = <&pinctrl_uart1_7990>;
 };
 
 &uart2 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2_4900>;
+	pinctrl-0 = <&pinctrl_uart2_7990>;
 	fsl,uart-has-rtscts;
 };
 
 &uart3 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_4900>;
+	pinctrl-0 = <&pinctrl_uart3_7990>;
 };
 
 &uart4 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart4_4900>;
+	pinctrl-0 = <&pinctrl_uart4_7990>;
 };
 
 &uart5 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5_4900>;
+	pinctrl-0 = <&pinctrl_uart5_7990>;
 };
 
 &i2c1 {
@@ -626,7 +650,7 @@
 
 &fec {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_enet_4900>;
+	pinctrl-0 = <&pinctrl_enet_7990>;
 	phy-mode = "rgmii";
 	status = "okay";
 };
