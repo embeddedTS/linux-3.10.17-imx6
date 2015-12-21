@@ -41,3 +41,6 @@
 	};
 };
 
+&touchscreen_spi {
+	status = "okay";
+};
