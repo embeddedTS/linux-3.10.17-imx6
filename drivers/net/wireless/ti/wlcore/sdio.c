@@ -32,6 +32,8 @@
 #include <linux/mmc/host.h>
 #include <linux/gpio.h>
 #include <linux/wl12xx.h>
+#include <linux/of_gpio.h>
+#include <linux/of_irq.h>
 #include <linux/pm_runtime.h>
 #include <linux/printk.h>
 
@@ -214,6 +216,50 @@ static struct wl1271_if_operations sdio_ops = {
 	.set_block_size = wl1271_sdio_set_block_size,
 };
 
+#ifdef CONFIG_OF
+static struct wl12xx_platform_data *wlcore_get_pdata_from_of(struct device *dev)
+{
+	struct wl12xx_platform_data *pdata;
+	struct device_node *np = dev->of_node;
+
+	if (!np) {
+		np = of_find_matching_node(NULL, dev->driver->of_match_table);
+		if (!np) {
+			dev_notice(dev, "device tree node not available\n");
+			pdata = ERR_PTR(-ENODEV);
+			goto out;
+		}
+	}
+
+	pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
+	if (!pdata) {
+		dev_err(dev, "can't allocate platform data\n");
+		pdata = ERR_PTR(-ENODEV);
+		goto out;
+	}
+
+	pdata->irq = irq_of_parse_and_map(np, 0);
+	if (pdata->irq < 0) {
+		dev_err(dev, "can't get interrupt gpio from the device tree\n");
+		goto out_free;
+	}
+	pdata->board_ref_clock = WL12XX_REFCLOCK_38; /* 38.4 MHz */
+	goto out;
+
+	out_free:
+	kfree(pdata);
+	pdata = ERR_PTR(-ENODEV);
+
+	out:
+	return pdata;
+}
+#else
+static struct wl12xx_platform_data *wlcore_get_pdata_from_of(struct device *dev)
+{
+	return NULL;
+}
+#endif
+
 static int wl1271_probe(struct sdio_func *func,
 				  const struct sdio_device_id *id)
 {
@@ -250,9 +296,15 @@ static int wl1271_probe(struct sdio_func *func,
 
 	pdev_data->pdata = wl12xx_get_platform_data();
 	if (IS_ERR(pdev_data->pdata)) {
-		ret = PTR_ERR(pdev_data->pdata);
-		dev_err(glue->dev, "missing wlan platform data: %d\n", ret);
-		goto out_free_glue;
+		dev_info(&func->dev,
+		"legacy platform data not found, trying device tree\n");
+
+		pdev_data->pdata = wlcore_get_pdata_from_of(&func->dev);
+		if (IS_ERR(pdev_data->pdata)) {
+			ret = PTR_ERR(pdev_data->pdata);
+			dev_err(&func->dev, "can't get platform data\n");
+			goto out_free_glue;
+		}
 	}
 
 	/* if sdio can keep power while host is suspended, enable wow */
@@ -386,16 +438,29 @@ static const struct dev_pm_ops wl1271_sdio_pm_ops = {
 };
 #endif
 
+#ifdef CONFIG_OF
+static const struct of_device_id wlcore_sdio_of_match_table[] = {
+	{ .compatible = "ti,wilink6" },
+	{ .compatible = "ti,wilink7" },
+	{ .compatible = "ti,wilink8" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, wlcore_sdio_of_match_table);
+#endif
+
 static struct sdio_driver wl1271_sdio_driver = {
 	.name		= "wl1271_sdio",
 	.id_table	= wl1271_devices,
 	.probe		= wl1271_probe,
 	.remove		= wl1271_remove,
-#ifdef CONFIG_PM
 	.drv = {
+#ifdef CONFIG_PM
 		.pm = &wl1271_sdio_pm_ops,
-	},
 #endif
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(wlcore_sdio_of_match_table),
+#endif
+	},
 };
 
 static int __init wl1271_init(void)
