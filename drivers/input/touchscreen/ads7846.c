@@ -176,7 +176,7 @@ struct ads7846 {
 #define	ADS_PD10_REF_ON		(2 << 0)	/* vREF on + penirq */
 #define	ADS_PD10_ALL_ON		(3 << 0)	/* ADC + vREF on */
 
-#define	MAX_12BIT	((1<<12)-1)
+#define	MAX_12BIT	((1<<13)-1)
 
 /* leave ADC powered up (disables penirq) between differential samples */
 #define	READ_12BIT_DFR(x, adc, vref) (ADS_START | ADS_A2A1A0_d_ ## x \
@@ -419,130 +419,6 @@ static int ads7845_read12_ser(struct device *dev, unsigned command)
 	return status;
 }
 
-#if IS_ENABLED(CONFIG_HWMON)
-
-#define SHOW(name, var, adjust) static ssize_t \
-name ## _show(struct device *dev, struct device_attribute *attr, char *buf) \
-{ \
-	struct ads7846 *ts = dev_get_drvdata(dev); \
-	ssize_t v = ads7846_read12_ser(&ts->spi->dev, \
-			READ_12BIT_SER(var)); \
-	if (v < 0) \
-		return v; \
-	return sprintf(buf, "%u\n", adjust(ts, v)); \
-} \
-static DEVICE_ATTR(name, S_IRUGO, name ## _show, NULL);
-
-
-/* Sysfs conventions report temperatures in millidegrees Celsius.
- * ADS7846 could use the low-accuracy two-sample scheme, but can't do the high
- * accuracy scheme without calibration data.  For now we won't try either;
- * userspace sees raw sensor values, and must scale/calibrate appropriately.
- */
-static inline unsigned null_adjust(struct ads7846 *ts, ssize_t v)
-{
-	return v;
-}
-
-SHOW(temp0, temp0, null_adjust)		/* temp1_input */
-SHOW(temp1, temp1, null_adjust)		/* temp2_input */
-
-
-/* sysfs conventions report voltages in millivolts.  We can convert voltages
- * if we know vREF.  userspace may need to scale vAUX to match the board's
- * external resistors; we assume that vBATT only uses the internal ones.
- */
-static inline unsigned vaux_adjust(struct ads7846 *ts, ssize_t v)
-{
-	unsigned retval = v;
-
-	/* external resistors may scale vAUX into 0..vREF */
-	retval *= ts->vref_mv;
-	retval = retval >> 12;
-
-	return retval;
-}
-
-static inline unsigned vbatt_adjust(struct ads7846 *ts, ssize_t v)
-{
-	unsigned retval = vaux_adjust(ts, v);
-
-	/* ads7846 has a resistor ladder to scale this signal down */
-	if (ts->model == 7846)
-		retval *= 4;
-
-	return retval;
-}
-
-SHOW(in0_input, vaux, vaux_adjust)
-SHOW(in1_input, vbatt, vbatt_adjust)
-
-static umode_t ads7846_is_visible(struct kobject *kobj, struct attribute *attr,
-				  int index)
-{
-	struct device *dev = container_of(kobj, struct device, kobj);
-	struct ads7846 *ts = dev_get_drvdata(dev);
-
-	if (ts->model == 7843 && index < 2)	/* in0, in1 */
-		return 0;
-	if (ts->model == 7845 && index != 2)	/* in0 */
-		return 0;
-
-	return attr->mode;
-}
-
-static struct attribute *ads7846_attributes[] = {
-	&dev_attr_temp0.attr,		/* 0 */
-	&dev_attr_temp1.attr,		/* 1 */
-	&dev_attr_in0_input.attr,	/* 2 */
-	&dev_attr_in1_input.attr,	/* 3 */
-	NULL,
-};
-
-static struct attribute_group ads7846_attr_group = {
-	.attrs = ads7846_attributes,
-	.is_visible = ads7846_is_visible,
-};
-__ATTRIBUTE_GROUPS(ads7846_attr);
-
-static int ads784x_hwmon_register(struct spi_device *spi, struct ads7846 *ts)
-{
-	/* hwmon sensors need a reference voltage */
-	switch (ts->model) {
-	case 7846:
-		if (!ts->vref_mv) {
-			dev_dbg(&spi->dev, "assuming 2.5V internal vREF\n");
-			ts->vref_mv = 2500;
-			ts->use_internal = true;
-		}
-		break;
-	case 7845:
-	case 7843:
-		if (!ts->vref_mv) {
-			dev_warn(&spi->dev,
-				"external vREF for ADS%d not specified\n",
-				ts->model);
-			return 0;
-		}
-		break;
-	}
-
-	ts->hwmon = hwmon_device_register_with_groups(&spi->dev, spi->modalias,
-						      ts, ads7846_attr_groups);
-	if (IS_ERR(ts->hwmon))
-		return PTR_ERR(ts->hwmon);
-
-	return 0;
-}
-
-static void ads784x_hwmon_unregister(struct spi_device *spi,
-				     struct ads7846 *ts)
-{
-	if (ts->hwmon)
-		hwmon_device_unregister(ts->hwmon);
-}
-
-#else
 static inline int ads784x_hwmon_register(struct spi_device *spi,
 					 struct ads7846 *ts)
 {
@@ -553,7 +429,6 @@ static inline void ads784x_hwmon_unregister(struct spi_device *spi,
 					    struct ads7846 *ts)
 {
 }
-#endif
 
 static ssize_t ads7846_pen_down_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
