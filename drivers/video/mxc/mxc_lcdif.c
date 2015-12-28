@@ -50,6 +50,16 @@ static struct fb_videomode lcdif_modedb[] = {
 	FB_SYNC_CLK_LAT_FALL,
 	FB_VMODE_NONINTERLACED,
 	0,},
+	{
+	"OKAYA-WVGA", 60, 800, 480, 30066, 50, 70, 0, 0, 50, 50, 
+	0,
+	FB_VMODE_NONINTERLACED,
+	0,},
+	{
+	"MICROTIPS-WVGA", 60, 800, 480, 30030, 46, 210, 23, 22, 1, 1,
+	0,
+	FB_VMODE_NONINTERLACED,
+	0,},
 };
 static int lcdif_modedb_sz = ARRAY_SIZE(lcdif_modedb);
 
