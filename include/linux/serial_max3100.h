@@ -47,6 +47,12 @@ struct plat_max3100 {
 	int crystal;
 	void (*max3100_hw_suspend) (int suspend);
 	int poll_time;
+	
+#if defined(CONFIG_SERIAL_MAX3100_TS) || defined (CONFIG_SERIAL_MAX3100_TS_MODULE)
+	int tx_fifo_size;
+	int rx_fifo_size;
+#endif
+	
 };
 
 #endif
