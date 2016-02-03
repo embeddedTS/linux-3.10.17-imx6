@@ -12,24 +12,11 @@
 #include "imx6ul.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6ul TS-4100";
+	model = "Technologic Systems i.MX6ul TS-4100 (Default Device Tree)";
 	compatible = "technologic,ts4100", "fsl,imx6ul";
 
 	chosen {
 		stdout-path = &uart1;
-	};
-
-	backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm1 0 5000000>;
-		brightness-levels = <0 4 8 16 32 64 128 255>;
-		default-brightness-level = <6>;
-		status = "okay";
-	};
-
-	pxp_v4l2 {
-		compatible = "fsl,imx6ul-pxp-v4l2", "fsl,imx6sx-pxp-v4l2", "fsl,imx6sl-pxp-v4l2";
-		status = "okay";
 	};
 
 	regulators {
@@ -114,10 +101,6 @@
 	fsl,ldo-bypass = <0>; /* DCDC, ldo-enable */
 };
 
-&pxp {
-	status = "okay";
-};
-
 &sai2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai2>;
@@ -127,7 +110,7 @@
 	assigned-clock-parents = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
 	assigned-clock-rates = <0>, <12288000>;
 
-	status = "okay";
+	status = "disabled";
 };
 
 &uart1 {
@@ -189,7 +172,7 @@
 	non-removable;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
-	bus-width = <8>;
+	bus-width = <4>;
 	status = "okay";
 };
 
@@ -200,20 +183,18 @@
 	status = "okay";
 };
 
+&i2c3 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3>;
+	status = "okay";
+};
+
 &qspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_qspi>;
-	status = "okay";
+	status = "disabled";
 	ddrsmp=<0>;
-
-	flash0: n25q256a@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "micron,n25q256a";
-		spi-max-frequency = <29000000>;
-		spi-nor,ddr-quad-read-dummy = <6>;
-		reg = <0>;
-	};
 };
 
 &iomuxc {
@@ -228,7 +209,6 @@
 				MX6UL_PAD_SNVS_TAMPER0__GPIO5_IO00 0x80000000 /* POWER_FAIL */
 				MX6UL_PAD_SNVS_TAMPER1__GPIO5_IO01 0x80000000 /* FPGA_IRQ */
 				MX6UL_PAD_SNVS_TAMPER2__GPIO5_IO02 0x80000000 /* EN_FPGA_PWR */
-				MX6UL_PAD_SNVS_TAMPER3__GPIO5_IO03 0x80000000 /* GPIO_DVFS */
 				MX6UL_PAD_SNVS_TAMPER4__GPIO5_IO04 0x80000000 /* JTAG_FPGA_TDO */
 				MX6UL_PAD_SNVS_TAMPER5__GPIO5_IO05 0x80000000 /* JTAG_FPGA_TDI */
 				MX6UL_PAD_SNVS_TAMPER6__GPIO5_IO06 0x80000000 /* JTAG_FPGA_TMS */
@@ -396,6 +376,13 @@
 			>;
 		};
 
+		pinctrl_i2c3: i2c3grp {
+			fsl,pins = <
+				MX6UL_PAD_LCD_DATA01__I2C3_SCL 0x4001b8b0
+				MX6UL_PAD_LCD_DATA00__I2C3_SDA 0x4001b8b0
+			>;
+		};
+
 		pinctrl_usdhc1: usdhc1grp {
 			fsl,pins = <
 				MX6UL_PAD_SD1_CMD__USDHC1_CMD        0x17059
@@ -404,7 +391,6 @@
 				MX6UL_PAD_SD1_DATA1__USDHC1_DATA1    0x17059
 				MX6UL_PAD_SD1_DATA2__USDHC1_DATA2    0x17059
 				MX6UL_PAD_SD1_DATA3__USDHC1_DATA3    0x17059
-				MX6UL_PAD_GPIO1_IO09__GPIO1_IO09     0x17059 /* SD1 RESET */
 				MX6UL_PAD_GPIO1_IO05__USDHC1_VSELECT 0x17059 /* SD1 VSELECT */
 			>;
 		};
@@ -439,10 +425,6 @@
 				MX6UL_PAD_NAND_DATA01__USDHC2_DATA1 0x17059
 				MX6UL_PAD_NAND_DATA02__USDHC2_DATA2 0x17059
 				MX6UL_PAD_NAND_DATA03__USDHC2_DATA3 0x17059
-				MX6UL_PAD_NAND_DATA04__USDHC2_DATA4 0x17059
-				MX6UL_PAD_NAND_DATA05__USDHC2_DATA5 0x17059
-				MX6UL_PAD_NAND_DATA06__USDHC2_DATA6 0x17059
-				MX6UL_PAD_NAND_DATA07__USDHC2_DATA7 0x17059
 			>;
 		};
 
@@ -456,15 +438,6 @@
 				MX6UL_PAD_NAND_DQS__QSPI_A_SS0_B      0x70a1
 				MX6UL_PAD_SNVS_TAMPER8__GPIO5_IO08    0x70a1
 				MX6UL_PAD_SNVS_TAMPER9__GPIO5_IO09    0x70a1
-			>;
-		};
-
-		pinctrl_spi4: spi4grp {
-			fsl,pins = <
-				MX6UL_PAD_BOOT_MODE0__GPIO5_IO10	0x70a1
-				MX6UL_PAD_BOOT_MODE1__GPIO5_IO11	0x70a1
-				MX6UL_PAD_SNVS_TAMPER7__GPIO5_IO07	0x70a1
-				MX6UL_PAD_SNVS_TAMPER8__GPIO5_IO08	0x80000000
 			>;
 		};
 
