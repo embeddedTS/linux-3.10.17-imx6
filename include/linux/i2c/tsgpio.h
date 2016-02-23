@@ -8,6 +8,7 @@
 struct tsgpio_platform_data {
 	int base;
 	int twobit;
+	int ngpio;
 };
 
 #endif /* _TS_GPIO_H_ */

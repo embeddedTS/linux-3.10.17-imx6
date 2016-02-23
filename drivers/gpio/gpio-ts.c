@@ -253,6 +253,9 @@ static struct tsgpio_platform_data *tsgpio_probe_dt(struct device *dev)
 	if (of_property_read_u32(node, "base", &pdata->base))
 		pdata->base = -1;
 
+	if (of_property_read_u32(node, "ngpio", &pdata->ngpio))
+		pdata->ngpio = 64;
+
 	return pdata;
 }
 #else
@@ -292,11 +295,7 @@ static int gpio_ts_probe(struct i2c_client *client,
 	priv->client = client;
 	priv->gpio_chip = template_chip;
 	priv->gpio_chip.base = pdata->base;
-
-	if (pdata->twobit)
-		priv->gpio_chip.ngpio = 64;
-	else
-		priv->gpio_chip.ngpio = 32;
+	priv->gpio_chip.ngpio = pdata->ngpio;
 	priv->gpio_chip.label = "tsgpio";
 	priv->gpio_chip.dev = &client->dev;
 

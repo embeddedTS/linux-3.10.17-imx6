@@ -280,6 +280,7 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 		base = <224>;
+		ngpio = <64>;
 		2bitio;
 	};
 

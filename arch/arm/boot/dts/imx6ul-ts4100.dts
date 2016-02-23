@@ -188,6 +188,15 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
+
+	gpio8: tsgpio@28 {
+		compatible = "tsgpio";
+		reg = <0x28>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		base = <160>;
+		ngpio = <128>;
+	};
 };
 
 &qspi {
