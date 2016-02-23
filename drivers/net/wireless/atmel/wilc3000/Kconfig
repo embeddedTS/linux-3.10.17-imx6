@@ -1,0 +1,61 @@
+config WILC3000
+	tristate "WILC3000 support (WiFi & Bluetooth coexistence)"
+    	depends on CFG80211 && BT
+	depends on MMC || SPI
+	---help---
+	  This module supports Atmel IEEE 802.11n FullMAC and Bluetooth combo
+	  chipset.
+
+	  For more information on WILC3000 combo chipset visit:
+	  http://www.atmel.com/devices/WILC3000.aspx
+
+	  For information on all Atmel wireless products visit:
+	  http://www.atmel.com/products/wireless/default.aspx
+
+choice
+	prompt "BUS Type"
+	depends on WILC3000
+	default WILC3000_SDIO
+
+config WILC3000_SDIO
+	bool "SDIO support"
+	---help---
+	  The Atmel WILC3000 SDIO is a full speed interface. It meets SDIO card
+	  specification version 2.0. The interface supports the 1-bit/4-bit SD
+	  transfer mode at the clock range of 0-50 MHz. The host can use this
+	  interface to read and write from any register within the chip as well
+	  as configure the WILC3000 for data DMA. To use this interface,
+	  pin 9 (SDIO_SPI_CFG) must be grounded. Select this if your platform
+	  is using the SDIO interface.
+
+config WILC3000_SPI
+	bool "SPI support"
+	---help---
+	  The Atmel WILC3000 has a Serial Peripheral Interface (SPI) that
+	  operates as a SPI slaves. The SPI interface can be used for control
+	  and for serial I/O of 802.11 data. The SPI is a full-duplex slave
+	  synchronous serial interface that is available immediately following
+	  reset when pin 9 (SDIO_SPI_CFG) is tied to VDDIO. Select this if
+	  your platform is using the SPI interface.
+
+endchoice
+
+config WILC3000_HW_OOB_INTR
+	bool "Use out of band interrupt"
+	depends on WILC3000 && WILC3000_SDIO
+	default n
+	---help---
+	  Use out of band interrupt for wake on wireless instead of SDIO time
+	  devision interrupt. Select this config option when your platform
+	  doesn't allow the SDIO card to interrupt host. The external interrupt
+	  should be tied to WILC3000 IRQ pin so that the host gets the interrupts
+	  from the WILC3000 chip.
+
+config WILC3000_DEBUG
+	bool "Debug support for the WILC3000 driver"
+	depends on WILC3000
+	default n
+	---help---
+	  Say Y here if you want the WILC3000 driver to produce more debug
+	  messages to the system log. Select this if you are having a trouble
+	  with WILC3000 and want to see what happens in more detail.
