@@ -410,6 +410,8 @@ struct i2c_bus_recovery_info {
 	/* gpio recovery */
 	int scl_gpio;
 	int sda_gpio;
+	struct i2c_adapter *adap;
+	void *arg;
 };
 
 int i2c_recover_bus(struct i2c_adapter *adap);
