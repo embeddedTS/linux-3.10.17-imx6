@@ -122,9 +122,9 @@ static int ts_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
 	WARN_ON(pdata == NULL);
 
 	if (enable)
-		reg |= TSGPIO_OD | TSGPIO_OE;
+		reg = TSGPIO_OD | TSGPIO_OE;
 	else
-		reg |= TSGPIO_OE;
+		reg = TSGPIO_OE;
 
 	return gpio_ts_write(client, gpio, reg);
 }
