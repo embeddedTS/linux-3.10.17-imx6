@@ -77,6 +77,15 @@ config PCIEASPM_PERFORMANCE
 	  Disable PCI Express ASPM L0s and L1, even if the BIOS enabled them.
 endchoice
 
+
 config PCIE_PME
-	def_bool y
+	bool "PCI Express Port PME"
+	default y
 	depends on PCIEPORTBUS && PM_RUNTIME
+	help
+	  Enable support for Power Management Events (PME)
+
+
+#config PCIE_PME
+#	def_bool y
+#	depends on PCIEPORTBUS && PM_RUNTIME
