@@ -278,6 +278,15 @@
 	};
 
 	gpio8: tsgpio@28 {
+		compatible = "technologic,tsgpio-2bitio";
+		reg = <0x28>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		base = <224>;
+		ngpio = /bits/ 16 <64>;
+	};
+
+	gpio8: tsgpio@28 {
 		compatible = "tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;

@@ -95,31 +95,26 @@ static inline int gpio_ts_read(struct i2c_client *client, u16 addr)
 static int ts_set_gpio_input(struct i2c_client *client,
 	int gpio)
 {
-	u8 reg;
-
 	dev_dbg(&client->dev, "%s setting gpio %d to input\n",
 		__func__,
 		gpio);
 
-	reg = gpio_ts_read(client, gpio);
-	// This will clear the data enable, the other bits are NC when this is cleared
-	reg = 0x0;
-	gpio_ts_write(client, gpio, reg);
+	/* This will clear the data enable, the other bits are
+	 * dontcare when this is cleared
+	 */
+	gpio_ts_write(client, gpio, 0);
 
 	return 0;
 }
 
 static int ts_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
 {
-	struct tsgpio_platform_data *pdata = client->dev.platform_data;
-	u8 reg;
+	u8 reg = 0x0;
 
 	dev_dbg(&client->dev, "%s setting gpio %d to output=%d\n",
 		__func__,
 		gpio,
 		enable);
-
-	WARN_ON(pdata == NULL);
 
 	if (enable)
 		reg = TSGPIO_OD | TSGPIO_OE;
@@ -132,14 +127,12 @@ static int ts_set_gpio_dataout(struct i2c_client *client, int gpio, int enable)
 static int ts_get_gpio_datain(struct i2c_client *client, int gpio)
 {
 	struct tsgpio_platform_data *pdata = client->dev.platform_data;
-	u8 reg, addr;
+	u8 reg;
 	int ret;
 
 	dev_dbg(&client->dev, "%s Getting GPIO %d Input\n", __func__, gpio);
 
-	addr = gpio;
-
-	reg = gpio_ts_read(client, addr);
+	reg = gpio_ts_read(client, gpio);
 
 	if (pdata->twobit)
 		ret = (reg & TSGPIO_OD) ? 1 : 0;
@@ -205,23 +198,10 @@ static struct gpio_chip template_chip = {
 	.can_sleep		= 1,
 };
 
-static int gpio_ts_remove(struct i2c_client *client)
-{
-	struct gpio_ts_priv *priv =
-		(struct gpio_ts_priv *)i2c_get_clientdata(client);
-	int status;
-
-	status = gpiochip_remove(&priv->gpio_chip);
-	if (status < 0)
-		return status;
-
-	return 0;
-}
-
-
 #ifdef CONFIG_OF
 static const struct of_device_id tsgpio_ids[] = {
-	{ .compatible = "tsgpio", .data = (void *) 0},
+	{ .compatible = "technologic,tsgpio", .data = (void *) 0},
+	{ .compatible = "technologic,tsgpio-2bitio", .data = (void *) 1},
 	{},
 };
 
@@ -248,13 +228,13 @@ static struct tsgpio_platform_data *tsgpio_probe_dt(struct device *dev)
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);
 
-	pdata->twobit = of_property_read_bool(node, "2bitio");
+	pdata->twobit = (unsigned long)match->data;
 
 	if (of_property_read_u32(node, "base", &pdata->base))
-		pdata->base = -1;
+		return ERR_PTR(-EINVAL);
 
-	if (of_property_read_u32(node, "ngpio", &pdata->ngpio))
-		pdata->ngpio = 64;
+	if (of_property_read_u16(node, "ngpio", &pdata->ngpio))
+		return ERR_PTR(-EINVAL);
 
 	return pdata;
 }
@@ -316,7 +296,7 @@ static const struct i2c_device_id tsgpio_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, tsgpio_id);
 
-MODULE_ALIAS("platform:tsgpio");
+MODULE_ALIAS("i2c:tsgpio");
 
 static struct i2c_driver gpio_ts_driver = {
 	.driver = {
@@ -327,7 +307,6 @@ static struct i2c_driver gpio_ts_driver = {
 #endif
 	},
 	.probe		= gpio_ts_probe,
-	.remove		= gpio_ts_remove,
 	.id_table	= tsgpio_id,
 };
 
