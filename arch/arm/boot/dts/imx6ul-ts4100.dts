@@ -23,6 +23,23 @@
 		reg = <0x80000000 0x20000000>;
 	};
 
+	leds {
+		pinctrl-names = "default";
+		compatible = "gpio-leds";
+
+		green-led {
+			label = "green-led";
+			gpios = <&gpio6 30 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		red-led {
+			label = "red-led";
+			gpios = <&gpio6 31 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -287,7 +304,7 @@
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
 
-	gpio8: tsgpio@28 {
+	gpio6: tsgpio@28 {
 		compatible = "technologic,tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
@@ -311,15 +328,16 @@
 			fsl,pins = <
 				MX6UL_PAD_GPIO1_IO01__GPIO1_IO01     0x17059 /* GPIO_1_ADC */
 				MX6UL_PAD_GPIO1_IO09__GPIO1_IO09     0x17059 /* GPIO_9_ADC */
-				MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x80000000 /* SPARE_1 */
-				MX6UL_PAD_UART1_RTS_B__GPIO1_IO19 0x80000000 /* SPARE_2 */
-				MX6UL_PAD_SNVS_TAMPER0__GPIO5_IO00 0x80000000 /* POWER_FAIL */
-				MX6UL_PAD_SNVS_TAMPER1__GPIO5_IO01 0x80000000 /* FPGA_IRQ */
-				MX6UL_PAD_SNVS_TAMPER2__GPIO5_IO02 0x80000000 /* EN_FPGA_PWR */
-				MX6UL_PAD_SNVS_TAMPER4__GPIO5_IO04 0x80000000 /* JTAG_FPGA_TDO */
-				MX6UL_PAD_SNVS_TAMPER5__GPIO5_IO05 0x80000000 /* JTAG_FPGA_TDI */
-				MX6UL_PAD_SNVS_TAMPER6__GPIO5_IO06 0x80000000 /* JTAG_FPGA_TMS */
-				MX6UL_PAD_SNVS_TAMPER7__GPIO5_IO07 0x80000000 /* JTAG_FPGA_TCK */
+				MX6UL_PAD_UART1_CTS_B__GPIO1_IO18    0x1b020 /* SPARE_1 */
+				MX6UL_PAD_UART1_RTS_B__GPIO1_IO19    0x1b020 /* SPARE_2 */
+				MX6UL_PAD_NAND_WP_B__GPIO4_IO11      0x1b020 /* FPGA_RESET# */
+				MX6UL_PAD_SNVS_TAMPER0__GPIO5_IO00   0x1b020 /* POWER_FAIL */
+				MX6UL_PAD_SNVS_TAMPER1__GPIO5_IO01   0x1b020 /* FPGA_IRQ */
+				MX6UL_PAD_SNVS_TAMPER2__GPIO5_IO02   0x1b020 /* EN_FPGA_PWR */
+				MX6UL_PAD_SNVS_TAMPER4__GPIO5_IO04   0x1b020 /* JTAG_FPGA_TDO */
+				MX6UL_PAD_SNVS_TAMPER5__GPIO5_IO05   0x1b020 /* JTAG_FPGA_TDI */
+				MX6UL_PAD_SNVS_TAMPER6__GPIO5_IO06   0x1b020 /* JTAG_FPGA_TMS */
+				MX6UL_PAD_SNVS_TAMPER7__GPIO5_IO07   0x1b020 /* JTAG_FPGA_TCK */
 			>;
 		};
 
@@ -555,7 +573,6 @@
 
 		pinctrl_ecspi3: ecspi3grp {
 			fsl,pins = <
-				MX6UL_PAD_NAND_WP_B__ECSPI3_RDY     0x10b0
 				MX6UL_PAD_NAND_READY_B__ECSPI3_SS0  0x10b0
 				MX6UL_PAD_NAND_CE0_B__ECSPI3_SCLK   0x10b0
 				MX6UL_PAD_NAND_CE1_B__ECSPI3_MOSI   0x10b0
