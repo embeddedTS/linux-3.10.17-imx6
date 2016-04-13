@@ -647,6 +647,11 @@ config GPIO_SX150X
 	  8 bits:  sx1508q
 	  16 bits: sx1509q
 
+config GPIO_TS
+	bool "Technologic Systems FPGA I2C GPIO"
+	depends on I2C
+	help
+	  GPIO driver for TS I2C FPGA
 endmenu
 
 menu "MFD GPIO expanders"
