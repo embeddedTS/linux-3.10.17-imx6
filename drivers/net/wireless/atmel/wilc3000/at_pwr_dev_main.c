@@ -891,12 +891,9 @@ static int linux_wlan_device_detection(int on_off)
 
 int at_pwr_power_up(int source)
 {
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 	mutex_lock(&pwr_dev.cs);
 
 	int count=0;
-
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 
 	PRINT_D(PWRDEV_DBG, "source: %s, current bus status Wifi: %d, BT: %d\n",
 		 (source == PWR_DEV_SRC_WIFI ? "Wifi" : "BT"),
@@ -904,18 +901,15 @@ int at_pwr_power_up(int source)
 		 pwr_dev.power_status[PWR_DEV_SRC_BT]);
 
 	if (pwr_dev.power_status[source] == true) {
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 		PRINT_ER("power up request for already powered up source %s\n",
 			 (source == PWR_DEV_SRC_WIFI ? "Wifi" : "BT"));
 		}
 	else
 	{
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 		/*Bug 215*/
 		/*Avoid overlapping between BT and Wifi intialization*/
 		if((pwr_dev.power_status[PWR_DEV_SRC_WIFI]==true))
 		{
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 			while(!pf_is_wilc3000_initalized())
 			{
 				msleep(100);
@@ -928,7 +922,6 @@ int at_pwr_power_up(int source)
 		}
 		else if((pwr_dev.power_status[PWR_DEV_SRC_BT]==true))
 		{
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 			while(!bt_init_done)
 			{
 				msleep(200);
@@ -943,26 +936,19 @@ int at_pwr_power_up(int source)
 			msleep(100);
 		}
 	}
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 
 	if ((pwr_dev.power_status[PWR_DEV_SRC_WIFI] == true) ||
 		   (pwr_dev.power_status[PWR_DEV_SRC_BT] == true)) {
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 		PRINT_WRN(PWRDEV_DBG, "Device already up. request source is %s\n",
 			 (source == PWR_DEV_SRC_WIFI ? "Wifi" : "BT"));
 	} else {
 		PRINT_D(PWRDEV_DBG, "WILC POWER UP\n");
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 		linux_wlan_device_power(0);
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 		linux_wlan_device_power(1);
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 		msleep(100);
 	}
 	pwr_dev.power_status[source] = true;
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 	mutex_unlock(&pwr_dev.cs);
-	printk(KERN_INFO "HERE: %s, %s, %d\n", __FILE__, __func__, __LINE__);
 
 	return 0;
 }
