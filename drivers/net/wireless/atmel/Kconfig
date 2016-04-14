@@ -1,0 +1,19 @@
+menuconfig ATMEL_SMARTCONNECT
+    bool "Atmel SmartConnect wireless cards Driver"
+
+    ---help---
+      This module adds support for the Atmel wireless drivers.
+      
+      For more information on the Atmel Wi-Fi products visit:
+      http://www.atmel.com/products/wireless/wifi/default.aspx
+      
+      For information on the WILC1000 visit:
+      http://www.atmel.com/devices/ATWILC1000.aspx
+      
+      For information on the WILC3000 visit:
+      http://www.atmel.com/devices/ATWILC3000.aspx
+
+if ATMEL_SMARTCONNECT
+
+source "drivers/net/wireless/atmel/wilc3000/Kconfig"
+endif
