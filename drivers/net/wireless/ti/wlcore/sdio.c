@@ -54,6 +54,7 @@ static bool dump = false;
 struct wl12xx_sdio_glue {
 	struct device *dev;
 	struct platform_device *core;
+	int wlen_gpio;
 };
 
 static const struct sdio_device_id wl1271_devices[] = {
@@ -155,6 +156,10 @@ static int wl12xx_sdio_power_on(struct wl12xx_sdio_glue *glue)
 	struct sdio_func *func = dev_to_sdio_func(glue->dev);
 	struct mmc_card *card = func->card;
 
+	if(gpio_is_valid(glue->wlen_gpio)) {
+		gpio_direction_output(glue->wlen_gpio, 1);
+	}
+
 	ret = pm_runtime_get_sync(&card->dev);
 	if (ret) {
 		/*
@@ -196,6 +201,10 @@ static int wl12xx_sdio_power_off(struct wl12xx_sdio_glue *glue)
 	pm_runtime_put_sync(&card->dev);
 
 out:
+	if(gpio_is_valid(glue->wlen_gpio)) {
+		gpio_direction_output(glue->wlen_gpio, 0);
+	}
+
 	return ret;
 }
 
@@ -237,6 +246,8 @@ static struct wl12xx_platform_data *wlcore_get_pdata_from_of(struct device *dev)
 		pdata = ERR_PTR(-ENODEV);
 		goto out;
 	}
+
+	pdata->wlen_gpio = of_get_named_gpio(np, "wlen-gpio", 0);
 
 	pdata->irq = irq_of_parse_and_map(np, 0);
 	if (pdata->irq < 0) {
@@ -306,6 +317,7 @@ static int wl1271_probe(struct sdio_func *func,
 			goto out_free_glue;
 		}
 	}
+	glue->wlen_gpio = pdev_data->pdata->wlen_gpio;
 
 	/* if sdio can keep power while host is suspended, enable wow */
 	mmcflags = sdio_get_host_pm_caps(func);
