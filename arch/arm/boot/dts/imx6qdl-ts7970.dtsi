@@ -207,7 +207,7 @@
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <3>;
-	cs-gpios = <&gpio5 31 0>, <&gpio7 12 0>, <&gpio5 18 0>;
+	cs-gpios = <&gpio5 31 1>, <&gpio7 12 1>, <&gpio5 18 1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
 	status = "okay";
@@ -339,9 +339,9 @@
 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK      0x100b1
 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI      0x100b1
 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO     0x100b1
-				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31      0x100b1 // FPGA_SPI_CS0#
-				MX6QDL_PAD_GPIO_17__GPIO7_IO12         0x100b1 // FPGA_SPI_CS1#
-				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18     0x100b1 // HD1_SPI_CS#
+				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31      0x1b0b1 // FPGA_SPI_CS0#
+				MX6QDL_PAD_GPIO_17__GPIO7_IO12         0x1b0b1 // FPGA_SPI_CS1#
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18     0x1b0b1 // HD1_SPI_CS#
 				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21      0x1b0b1 // FPGA_RESET#
 				MX6QDL_PAD_GPIO_3__XTALOSC_REF_CLK_24M 0x10       // FPGA 24MHZ
 				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20    0x1b0b1 // FPGA_IRQ_0
