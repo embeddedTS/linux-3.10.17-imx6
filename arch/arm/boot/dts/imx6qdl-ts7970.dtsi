@@ -286,16 +286,6 @@
 		ngpio = /bits/ 16 <64>;
 	};
 
-	gpio8: tsgpio@28 {
-		compatible = "tsgpio";
-		reg = <0x28>;
-		#gpio-cells = <2>;
-		gpio-controller;
-		base = <224>;
-		ngpio = <64>;
-		2bitio;
-	};
-
 	codec: sgtl5000@0a {
 		compatible = "fsl,sgtl5000";
 		reg = <0x0a>;
