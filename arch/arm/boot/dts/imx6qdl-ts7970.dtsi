@@ -124,7 +124,7 @@
 			regulator-name = "reg_can1_3v3";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio4 21 0>;
+			gpio = <&gpio4 21 1>;
 		};
 
 		reg_can2_3v3: en-reg_can2_3v3 {
@@ -132,7 +132,7 @@
 			regulator-name = "reg_can2_3v3";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio6 31 0>;
+			gpio = <&gpio6 31 1>;
 		};
 	};
 
@@ -253,7 +253,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexcan1>;
 	status = "okay";
-	xceiver-supply = <&reg_can2_3v3>;
+	xceiver-supply = <&reg_can1_3v3>;
 };
 
 &flexcan2 {
