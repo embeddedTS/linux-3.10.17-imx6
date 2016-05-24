@@ -168,6 +168,8 @@
 				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19        0x1b0b1 // CN1_53
 				MX6QDL_PAD_DI0_PIN15__GPIO4_IO17       0x1b0b1 // CN1_55
 				MX6QDL_PAD_EIM_D31__GPIO3_IO31         0x1b0b1 // CN1_65
+				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15        0x1b0b1 // CN1_69
+				MX6QDL_PAD_KEY_COL4__GPIO4_IO14        0x1b0b1 // CN1_71
 				MX6QDL_PAD_EIM_A21__GPIO2_IO17         0x1b0b1 // CN1_77
 				MX6QDL_PAD_EIM_BCLK__GPIO6_IO31        0x1b0b1 // CN1_79
 				MX6QDL_PAD_EIM_A18__GPIO2_IO20         0x1b0b1 // CN1_81
@@ -227,6 +229,10 @@
 			>;
 		};
 	};
+};
+
+&flexcan2 {
+	status = "disabled";
 };
 
 &pcie {
