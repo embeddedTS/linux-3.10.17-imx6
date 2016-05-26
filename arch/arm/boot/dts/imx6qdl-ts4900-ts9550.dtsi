@@ -226,9 +226,15 @@
 				MX6QDL_PAD_GPIO_19__GPIO4_IO05         0x1b0b1 // CN2_68
 				MX6QDL_PAD_CSI0_MCLK__GPIO5_IO19       0x1b0b1 // CN2_70
 				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18     0x1b0b1 // CN2_72
+				MX6QDL_PAD_KEY_COL2__GPIO4_IO10        0x1b0b1 // CN1_97
+				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11        0x1b0b1 // CN1_99
 			>;
 		};
 	};
+};
+
+&flexcan1 {
+	status = "disabled";
 };
 
 &flexcan2 {
