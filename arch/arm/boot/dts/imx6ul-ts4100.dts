@@ -124,24 +124,27 @@
 
 &ecspi3 {
 	fsl,spi-num-chipselects = <2>;
+	cs-gpios = <&gpio4 12 0>, <&gpio4 10 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi3>;
 	status = "okay";
 
-	serial1: max3100-1@0 {
-		compatible = "max3100";
+	spidevfpga: spi@0 {
+		compatible = "spidev";
 		reg = <0>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <18 IRQ_TYPE_EDGE_FALLING>;
-		spi-max-frequency = <15000000>;
-		loopback = <0>;
-		crystal = <1>;
-		poll-time = <100>;
+		spi-max-frequency = <1000000>;
+	};
+
+	spioffbd: spi@1 {
+		compatible = "spidev";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
 	};
 };
 
 &ecspi4 {
-	fsl,spi-num-chipselects = <2>;
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio4 9 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi4>;
 	status = "okay";
@@ -581,11 +584,11 @@
 
 		pinctrl_ecspi3: ecspi3grp {
 			fsl,pins = <
-				MX6UL_PAD_NAND_READY_B__ECSPI3_SS0  0x10b0
+				MX6UL_PAD_NAND_READY_B__GPIO4_IO12  0x10b0 // SPI_3_FPGA_CS#
 				MX6UL_PAD_NAND_CE0_B__ECSPI3_SCLK   0x10b0
 				MX6UL_PAD_NAND_CE1_B__ECSPI3_MOSI   0x10b0
 				MX6UL_PAD_NAND_CLE__ECSPI3_MISO     0x10b0
-				MX6UL_PAD_NAND_ALE__ECSPI3_SS1      0x10b0
+				MX6UL_PAD_NAND_ALE__GPIO4_IO10      0x10b0 // SPI_3_OFF_BD_CS#
 			>;
 		};
 
@@ -594,7 +597,7 @@
 				MX6UL_PAD_NAND_DATA04__ECSPI4_SCLK  0x10b0
 				MX6UL_PAD_NAND_DATA05__ECSPI4_MOSI  0x10b0
 				MX6UL_PAD_NAND_DATA06__ECSPI4_MISO  0x10b0
-				MX6UL_PAD_NAND_DATA07__ECSPI4_SS0   0x10b0
+				MX6UL_PAD_NAND_DATA07__GPIO4_IO09   0x10b0
 			>;
 		};
 
