@@ -29,13 +29,13 @@
 
 		green-led {
 			label = "green-led";
-			gpios = <&gpio6 30 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio6 27 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		red-led {
 			label = "red-led";
-			gpios = <&gpio6 31 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio6 28 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 		};
 	};
