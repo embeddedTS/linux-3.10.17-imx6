@@ -20,8 +20,8 @@
 #define LINUX_WLAN_COMMON_H
 
 
-#define WIFI_FIRMWARE	"wifi_firmware.bin"
-#define BT_FIRMWARE				"bt_firmware.bin"
+#define WIFI_FIRMWARE	"atmel/wilc3000_wifi_firmware.bin"
+#define BT_FIRMWARE	"atmel/wilc3000_bt_firmware.bin"
 
 enum debug_region{
 	Generic_debug = 0,
@@ -43,6 +43,13 @@ enum debug_region{
 	PwrDev_debug,
 	COMP = 0xFFFFFFFF,
 };
+
+/* Antenna selection*/
+typedef enum { ANTENNA1  = 0,
+               ANTENNA2  = 1,
+               DIVERSITY = 2,
+               NUM_ANT_MODE
+}ANT_T;
 
 #define GENERIC_DBG	  		(1<<Generic_debug)
 #define HOSTAPD_DBG       	(1<<Hostapd_debug)
@@ -84,11 +91,25 @@ enum debug_region{
 #endif
 #define LINUX_TX_SIZE	(64 * 1024)
 
+#if defined(PLAT_SAMA5D4)
 #define MODALIAS	"wilc_spi"
-#define GPIO_NUM	112
+#define GPIO_NUM	46
 #define MIN_SPEED 24000000
-#define GPIO_NUM_RESET	19
-#define GPIO_NUM_CHIP_EN	18
+#define GPIO_NUM_RESET	60
+#define GPIO_NUM_CHIP_EN	94
+#endif
+
+#if defined(PLAT_SAMA5D3)
+#define MODALIAS	"wilc_spi"
+#define GPIO_NUM	68
+#define MIN_SPEED 24000000
+#endif
+
+#define MODALIAS		"wilc_spi"
+#define GPIO_NUM 		136
+#define GPIO_NUM_RESET 		181
+#define GPIO_NUM_CHIP_EN 	180
+#define MIN_SPEED 		24000000
 
 int linux_wlan_get_num_conn_ifcs(void);
 #endif /* LINUX_WLAN_COMMON_H */

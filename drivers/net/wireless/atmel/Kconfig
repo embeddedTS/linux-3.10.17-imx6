@@ -1,6 +1,8 @@
 menuconfig ATMEL_SMARTCONNECT
     bool "Atmel SmartConnect wireless cards Driver"
-
+    depends on WLAN && CFG80211
+#    select WIRELESS_EXT
+#    select WEXT_PRIV
     ---help---
       This module adds support for the Atmel wireless drivers.
       
@@ -16,4 +18,6 @@ menuconfig ATMEL_SMARTCONNECT
 if ATMEL_SMARTCONNECT
 
 source "drivers/net/wireless/atmel/wilc3000/Kconfig"
+source "drivers/net/wireless/atmel/wilc1000/Kconfig"
+
 endif

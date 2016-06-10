@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC1000 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -24,8 +24,8 @@
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 
-extern struct linux_wlan *g_linux_wlan;
-extern struct wilc_wlan_oup *gpstrWlanOps;
+extern linux_wlan_t *g_linux_wlan;
+extern wilc_wlan_oup_t *gpstrWlanOps;
 extern volatile int g_bWaitForRecovery;
 extern bool bEnablePS;
 
@@ -34,14 +34,14 @@ struct net_device* linux_wlan_get_if_netdev(uint8_t ifc);
 void WILC_WFI_monitor_rx(uint8_t *buff, uint32_t size);
 int mac_xmit(struct sk_buff *skb, struct net_device *dev);
 void WILC_WFI_mgmt_rx(uint8_t *buff, uint32_t size);
-int linux_wlan_get_firmware(struct perInterface_wlan *p_nic);
+int linux_wlan_get_firmware(perInterface_wlan_t *p_nic);
 int mac_open(struct net_device *ndev);
 int mac_close(struct net_device *ndev);
 void EAP_buff_timeout(unsigned long pUserVoid);
 void wilc_wlan_deinit(struct linux_wlan *nic);
 void frmw_to_linux(uint8_t *buff, uint32_t size, uint32_t pkt_offset);
 int linux_wlan_set_bssid(struct net_device *wilc_netdev, uint8_t *pBSSID, uint8_t mode);
-int wilc_wlan_init(struct net_device *dev, struct perInterface_wlan *p_nic);
+int wilc_wlan_init(wilc_wlan_inp_t *inp, wilc_wlan_oup_t *oup);
 void linux_wlan_enable_irq(void);
 
 #endif /* WILC_LINUX_WLAN_H */

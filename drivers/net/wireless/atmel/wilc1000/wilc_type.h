@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC1000 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -19,7 +19,7 @@
 #ifndef WILC_TYPE_H
 #define WILC_TYPE_H
 
-#include "atl_error_support.h"
+#include "wilc_oswrapper.h"
 #include <linux/kthread.h>
 #include <linux/semaphore.h>
 #include <linux/module.h>

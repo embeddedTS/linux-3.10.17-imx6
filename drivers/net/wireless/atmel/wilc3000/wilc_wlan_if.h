@@ -527,6 +527,10 @@ enum WID_E {
 	 * --------------------------------------------------------------------
 	 */
 	WID_JOIN_REQ			= 0x0020,
+	/*antenna selection WID*/
+
+	WID_ANTENNA_SELECTION              = 0x0021,
+
 	WID_LINKSPEED			= 0x0026,
 
 	/*

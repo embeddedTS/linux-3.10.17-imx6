@@ -53,6 +53,7 @@
 #endif /* WILC_SDIO */
 #include "at_pwr_dev.h"
 #include "linux_wlan.h"
+#include <linux/pm_runtime.h>
 
 #ifdef DISABLE_PWRSAVE_AND_SCAN_DURING_IP
 static int dev_state_ev_handler(struct notifier_block *this, unsigned long event, void *ptr);
@@ -709,6 +710,10 @@ int linux_wlan_get_num_conn_ifcs(void)
 	return ret_val;
 }
 
+struct net_device* linux_wlan_get_if_netdev(uint8_t ifc)
+{
+	return g_linux_wlan->strInterfaceInfo[ifc].wilc_netdev;
+}
 /*TicketId883*/
 #ifdef WILC_BT_COEXISTENCE
 int linux_wlan_change_bt_coex_mode(u8 u8BtCoexMode)
@@ -779,9 +784,9 @@ static int linux_wlan_txq_task(void *vp)
 #if defined USE_TX_BACKOFF_DELAY_IF_NO_BUFFERS
 #define TX_BACKOFF_WEIGHT_INCR_STEP (1)
 #define TX_BACKOFF_WEIGHT_DECR_STEP (1)
-#define TX_BACKOFF_WEIGHT_MAX (7)
+#define TX_BACKOFF_WEIGHT_MAX (0)
 #define TX_BACKOFF_WEIGHT_MIN (0)
-#define TX_BACKOFF_WEIGHT_UNIT_MS (10)
+#define TX_BACKOFF_WEIGHT_UNIT_MS (1)
 	int backoff_weight = TX_BACKOFF_WEIGHT_MIN;
 	signed long timeout;
 #endif
@@ -817,6 +822,18 @@ static int linux_wlan_txq_task(void *vp)
 
 			if (ret == WILC_TX_ERR_NO_BUF) {
 				timeout = msecs_to_jiffies(TX_BACKOFF_WEIGHT_UNIT_MS << backoff_weight);
+				do {
+					/* Back off from sending packets for some time. */
+					/* schedule_timeout will allow RX task to run and free buffers.*/
+					/*TicketId_818*/
+					/*Setting state to TASK_INTERRUPTIBLE will put the thread back to CPU*/
+					/*running queue when it's signaled even if 'timeout' isn't elapsed.*/
+					/*This gives faster chance for reserved SK buffers to be freed*/
+					set_current_state(TASK_INTERRUPTIBLE);
+					timeout = schedule_timeout(timeout);
+					//msleep(TX_BACKOFF_WEIGHT_UNIT_MS << backoff_weight);
+					//msleep(1);
+				} while(/*timeout*/0);
 				backoff_weight += TX_BACKOFF_WEIGHT_INCR_STEP;
 				if (backoff_weight > TX_BACKOFF_WEIGHT_MAX)
 					backoff_weight = TX_BACKOFF_WEIGHT_MAX;
@@ -915,6 +932,10 @@ static int linux_wlan_start_firmware(struct perInterface_wlan *nic)
 
 	/* wait for mac ready */
 	PRINT_D(INIT_DBG, "Waiting for Firmware to get ready ...\n");
+
+#ifdef WILC_SDIO
+	pm_runtime_get_sync(local_sdio_func->card->host->parent);
+#endif
 
 	/* TicketId908
 	* Waiting for 500ms is much more enough for firmware to respond
@@ -1024,12 +1045,11 @@ static int linux_wlan_init_test_config(struct net_device *dev, struct linux_wlan
 	wilc_get_chipid(0);
 
 	if (g_linux_wlan->oup.wlan_cfg_set == NULL) {
-		PRINT_ER("Null p[ointer\n");
+		PRINT_ER("Null pointer\n");
 		goto _fail_;
 	}
 
 	*(int *)c_val = (unsigned int)nic->iftype;
-	
 	if (!g_linux_wlan->oup.wlan_cfg_set(1, WID_SET_OPERATION_MODE, c_val,
 					    4, 0, 0))
 		goto _fail_;
@@ -1267,18 +1287,6 @@ static int linux_wlan_init_test_config(struct net_device *dev, struct linux_wlan
 					    1, 0, 0))
 		goto _fail_;
 
-	
-#ifdef WILC_BT_COEXISTENCE
-	/*TicketId842*/
-	/*If Hostspot is turning on,  set COEX_FORCE_WIFI mode.*/
-	if(nic->iftype == AP_MODE)
-	{
-		/* Disable coexistence in the initialization */
-		c_val[0] = COEX_FORCE_WIFI;
-		if (!g_linux_wlan->oup.wlan_cfg_set(0, WID_BT_COEX_MODE, c_val, 1, 0, 0))
-			goto _fail_;
-	}
-#endif /* WILC_BT_COEXISTENCE */
 	c_val[0] = 1; /* Enable N with immediate block ack. */
 	/* changed from zero to 1 */
 	if (!g_linux_wlan->oup.wlan_cfg_set(0, WID_11N_IMMEDIATE_BA_ENABLED, c_val, 1, 1,0))
@@ -1840,6 +1848,11 @@ int mac_open(struct net_device *ndev)
 				nic->wilc_netdev,
 				nic->g_struct_frame_reg[1].frame_type,
 				nic->g_struct_frame_reg[1].reg);
+
+	/*the following call is optional and could be removed if it would call from another function*/
+	#if defined(HAS_DUAL_IP_ANTENNA_DEV_MODULE) || defined(HAS_SINGLE_IP_ANTENNA_DEV_MODULE)
+	host_int_set_antenna(priv->hWILCWFIDrv,DIVERSITY);
+	#endif
 	netif_wake_queue(ndev);
 	g_linux_wlan->open_ifcs++;
 	nic->mac_opened = 1;
@@ -1982,7 +1995,7 @@ int mac_xmit(struct sk_buff *skb, struct net_device *ndev)
 {
 	struct perInterface_wlan *nic;
 	struct tx_complete_data *tx_data = NULL;
-	int QueueCount;
+	int QueueCount = 0;
 	char *pu8UdpBuffer;
 	struct iphdr *ih;
 	struct ethhdr *eth_h;
@@ -2448,7 +2461,7 @@ static int __init init_wilc_driver(void)
 {
 	int ret = 0;
 
-	PRINT_D(INIT_DBG, "WILC3000 driver v11.2.1\n");
+	printk("*** WILC3000 driver VERSION=[%s] ***\n", __DRIVER_VERSION__);
 	set_pf_chip_sleep_manually(chip_sleep_manually);
 	set_pf_get_num_conn_ifcs( linux_wlan_get_num_conn_ifcs);
 	set_pf_host_wakeup_notify(wilc_host_wakeup_notify);
@@ -2474,7 +2487,7 @@ static int __init init_wilc_driver(void)
 	PRINT_D(INIT_DBG, "Device has been initialized successfully\n");
 	return 0;
 }
-module_init(init_wilc_driver);
+late_initcall(init_wilc_driver);
 
 static void __exit exit_wilc_driver(void)
 {

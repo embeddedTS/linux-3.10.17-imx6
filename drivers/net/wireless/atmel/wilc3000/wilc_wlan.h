@@ -133,6 +133,8 @@ uint32_t wilc_get_chipid(uint8_t update);
 #define rHAVE_SLEEP_CLK_SRC_XO_BIT	(3)
 #define rHAVE_EXT_PA_INV_TX_RX_BIT	(4)
 #define rFILTER_WIFI_LOGS_BIT		(8)
+#define rHAVE_SIN_IP_ANT_DEV_MODULE_BIT	(9)
+#define rHAVE_DUL_IP_ANT_DEV_MODULE_BIT	(10)
 
 #define WILC_HAVE_SDIO_IRQ_GPIO		(1 << rHAVE_SDIO_IRQ_GPIO_BIT)
 #define WILC_HAVE_USE_PMU		(1 << rHAVE_USE_PMU_BIT)
@@ -140,6 +142,8 @@ uint32_t wilc_get_chipid(uint8_t update);
 #define WILC_HAVE_SLEEP_CLK_SRC_XO	(1 << rHAVE_SLEEP_CLK_SRC_XO_BIT)
 #define WILC_HAVE_EXT_PA_INV_TX_RX	(1 << rHAVE_EXT_PA_INV_TX_RX_BIT)
 #define WILC_FILTER_WIFI_LOGS		(1 << rFILTER_WIFI_LOGS_BIT)
+#define WILC_HAVE_SIN_IP_ANT_DEV_MODULE (1 << rHAVE_SIN_IP_ANT_DEV_MODULE_BIT)
+#define WILC_HAVE_DUL_IP_ANT_DEV_MODULE (1 << rHAVE_DUL_IP_ANT_DEV_MODULE_BIT)
 
 /*
  * Wlan Defines
@@ -233,6 +237,7 @@ struct txq_entry_t {
 	struct txq_entry_t *next;
 	struct txq_entry_t *prev;
 	int type;
+	uint8_t q_num;
 	int tcp_PendingAck_index;
 	uint8_t *buffer;
 	int buffer_size;
@@ -276,4 +281,13 @@ void chip_sleep_manually(unsigned int u32SleepTime , int source);
 
 void wilc_host_sleep_notify( int source);
 void wilc_host_wakeup_notify(int source);
+#define NQUEUES 4
+#define VO_AC_COUNT_POS		25
+#define VO_AC_ACM_STAT_POS	24
+#define VI_AC_COUNT_POS		17
+#define VI_AC_ACM_STAT_POS	16
+#define BE_AC_COUNT_POS		9
+#define BE_AC_ACM_STAT_POS	8
+#define BK_AC_COUNT_POS		2
+#define BK_AC_ACM_STAT_POS	1
 #endif

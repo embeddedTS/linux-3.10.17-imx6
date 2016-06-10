@@ -844,14 +844,14 @@ void wifi_pm_power(int power)
 		gpio_direction_output(GPIO_NUM_RESET, 0);
 		if (power)
 		{
-			gpio_set_value(GPIO_NUM_CHIP_EN , 1);
+			gpio_set_value_cansleep(GPIO_NUM_CHIP_EN , 1);
 			mdelay(5);
-			gpio_set_value(GPIO_NUM_RESET , 1);
+			gpio_set_value_cansleep(GPIO_NUM_RESET , 1);
 		}
 		else
 		{
-			gpio_set_value(GPIO_NUM_RESET , 0);
-			gpio_set_value(GPIO_NUM_CHIP_EN , 0);
+			gpio_set_value_cansleep(GPIO_NUM_RESET , 0);
+			gpio_set_value_cansleep(GPIO_NUM_CHIP_EN , 0);
 		}
 		gpio_free(GPIO_NUM_CHIP_EN);
 		gpio_free(GPIO_NUM_RESET);

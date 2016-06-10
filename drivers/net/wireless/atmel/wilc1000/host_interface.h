@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC1000 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -19,13 +19,13 @@
 #ifndef HOST_INT_H
 #define HOST_INT_H
 
-#include "core_configurator.h"
+#include "coreconfigurator.h"
 
 #define FAIL			0x0000
 #define SUCCESS			0x0001
 #define IP_ALEN			4
 #define AP_MODE			0x01
-#define STATION_MODE		0x02
+#define STATION_MODE	0x02
 #define GO_MODE			0x03
 #define CLIENT_MODE		0x04
 
@@ -36,41 +36,22 @@
 #define IFC_0 "wlan0"
 #define IFC_1 "p2p0"
 
-/*TicketId1092*/
-#ifdef WILC_BT_COEXISTENCE
-typedef enum{
-	COEX_OFF = 0,
-	COEX_ON, 		
-	COEX_FORCE_WIFI,
-	COEX_FORCE_BT,
-} tenuCoexMode;
-
-/*TicketId1115*/
-typedef enum{
-	COEX_NULL_FRAMES_OFF = 0,
-	COEX_NULL_FRAMES_ON, 		
-} tenuCoexNullFramesMode;
-#endif /*WILC_BT_COEXISTENCE*/
 
 
-
-
-
-
-#define MAX_NUM_STA		9
-#define ACTIVE_SCAN_TIME	10
-#define PASSIVE_SCAN_TIME	1200
-#define MIN_SCAN_TIME		10
-#define MAX_SCAN_TIME		1200
-#define DEFAULT_SCAN		0
-#define USER_SCAN		BIT0
-#define OBSS_PERIODIC_SCAN	BIT1
-#define OBSS_ONETIME_SCAN	BIT2
-#define GTK_RX_KEY_BUFF_LEN	24
-#define ADDKEY			0x1
-#define REMOVEKEY		0x2
-#define DEFAULTKEY		0x4
-#define ADDKEY_AP		0x8
+#define MAX_NUM_STA                 9
+#define ACTIVE_SCAN_TIME			10
+#define PASSIVE_SCAN_TIME			1200
+#define MIN_SCAN_TIME				10
+#define MAX_SCAN_TIME				1200
+#define DEFAULT_SCAN				0
+#define USER_SCAN					BIT0
+#define OBSS_PERIODIC_SCAN			BIT1
+#define OBSS_ONETIME_SCAN			BIT2
+#define GTK_RX_KEY_BUFF_LEN			24
+#define ADDKEY						0x1
+#define REMOVEKEY					0x2
+#define DEFAULTKEY					0x4
+#define ADDKEY_AP					0x8
 
 #define MAX_NUM_SCANNED_NETWORKS	100 /* 30 */
 #define MAX_NUM_SCANNED_NETWORKS_SHADOW	130
@@ -80,21 +61,20 @@ typedef enum{
 
 #define TX_MIC_KEY_LEN		8
 #define RX_MIC_KEY_LEN		8
-#define PTK_KEY_LEN		16
+#define PTK_KEY_LEN			16
 #define TX_MIC_KEY_MSG_LEN	26
 #define RX_MIC_KEY_MSG_LEN	48
 #define PTK_KEY_MSG_LEN		39
 #define PMKSA_KEY_LEN		22
-#define ETH_ALEN		6
-#define PMKID_LEN		16
-#define AT_MAX_NUM_PMKIDS	16
+#define ETH_ALEN			6
+#define PMKID_LEN			16
+#define WILC_MAX_NUM_PMKIDS  16
 #define WILC_SUPP_MCS_SET_SIZE	16
 /* Not including the rates field cause it has variable length*/
 #define WILC_ADD_STA_LENGTH	40
 #define SCAN_EVENT_DONE_ABORTED
-#define NUM_CONCURRENT_IFC 2
 
-#define WILC_MULTICAST_TABLE_SIZE	8
+
 
 extern bool gbScanWhileConnected;
 extern unsigned int gu8FlushedJoinReqDrvHandler;
@@ -118,7 +98,7 @@ enum tenuHostIFstate {
 	HOST_IF_IDLE				= 0,
 	HOST_IF_SCANNING			= 1,
 	HOST_IF_CONNECTING			= 2,
-	HOST_IF_WAITING_CONN_RESP		= 3,
+	HOST_IF_WAITING_CONN_RESP	= 3,
 	HOST_IF_CONNECTED			= 4,
 	HOST_IF_P2P_LISTEN			= 5,
 	HOST_IF_FORCE_32BIT			= 0xFFFFFFFF
@@ -131,7 +111,7 @@ struct tstrHostIFpmkid {
 
 struct tstrHostIFpmkidAttr {
 	u8 numpmkid;
-	struct tstrHostIFpmkid pmkidlist[AT_MAX_NUM_PMKIDS];
+	struct tstrHostIFpmkid pmkidlist[WILC_MAX_NUM_PMKIDS];
 };
 
 enum CURRENT_TX_RATE_T {
@@ -166,7 +146,7 @@ struct tstrCfgParamVal {
 	u8 txop_prot_disabled;
 	u16 beacon_interval;
 	u16 dtim_period;
-	enum SITE_SURVEY_E site_survey_enabled;
+	SITE_SURVEY_T site_survey_enabled;
 	u16 site_survey_scan_time;
 	u8 scan_source;
 	u16 active_scan_time;
@@ -803,11 +783,6 @@ signed int host_int_set_wfi_drv_handler(unsigned int u32address, u8 u8IfMode, ch
 signed int host_int_set_operation_mode(struct WFIDrvHandle *hWFIDrv,
 				       unsigned int u32mode);
 
-#ifdef WILC_BT_COEXISTENCE
-signed int host_int_change_bt_coex_mode(struct WFIDrvHandle *hWFIDrv,
-				       tenuCoexMode u8BtCoexMode);
-#endif	/*WILC_BT_COEXISTENCE*/
-
 signed int Handle_ScanDone(void *drvHandler, enum tenuScanEvent enuEvent);
 
 static int host_int_addBASession(struct WFIDrvHandle *hWFIDrv, char *pBSSID,
@@ -824,6 +799,6 @@ void resolve_disconnect_aberration(void *drvHandler);
 signed int host_int_set_tx_power(struct WFIDrvHandle *hWFIDrv, u8 tx_power);
 signed int  host_int_get_tx_power(struct WFIDrvHandle * hWFIDrv, u8 *tx_power);
 /*0 select antenna 1 , 2 select antenna mode , 2 allow the firmware to choose the best antenna*/
-signed int host_int_set_antenna(struct WFIDrvHandle * hWFIDrv, u8 antenna_mode);
+signed int host_int_set_antenna(struct WFIDrvHandle *hWFIDrv, u8 antenna_mode);
 
 #endif
