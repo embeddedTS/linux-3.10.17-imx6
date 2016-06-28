@@ -270,16 +270,22 @@
 
 &i2c1 {
 	clock-frequency = <100000>;
-	pinctrl-names = "default";
+	pinctrl-names = "default", "gpio";
 	pinctrl-0 = <&pinctrl_i2c1>;
+	pinctrl-1 = <&pinctrl_i2c1_gpio>;
 	status = "okay";
+	scl-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 };
 
 &i2c3 {
 	clock-frequency = <400000>;
-	pinctrl-names = "default";
+	pinctrl-names = "default", "gpio";
 	pinctrl-0 = <&pinctrl_i2c3>;
+	pinctrl-1 = <&pinctrl_i2c3_gpio>;
 	status = "okay";
+	scl-gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
 
 	gpio6: tsgpio@28 {
 		compatible = "technologic,tsgpio";
@@ -422,10 +428,24 @@
 			>;
 		};
 
+		pinctrl_i2c1_gpio: i2c1grpgpio {
+			fsl,pins = <
+				MX6UL_PAD_GPIO1_IO02__GPIO1_IO02 0x4001b8b0
+				MX6UL_PAD_GPIO1_IO03__GPIO1_IO03 0x4001b8b0
+			>;
+		};
+
 		pinctrl_i2c3: i2c3grp {
 			fsl,pins = <
 				MX6UL_PAD_LCD_DATA01__I2C3_SCL 0x4001b8b0
 				MX6UL_PAD_LCD_DATA00__I2C3_SDA 0x4001b8b0
+			>;
+		};
+
+		pinctrl_i2c3_gpio: i2c3grpgpio {
+			fsl,pins = <
+				MX6UL_PAD_LCD_DATA01__GPIO3_IO06 0x4001b8b0
+				MX6UL_PAD_LCD_DATA00__GPIO3_IO05 0x4001b8b0
 			>;
 		};
 
