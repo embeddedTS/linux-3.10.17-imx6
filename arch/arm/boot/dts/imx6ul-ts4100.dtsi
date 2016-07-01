@@ -52,8 +52,8 @@
 	};
 
 	aliases {
-		ethernet0 = &fec1;
-		ethernet1 = &fec2;
+		ethernet0 = &fec2;
+		ethernet1 = &fec1;
 	};
 
 	pxp_v4l2 {
