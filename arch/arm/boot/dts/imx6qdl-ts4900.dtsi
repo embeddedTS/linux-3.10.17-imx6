@@ -161,7 +161,7 @@
 	sda-gpios = <&gpio3 28 0>;
 
 	rtc: isl12022@6f {
-		compatible = "isl,isl12022";
+		compatible = "isil,isl12022";
 		reg = <0x6f>;
 	};
 
