@@ -77,17 +77,10 @@
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			gpio = <&gpio8 14 0>;
-			startup-delay-us = <100000>;
+			startup-delay-us = <70000>;
 			enable-active-high;
 			regulator-boot-on;
 		};
-	};
-
-	wlan {
-		compatible = "ti,wilink8";
-		interrupt-parent = <&gpio1>;
-		wlen-gpio = <&gpio8 14 0>;
-		interrupts = <26 IRQ_TYPE_EDGE_FALLING>;
 	};
 };
 
@@ -508,6 +501,16 @@
 	bus-width = <4>;
 	status = "okay";
 	non-removable;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	wl1271@2 {
+		compatible = "ti,wl1271";
+		reg = <2>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
+		ref-clock-frequency = <38400000>;
+	};
 };
 
 // SD
