@@ -135,6 +135,7 @@
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
+	interrupts-extended = <&gpio1 6 0x04>, <&gpc 0 119 0x04>;
 	phy-mode = "rgmii";
 	status = "okay";
 };
@@ -233,6 +234,7 @@
 				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK  0x4001b0a8
 				MX6QDL_PAD_ENET_TX_EN__GPIO1_IO28     0x1b0b1
 				MX6QDL_PAD_DI0_PIN4__GPIO4_IO20       0x1b0b1 // ETH_PHY_RESET
+				MX6QDL_PAD_GPIO_6__ENET_IRQ           0x000b1
 			>;
 		};
 
