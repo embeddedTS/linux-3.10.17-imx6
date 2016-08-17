@@ -338,7 +338,12 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
    imx6dl-ts4900.dtb \
    imx6q-ts7970.dtb \
    imx6dl-ts7970.dtb \
-   imx6q-ts4900-14.dtb
+   imx6q-ts7990-lxd.dtb \
+   imx6q-ts7990-microtips.dtb \
+   imx6q-ts7990-okaya.dtb \
+   imx6dl-ts7990-lxd.dtb \
+   imx6dl-ts7990-microtips.dtb \
+   imx6dl-ts7990-okaya.dtb
 dtb-$(CONFIG_SOC_IMX6SL) += \
 	imx6sl-evk.dtb \
 	imx6sl-evk-btwifi.dtb \
