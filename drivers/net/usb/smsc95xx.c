@@ -29,6 +29,8 @@
 #include <linux/crc32.h>
 #include <linux/usb/usbnet.h>
 #include <linux/slab.h>
+#include <linux/of_device.h>
+#include <linux/of_net.h>
 #include "smsc95xx.h"
 
 #define SMSC_CHIPNAME			"smsc95xx"
@@ -73,6 +75,10 @@ struct smsc95xx_priv {
 static bool turbo_mode = true;
 module_param(turbo_mode, bool, 0644);
 MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
+
+static char *macaddr = ":";
+MODULE_PARM_DESC(macaddr, "MAC address");
+module_param(macaddr, charp, 0);
 
 static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
 					    u32 *data, int in_pm)
@@ -763,14 +769,70 @@ static int smsc95xx_ioctl(struct net_device *netdev, struct ifreq *rq, int cmd)
 	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
 }
 
+void get_mac_addr(struct net_device *net, u8 *mac)
+{
+	int i;
+	int j;
+	int got_num;
+	int num;
+
+	i = j = num = got_num = 0;
+	while (j < ETH_ALEN) {
+		if (macaddr[i]) {
+			int digit;
+
+			got_num = 1;
+			digit = hex_to_bin(macaddr[i]);
+			if (digit >= 0)
+				num = num * 16 + digit;
+			else if (':' == macaddr[i])
+				got_num = 2;
+			else
+				break;
+		} else if (got_num)
+			got_num = 2;
+		else
+			break;
+		if (2 == got_num) {
+			net->dev_addr[j++] = num;
+		}
+		i++;
+	}
+}
+
 static void smsc95xx_init_mac_address(struct usbnet *dev)
 {
+#ifdef CONFIG_OF
+	const void *address;
+	struct device_node *np;
+
+	/* try the device tree */
+	np = of_find_node_by_name(NULL, "smsc95xx");
+	if (np) {
+		address = of_get_mac_address(np);
+		if (address) {
+			memcpy(dev->net->dev_addr, address, ETH_ALEN);
+			netif_dbg(dev, ifup, dev->net, "MAC address read from device tree\n");
+			return;
+		}
+	}
+#endif
+
 	/* try reading mac address from EEPROM */
 	if (smsc95xx_read_eeprom(dev, EEPROM_MAC_OFFSET, ETH_ALEN,
 			dev->net->dev_addr) == 0) {
 		if (is_valid_ether_addr(dev->net->dev_addr)) {
 			/* eeprom values are valid so use them */
 			netif_dbg(dev, ifup, dev->net, "MAC address read from EEPROM\n");
+			return;
+		}
+	}
+
+	if (macaddr[0] != ':'){
+		get_mac_addr(dev->net, macaddr);
+		if (is_valid_ether_addr(dev->net->dev_addr))
+		{
+			netif_dbg(dev, ifup, dev->net, "MAC address read from parameter\n");
 			return;
 		}
 	}
