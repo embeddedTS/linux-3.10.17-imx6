@@ -282,7 +282,6 @@
 
 				// Old REV A DIO
 				MX6QDL_PAD_GPIO_5__GPIO1_IO05          0x1b0b1 // DIO_20/IN_6
-				MX6QDL_PAD_GPIO_6__GPIO1_IO06          0x1b0b1 // DIO_52/IN_11
 				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x1b0b1 // DIO_43/IN_9
 			>;
 		};

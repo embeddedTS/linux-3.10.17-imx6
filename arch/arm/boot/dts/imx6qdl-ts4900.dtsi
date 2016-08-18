@@ -380,7 +380,6 @@
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1           0x130b0 // Audio CLK
 				
 				MX6QDL_PAD_GPIO_5__GPIO1_IO05          0x1b0b1 // DIO_1
-				MX6QDL_PAD_GPIO_6__GPIO1_IO06          0x1b0b1 // DIO_2
 				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x1b0b1 // DIO_3
 				MX6QDL_PAD_GPIO_16__GPIO7_IO11         0x1b0b1 // DIO_4
 				MX6QDL_PAD_GPIO_17__GPIO7_IO12         0x1b0b1 // DIO_5
