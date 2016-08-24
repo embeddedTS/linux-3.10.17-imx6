@@ -328,6 +328,13 @@ config SERIAL_MAX3100
 	help
 	  MAX3100 chip support
 
+config SERIAL_MAX3100_TS
+   tristate "MAX3100-TS Technologic Systems Extended Uart"
+   depends on SPI
+   select SERIAL_CORE
+   help
+     Support for the Technologic Systems FPGA-based MAX3100 multiple-uarts.
+
 config SERIAL_MAX310X
 	tristate "MAX310X support"
 	depends on SPI_MASTER
