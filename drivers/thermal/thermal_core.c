@@ -375,10 +375,7 @@ static void handle_critical_trips(struct thermal_zone_device *tz,
 		dev_emerg(&tz->device,
 			  "critical temperature reached(%d C),shutting down\n",
 			  tz->temperature / 1000);
-		if (tz->poweroff)
-			return;
-		if (!orderly_poweroff(true))
-			tz->poweroff = true;
+		orderly_reboot();
 	}
 }
 
