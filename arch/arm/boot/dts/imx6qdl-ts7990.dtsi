@@ -588,6 +588,10 @@
 	};
 };
 
+&gpc {
+	fsl,ldo-bypass = <0>;
+};
+
 &pcie {
 	status = "okay";
 };
