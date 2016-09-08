@@ -154,13 +154,6 @@
 		default-brightness-level = <8>;
 	};
 
-	backlight_rem_lcd {
-		compatible = "pwm-backlight";
-		pwms = <&pwm1 0 5000000>;
-		brightness-levels = <0 128 140 160 180 200 220 240 255>;
-		default-brightness-level = <8>;
-	};
-
 	touchscreen_spi: touch-spi {
 		compatible = "spi-gpio";
 		status = "disabled";
