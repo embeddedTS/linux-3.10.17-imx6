@@ -113,6 +113,10 @@
 	};
 };
 
+&snvs_rtc {
+	status = "disabled";
+};
+
 &ecspi2 {
 	fsl,spi-num-chipselects = <1>;
 	cs-gpios = <&gpio6 2 0>;
