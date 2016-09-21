@@ -603,6 +603,8 @@ static void reduce_bus_freq_handler(struct work_struct *work)
  */
 int set_low_bus_freq(void)
 {
+	if(!cpu_is_imx6ul()) return 0;
+
 	if (busfreq_suspended)
 		return 0;
 
