@@ -254,10 +254,16 @@
 	scl-gpios = <&gpio3 21 0>;
 	sda-gpios = <&gpio3 28 0>;
 
-	rtc: isl12022@6f {
-		compatible = "isil,isl12022";
+	rtc1: m41t00s@68 {
+		compatible = "m41t00";
+		reg = <0x68>;
+	};
+
+	rtc2: isl12022@6f {
+		compatible = "isl,isl12022";
 		reg = <0x6f>;
 	};
+
 
 	gpio8: tsgpio@28 {
 		compatible = "technologic,tsgpio-2bitio";
