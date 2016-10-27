@@ -129,7 +129,7 @@
 		reg = <0>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 IRQ_TYPE_LEVEL_LOW>;
-		spi-max-frequency = <15000000>;
+		spi-max-frequency = <10000000>;
 		loopback = <0>;
 		crystal = <1>;
 		poll-time = <100>;
