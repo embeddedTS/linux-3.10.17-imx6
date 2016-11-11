@@ -295,6 +295,15 @@
 		base = <160>;
 		ngpio = /bits/ 16 <128>;
 	};
+
+	rtc: m41t00s@68 {
+		compatible = "m41t00";
+		reg = <0x68>;
+	};
+};
+
+&snvs_rtc {
+	status = "disabled";
 };
 
 &wdog1 {
