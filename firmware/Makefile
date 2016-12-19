@@ -138,6 +138,7 @@ fw-shipped-$(CONFIG_VIDEO_CPIA2) += cpia2/stv0672_vp4.bin
 fw-shipped-$(CONFIG_WL12XX) += ti-connectivity/TIInit_7.2.31.bts \
 			       ti-connectivity/wl1251-fw.bin \
 			       ti-connectivity/wl1251-nvs.bin \
+			       ti-connectivity/wl1271-nvs.bin \
 			       ti-connectivity/wl127x-fw-5-mr.bin \
 			       ti-connectivity/wl127x-fw-5-plt.bin \
 			       ti-connectivity/wl127x-fw-5-sr.bin \
@@ -157,6 +158,7 @@ fw-shipped-$(CONFIG_WL12XX) += ti-connectivity/TIInit_7.2.31.bts \
 			       ti-connectivity/wl18xx-fw-3.bin \
 			       ti-connectivity/wl18xx-fw-4.bin \
 			       ti-connectivity/wl18xx-fw.bin
+
 fw-shipped-$(CONFIG_YAM) += yam/1200.bin yam/9600.bin
 
 fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
