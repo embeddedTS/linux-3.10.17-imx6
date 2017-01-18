@@ -16,7 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "core_configurator.h"
+#include "coreconfigurator.h"
 #include "linux_wlan.h"
 
 #define PHY_802_11n
@@ -241,8 +241,8 @@ static inline u16 get_beacon_period(u8 *data)
 
 static inline unsigned int get_beacon_timestamp_lo(u8 *data)
 {
-	unsigned int time_stamp = 0;
-	unsigned int index    = MAC_HDR_LEN;
+	u32 time_stamp = 0;
+	u32 index    = MAC_HDR_LEN;
 
 	time_stamp |= data[index++];
 	time_stamp |= (data[index++] << 8);
@@ -252,10 +252,10 @@ static inline unsigned int get_beacon_timestamp_lo(u8 *data)
 	return time_stamp;
 }
 
-static inline unsigned int get_beacon_timestamp_hi(u8 *data)
+static inline u32 get_beacon_timestamp_hi(u8 *data)
 {
-	unsigned int time_stamp = 0;
-	unsigned int index    = (MAC_HDR_LEN + 4);
+	u32 time_stamp = 0;
+	u32 index    = (MAC_HDR_LEN + 4);
 
 	time_stamp |= data[index++];
 	time_stamp |= (data[index++] << 8);
@@ -431,9 +431,9 @@ static inline u16 get_asoc_id(u8 *data)
  * initializes the Core Configurator
  */
 
-signed int CoreConfiguratorInit(void)
+s32 CoreConfiguratorInit(void)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 
 	PRINT_D(CORECONFIG_DBG,"CoreConfiguratorInit() \n");
 
@@ -442,7 +442,7 @@ signed int CoreConfiguratorInit(void)
 
 	gps8ConfigPacket = kmalloc(MAX_PACKET_BUFF_SIZE, GFP_ATOMIC);
 	if (gps8ConfigPacket == NULL) {
-		s32Error = ATL_NO_MEM;
+		s32Error = WILC_NO_MEM;
 		goto _fail_;
 	}
 
@@ -518,9 +518,9 @@ u8 get_current_channel(u8 *pu8msa, u16 u16RxLen)
 /*
  * parses the received 'N' message
  */
-signed int ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetworkInfo)
+s32 ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetworkInfo)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 	struct tstrNetworkInfo *pstrNetworkInfo = NULL;
 	u8 u8MsgType = 0;
 	u8 u8MsgID = 0;
@@ -528,7 +528,6 @@ signed int ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetw
 	u16 u16WidID = (u16)WID_NIL;
 	u16 u16WidLen  = 0;
 	u8  *pu8WidVal = 0;
-
 	u8  *pu8msa = 0;
 	u16 u16RxLen = 0;
 	u8 *pu8TimElm = 0;
@@ -543,7 +542,7 @@ signed int ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetw
 	/* Check whether the received message type is 'N' */
 	if ('N' != u8MsgType) {
 		PRINT_ER("Received Message format incorrect.\n");
-		ATL_ERRORREPORT(s32Error, ATL_FAIL);
+		WILC_ERRORREPORT(s32Error, WILC_FAIL);
 	}
 
 	/* Extract message ID */
@@ -624,7 +623,7 @@ signed int ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetw
 
 	*ppstrNetworkInfo = pstrNetworkInfo;
 
-	ATL_CATCH(s32Error){
+	WILC_CATCH(s32Error){
 	}
 	return s32Error;
 }
@@ -632,21 +631,21 @@ signed int ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetw
 /*
  * Deallocates the parsed Network Info
  */
-signed int DeallocateNetworkInfo(struct tstrNetworkInfo *pstrNetworkInfo)
+s32 DeallocateNetworkInfo(struct tstrNetworkInfo *pstrNetworkInfo)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 
 	if (pstrNetworkInfo != NULL) {
 		if (pstrNetworkInfo->pu8IEs != NULL) {
 			kfree(pstrNetworkInfo->pu8IEs);
 			pstrNetworkInfo->pu8IEs = NULL;
 		} else {
-			s32Error = ATL_FAIL;
+			s32Error = WILC_FAIL;
 		}
 		kfree(pstrNetworkInfo);
 		pstrNetworkInfo = NULL;
 	} else {
-		s32Error = ATL_FAIL;
+		s32Error = WILC_FAIL;
 	}
 	return s32Error;
 }
@@ -654,16 +653,16 @@ signed int DeallocateNetworkInfo(struct tstrNetworkInfo *pstrNetworkInfo)
 /*
  * parses the received Association Response frame
  */
-signed int ParseAssocRespInfo(u8 *pu8Buffer, unsigned int u32BufferLen,
+s32 ParseAssocRespInfo(u8 *pu8Buffer, u32 u32BufferLen,
 			      struct tstrConnectRespInfo **ppstrConnectRespInfo)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 	struct tstrConnectRespInfo *pstrConnectRespInfo = NULL;
 	u16 u16AssocRespLen = 0;
 	u8 *pu8IEs = 0;
 	u16 u16IEsLen = 0;
 
-	pstrConnectRespInfo = kmalloc(sizeof(*pstrConnectRespInfo), GFP_ATOMIC);
+	pstrConnectRespInfo = kmalloc(sizeof(struct tstrConnectRespInfo), GFP_ATOMIC);
 	memset((void *)(pstrConnectRespInfo), 0, sizeof(struct tstrConnectRespInfo));
 
 	u16AssocRespLen = (u16)u32BufferLen;
@@ -696,39 +695,39 @@ signed int ParseAssocRespInfo(u8 *pu8Buffer, unsigned int u32BufferLen,
 /*
  * Deallocates the parsed Association Response Info
  */
-signed int DeallocateAssocRespInfo(struct tstrConnectRespInfo *pstrConnectRespInfo)
+s32 DeallocateAssocRespInfo(struct tstrConnectRespInfo *pstrConnectRespInfo)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 
 	if (NULL != pstrConnectRespInfo) {
 		if (NULL != pstrConnectRespInfo->pu8RespIEs) {
 			kfree(pstrConnectRespInfo->pu8RespIEs);
 			pstrConnectRespInfo->pu8RespIEs = NULL;
 		} else {
-			s32Error = ATL_FAIL;
+			s32Error = WILC_FAIL;
 		}
 		kfree(pstrConnectRespInfo);
 		pstrConnectRespInfo = NULL;
 	} else {
-		s32Error = ATL_FAIL;
+		s32Error = WILC_FAIL;
 	}
 	return s32Error;
 }
 
 #ifndef CONNECT_DIRECT
-signed int ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_FRAG_SIZE],
+s32 ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_FRAG_SIZE],
 			      struct wid_site_survey_reslts **ppstrSurveyResults,
-			      unsigned int *pu32SurveyResultsCount)
+			      u32 *pu32SurveyResultsCount)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 	struct wid_site_survey_reslts *pstrSurveyResults = NULL;
-	unsigned int u32SurveyResultsCount = 0;
-	unsigned int u32SurveyBytesLength = 0;
+	u32 u32SurveyResultsCount = 0;
+	u32 u32SurveyBytesLength = 0;
 	u8 *pu8BufferPtr;
-	unsigned int u32RcvdSurveyResultsNum = 2;
+	u32 u32RcvdSurveyResultsNum = 2;
 	u8 u8ReadSurveyResFragNum;
-	unsigned int i;
-	unsigned int j;
+	u32 i;
+	u32 j;
 
 	for (i = 0; i < u32RcvdSurveyResultsNum; i++) {
 		u32SurveyBytesLength = ppu8RcvdSiteSurveyResults[i][0];
@@ -742,7 +741,7 @@ signed int ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_F
 
 	if (NULL == pstrSurveyResults) {
 		u32SurveyResultsCount = 0;
-		ATL_ERRORREPORT(s32Error, ATL_NO_MEM);
+		WILC_ERRORREPORT(s32Error, WILC_NO_MEM);
 	}
 
 	memset((void *)(pstrSurveyResults), 0,
@@ -761,13 +760,13 @@ signed int ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_F
 
 		for (j = 0; j < u32SurveyBytesLength; j += SURVEY_RESULT_LENGTH) {
 			memcpy(&pstrSurveyResults[u32SurveyResultsCount],
-			       pu8BufferPtr, SURVEY_RESULT_LENGTH);
+					pu8BufferPtr, SURVEY_RESULT_LENGTH);
 			pu8BufferPtr += SURVEY_RESULT_LENGTH;
 			u32SurveyResultsCount++;
 		}
 	}
 
-	ATL_CATCH(s32Error){
+	WILC_CATCH(s32Error){
 	}
 	*ppstrSurveyResults = pstrSurveyResults;
 	*pu32SurveyResultsCount = u32SurveyResultsCount;
@@ -775,9 +774,9 @@ signed int ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_F
 	return s32Error;
 }
 
-signed int DeallocateSurveyResults(struct wid_site_survey_reslts *pstrSurveyResults)
+s32 DeallocateSurveyResults(struct wid_site_survey_reslts *pstrSurveyResults)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 
 	if (NULL != pstrSurveyResults)
 		kfree(pstrSurveyResults);
@@ -790,9 +789,9 @@ signed int DeallocateSurveyResults(struct wid_site_survey_reslts *pstrSurveyResu
  * Deinitializes the Core Configurator
  */
 
-signed int CoreConfiguratorDeInit(void)
+s32 CoreConfiguratorDeInit(void)
 {
-	signed int s32Error = ATL_SUCCESS;
+	s32 s32Error = WILC_SUCCESS;
 
 	PRINT_D(CORECONFIG_DBG,"CoreConfiguratorDeInit() \n");		
 
@@ -814,11 +813,11 @@ uint32_t cfg_timed_out_cnt = 0;
  * @pu8RxResp The received Packet Response
  * @ps32RxRespLen Length of the received Packet Response
  */
-signed int SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
-			 unsigned int u32WIDsCount, bool bRespRequired,
-			 unsigned int drvHandler)
+s32 SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
+			 u32 u32WIDsCount, bool bRespRequired,
+			 u32 drvHandler)
 {
-	signed int counter = 0, ret = 0;
+	s32 counter = 0, ret = 0;
 
 	if (NULL == gpstrWlanOps) {
 		PRINT_INFO(CORECONFIG_DBG,"Net Dev is still not initialized\n");
@@ -836,6 +835,8 @@ signed int SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
 	    NULL == gpstrWlanOps->wlan_cfg_get)	{
 		PRINT_INFO(CORECONFIG_DBG,"Set and Get is still not initialized\n");
 		return 1;
+	}else{
+		PRINT_D(CORECONFIG_DBG,"SET is initialized\n");
 	}
 
 	if (u8Mode == GET_CFG) {

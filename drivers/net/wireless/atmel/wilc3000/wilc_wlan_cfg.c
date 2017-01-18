@@ -19,7 +19,7 @@
 #include "wilc_wlan_if.h"
 #include "wilc_wlan.h"
 #include "wilc_wlan_cfg.h"
-#include "core_configurator.h"
+#include "coreconfigurator.h"
 
 struct wilc_mac_cfg_t {
 	int mac_status;
@@ -40,6 +40,7 @@ struct wilc_mac_cfg_t {
 	uint8_t firmware_info[8];
 	uint8_t scan_result[256];
 	uint8_t scan_result1[256];
+	uint8_t antenna_param[5];
 };
 
 static struct wilc_mac_cfg_t g_mac;
@@ -85,6 +86,7 @@ static struct wilc_cfg_byte_t g_cfg_byte[] = {
 	{WID_11N_IMMEDIATE_BA_ENABLED, 0},
 	{WID_11N_TXOP_PROT_DISABLE, 0},
 	{WID_TX_POWER, 0},
+	{WID_WOWLAN_TRIGGER, 0},
 	{WID_NIL, 0}
 };
 
@@ -151,6 +153,10 @@ static struct wilc_cfg_str_t g_cfg_str[] = {
 	{WID_NIL, NULL}
 };
 
+/*ATWILCSW-403*/
+static wilc_cfg_bin_t g_cfg_bin[] = {
+	{WID_ANTENNA_SELECTION, g_mac.antenna_param}
+};
 static int wilc_wlan_cfg_set_byte(uint8_t *frame, uint32_t offset,
 				  uint16_t id, uint8_t val8)
 {
@@ -225,7 +231,7 @@ static int wilc_wlan_cfg_set_str(uint8_t *frame, uint32_t offset,
 	buf[1] = (uint8_t)(id >> 8);
 	buf[2] = (uint8_t)size;
 	buf[3] = (uint8_t)(size>>8);
-
+	
 	if((str != NULL) && (size != 0))
 	{
 		memcpy(&buf[4], str, size);
@@ -274,78 +280,94 @@ static void wilc_wlan_parse_response_frame(uint8_t *info, int size)
 	#endif
 		PRINT_INFO(GENERIC_DBG,"Processing response for %d seq %d\n", wid, seq++);
 		switch ((wid >> 12) & 0x7) {
-		case WID_CHAR:
-			do {
-				if (g_cfg_byte[i].id == WID_NIL)
-					break;
+			case WID_CHAR:
+				do {
+					if (g_cfg_byte[i].id == WID_NIL)
+						break;
 
-				if (g_cfg_byte[i].id == wid) {
-					g_cfg_byte[i].val = info[4];
-					break;
-				}
-				i++;
-			} while (1);
-			len = 3;
-			break;
-		case WID_SHORT:
-			do {
-				if (g_cfg_hword[i].id == WID_NIL)
-					break;
-
-				if (g_cfg_hword[i].id == wid) {
-#ifdef BIG_ENDIAN
-					g_cfg_hword[i].val = (info[4]<<8)|(info[5]);
-#else
-					g_cfg_hword[i].val = info[4]|(info[5]<<8);
-#endif
-					break;
-				}
-				i++;
-			} while (1);
-			len = 4;
-			break;
-		case WID_INT:
-			do {
-				if (g_cfg_word[i].id == WID_NIL)
-					break;
-
-				if (g_cfg_word[i].id == wid) {
-#ifdef BIG_ENDIAN
-					g_cfg_word[i].val = (info[4]<<24)|(info[5]<<16)|(info[6]<<8)|(info[7]);
-#else
-					g_cfg_word[i].val = info[4]|(info[5]<<8)|(info[6]<<16)|(info[7]<<24);
-#endif
-					break;
-				}
-				i++;
-			} while (1);
-			len = 6;
-			break;
-		case WID_STR:
-			do {
-				if (g_cfg_str[i].id == WID_NIL)
-					break;
-
-				if (g_cfg_str[i].id == wid) {
-					if (wid == WID_SITE_SURVEY_RESULTS) {
-						static int toggle;
-
-						PRINT_INFO(GENERIC_DBG,"Site survey results received %d\n",
-							   size);
-
-						PRINT_INFO(GENERIC_DBG,"Site survey results value %d toggle%d\n", size, toggle);
-						i += toggle;
-						toggle ^= 1;
+					if (g_cfg_byte[i].id == wid) {
+						g_cfg_byte[i].val = info[4];
+						break;
 					}
-					memcpy(g_cfg_str[i].str, &info[2], (info[2]+2));
-					break;
-				}
-				i++;
-			} while (1);
-			len = 2+info[2];
-			break;
-		default:
-			break;
+					i++;
+				} while (1);
+				len = 3;
+				break;
+			case WID_SHORT:
+				do {
+					if (g_cfg_hword[i].id == WID_NIL)
+						break;
+
+					if (g_cfg_hword[i].id == wid) {
+#ifdef BIG_ENDIAN
+						g_cfg_hword[i].val = (info[4]<<8)|(info[5]);
+#else
+						g_cfg_hword[i].val = info[4]|(info[5]<<8);
+#endif
+						break;
+					}
+					i++;
+				} while (1);
+				len = 4;
+				break;
+			case WID_INT:
+				do {
+					if (g_cfg_word[i].id == WID_NIL)
+						break;
+
+					if (g_cfg_word[i].id == wid) {
+#ifdef BIG_ENDIAN
+						g_cfg_word[i].val = (info[4]<<24)|(info[5]<<16)|(info[6]<<8)|(info[7]);
+#else
+						g_cfg_word[i].val = info[4]|(info[5]<<8)|(info[6]<<16)|(info[7]<<24);
+#endif
+						break;
+					}
+					i++;
+				} while (1);
+				len = 6;
+				break;
+			case WID_STR:
+				do {
+					if (g_cfg_str[i].id == WID_NIL)
+						break;
+
+					if (g_cfg_str[i].id == wid) {
+						if (wid == WID_SITE_SURVEY_RESULTS) {
+							static int toggle;
+
+							PRINT_INFO(GENERIC_DBG,"Site survey results received %d\n",
+								   size);
+
+							PRINT_INFO(GENERIC_DBG,"Site survey results value %d toggle%d\n", size, toggle);
+							i += toggle;
+							toggle ^= 1;
+						}
+						memcpy(g_cfg_str[i].str, &info[2], (2+((info[3] << 8) | info[2])));
+						break;
+					}
+					i++;
+				} while (1);
+				len = 2+((info[3] << 8) | info[2]);
+				break;
+
+			/*ATWILCSW-403*/
+			case WID_BIN_DATA:
+				do {
+					if (g_cfg_bin[i].id == WID_NIL)
+						break;
+
+					if (g_cfg_bin[i].id == wid) {					
+						memcpy(g_cfg_bin[i].bin, &info[2], (2+((info[3] << 8) | info[2])));
+						break;
+					} 
+					i++;
+				} while (1);
+				len = 2+((info[3] << 8) | info[2]);
+				break;
+				
+			default:
+				break;
 		}
 		size -= (2 + len);
 		info += (2 + len);
@@ -483,6 +505,21 @@ static int wilc_wlan_cfg_get_wid_value(uint16_t wid, uint8_t *buffer,
 			}
 			i++;
 		} while (1);
+	}else if (type == 4) {			/* binary command */
+		do {
+			if (g_cfg_bin[i].id == WID_NIL)
+				break;
+
+			if (g_cfg_bin[i].id == wid) {
+				uint32_t size =  (g_cfg_bin[i].bin[0])|(g_cfg_bin[i].bin[1]<<8);
+				if (buffer_size >= size) {					
+					memcpy(buffer,  &g_cfg_bin[i].bin[2], size);
+					ret = size;
+				}
+				break;
+			}
+			i++;
+		} while (1);
 	} else {
 		PRINT_ER("[CFG]: illegal type (%08x)\n", wid);
 	}
@@ -535,7 +572,7 @@ static int wilc_wlan_cfg_indicate_rx(uint8_t *frame, int size, struct wilc_cfg_r
 		host_int_ScanCompleteReceived(frame - 4, size + 4);
 		break;
 	default:
-		PRINT_INFO(RX_DBG,"unknown message type %d-%d-%d-%d-%d-%d-%d-%d\n",
+		PRINT_INFO(RX_DBG,"Receive unknown message type %d-%d-%d-%d-%d-%d-%d-%d\n",
 			 frame[0], frame[1], frame[2], frame[3], frame[4],
 			 frame[5], frame[6], frame[7]);
 		rsp->type = 0;

@@ -19,7 +19,7 @@
 #ifndef CORECONFIGURATOR_H
 #define CORECONFIGURATOR_H
 
-#include "atl_error_support.h"
+#include "wilc_errorsupport.h"
 #include "wilc_wlan_if.h"
 #include <linux/kthread.h>
 #include <linux/semaphore.h>
@@ -71,10 +71,9 @@
 #define MAC_CONNECTED			1
 #define MAC_DISCONNECTED		0
 #define MAKE_WORD16(lsb, msb) ((((u16)(msb) << 8) & 0xFF00) | (lsb))
-#define MAKE_WORD32(lsw, msw) ((((unsigned int)(msw) << 16) & 0xFFFF0000) \
+#define MAKE_WORD32(lsw, msw) ((((u32)(msw) << 16) & 0xFFFF0000) \
 			      | (lsw))
 
-extern u16 g_num_total_switches;
 extern uint32_t cfg_timed_out_cnt;
 
 /* Frame Type and Subtype Codes (6-bit) */
@@ -141,8 +140,8 @@ enum tenuConnectSts {
 
 struct tstrWID {
 	u16 u16WIDid;
-	enum WID_TYPE enuWIDtype;
-	signed int s32ValueSize;
+	enum tenuWIDtype enuWIDtype;
+	s32 s32ValueSize;
 	s8 *ps8WidVal;
 };
 struct tstrRSSI {
@@ -172,7 +171,7 @@ struct tstrNetworkInfo {
 	u8 u8Found;
 #endif
 #ifdef WILC_P2P
-	unsigned int u32Tsf; /* time-stamp [Low only 32 bit] */
+	u32 u32Tsf; /* time-stamp [Low only 32 bit] */
 #endif
 	u8 *pu8IEs;
 	u16 u16IEsLen;
@@ -220,25 +219,25 @@ struct wid_site_survey_reslts {
 };
 #endif /* CONNECT_DIRECT */
 
-signed int CoreConfiguratorInit(void);
-signed int CoreConfiguratorDeInit(void);
-signed int SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
-				unsigned int u32WIDsCount,
+s32 CoreConfiguratorInit(void);
+s32 CoreConfiguratorDeInit(void);
+s32 SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
+				u32 u32WIDsCount,
 				bool bRespRequired,
-				unsigned int drvHandler);
-signed int ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetworkInfo);
-signed int DeallocateNetworkInfo(struct tstrNetworkInfo *pstrNetworkInfo);
-signed int ParseAssocRespInfo(u8 *pu8Buffer, unsigned int u32BufferLen,
+				u32 drvHandler);
+s32 ParseNetworkInfo(u8 *pu8MsgBuffer, struct tstrNetworkInfo **ppstrNetworkInfo);
+s32 DeallocateNetworkInfo(struct tstrNetworkInfo *pstrNetworkInfo);
+s32 ParseAssocRespInfo(u8 *pu8Buffer, u32 u32BufferLen,
 				     struct tstrConnectRespInfo **ppstrConnectRespInfo);
-signed int DeallocateAssocRespInfo(struct tstrConnectRespInfo *pstrConnectRespInfo);
+s32 DeallocateAssocRespInfo(struct tstrConnectRespInfo *pstrConnectRespInfo);
 #ifndef CONNECT_DIRECT
-signed int ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_FRAG_SIZE],
+s32 ParseSurveyResults(u8 ppu8RcvdSiteSurveyResults[][MAX_SURVEY_RESULT_FRAG_SIZE],
 				     struct wid_site_survey_reslts **ppstrSurveyResults,
-				     unsigned int *pu32SurveyResultsCount);
-signed int DeallocateSurveyResults(struct wid_site_survey_reslts *pstrSurveyResults);
+				     u32 *pu32SurveyResultsCount);
+s32 DeallocateSurveyResults(struct wid_site_survey_reslts *pstrSurveyResults);
 #endif /* CONNECT_DIRECT */
-signed int SendRawPacket(s8 *pspacket, signed int s32PacketLen);
-void NetworkInfoReceived(u8 *pu8Buffer, unsigned int u32Length);
-void GnrlAsyncInfoReceived(u8 *pu8Buffer, unsigned int u32Length);
-void host_int_ScanCompleteReceived(u8 *pu8Buffer, unsigned int u32Length);
+s32 SendRawPacket(s8 *pspacket, s32 s32PacketLen);
+void NetworkInfoReceived(u8 *pu8Buffer, u32 u32Length);
+void GnrlAsyncInfoReceived(u8 *pu8Buffer, u32 u32Length);
+void host_int_ScanCompleteReceived(u8 *pu8Buffer, u32 u32Length);
 #endif /* CORECONFIGURATOR_H */

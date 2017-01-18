@@ -19,7 +19,7 @@
 #ifndef WILC_TYPE_H
 #define WILC_TYPE_H
 
-#include "atl_error_support.h"
+#include "wilc_errorsupport.h"
 #include <linux/kthread.h>
 #include <linux/semaphore.h>
 #include <linux/module.h>

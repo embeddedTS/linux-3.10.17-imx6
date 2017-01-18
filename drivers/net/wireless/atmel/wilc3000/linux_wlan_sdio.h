@@ -20,13 +20,11 @@
 #define LINUX_WLAN_SDIO_H
 
 #include <linux/mmc/sdio_func.h>
-#include "wilc_type.h"
 
 #ifdef WILC_SDIO
 extern struct sdio_func *local_sdio_func;
 extern struct sdio_driver wilc_bus;
 #endif /* WILC_SDIO */
-extern volatile int probe;
 
 struct sdio_cmd52_t {
 	uint32_t read_write : 1;
@@ -46,7 +44,7 @@ struct sdio_cmd53_t {
 	uint8_t *buffer;
 	uint32_t block_size;
 };
-typedef void (*wilc_debug_func)(uint32_t, char *, ...);
+
 typedef void (*isr_handler_t)(void);
 int linux_sdio_init(void *);
 void linux_sdio_deinit(void *);

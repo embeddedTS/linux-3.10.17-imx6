@@ -28,10 +28,20 @@
 
 #define SDIO_MODALIAS "wilc_sdio"
 
+struct wilc_wlan_os_context  g_linux_sdio_os_context;
 struct sdio_func *local_sdio_func = NULL;
 EXPORT_SYMBOL(local_sdio_func);
 
 static isr_handler_t isr_handler;
+extern int sdio_init(struct wilc_wlan_inp *inp);
+extern int wilc3000_sdio_reset(void *pv);
+void chip_wakeup(int source);
+void chip_allow_sleep(int source);
+extern void (*pf_chip_sleep_manually)(unsigned int , int );
+extern int (*pf_get_num_conn_ifcs)(void);
+extern void (*pf_host_wakeup_notify)(int);
+extern void (*pf_host_sleep_notify)(int);
+extern int (*pf_get_u8SuspendOnEvent_value)(void);
 
 #define SDIO_VENDOR_ID_WILC 0x0296
 #define SDIO_DEVICE_ID_WILC 0x5347
@@ -137,20 +147,11 @@ int linux_sdio_cmd53(struct sdio_cmd53_t *cmd)
 	return 1;
 }
 
-volatile int probe = 0;
 static int linux_sdio_probe(struct sdio_func *func,
 			    const struct sdio_device_id *id)
 {
-	PRINT_D(BUS_DBG, "probe function\n");
+	PRINT_D(INIT_DBG, "probe function\n");
 
-	if (NULL != local_sdio_func) {
-		local_sdio_func = func;
-		probe = 1;
-
-		up(&sdio_probe_sync);
-
-		return 0;
-	}
 	local_sdio_func = func;
 
 	up(&sdio_probe_sync);
@@ -162,39 +163,27 @@ static void linux_sdio_remove(struct sdio_func *func)
 {
 }
 
-int sdio_init(struct wilc_wlan_inp *inp, wilc_debug_func func);
-int sdio_deinit(void *pv);
-void chip_wakeup(int source);
-void chip_allow_sleep(int source);
-extern void (*pf_chip_sleep_manually)(unsigned int , int );
-extern int (*pf_get_num_conn_ifcs)(void);
-extern void (*pf_host_wakeup_notify)(int);
-extern void (*pf_host_sleep_notify)(int);
-extern int (*pf_get_u8SuspendOnEvent_value)(void);
-
 static int wilc_sdio_suspend(struct device *dev)
 {
 	printk("\n\n << SUSPEND >>\n\n");
 	chip_wakeup(0);
 	/*if there is no events , put the chip in low power mode */
-	if(pf_get_u8SuspendOnEvent_value()== 0)
-		
-	{
+	if(pf_get_u8SuspendOnEvent_value()== 0){
 		/*BugID_5213*/
 		/*Allow chip sleep, only if both interfaces are not connected*/
 		if(!pf_get_num_conn_ifcs())
-		{
 			pf_chip_sleep_manually(0xFFFFFFFF,0);
-		}
 	}
-	else
-	{
+	else{
 		/*notify the chip that host will sleep*/
 		pf_host_sleep_notify(0);
 		chip_allow_sleep(0);
 	}
+
+	if((g_linux_sdio_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_sdio_os_context.hif_critical_section));
 	/*reset SDIO to allow kerenl reintilaization at wake up*/
-	sdio_deinit(NULL);
+	wilc3000_sdio_reset(NULL);
 	/*claim the host to prevent driver SDIO access before resume is called*/
 	sdio_claim_host(local_sdio_func);
 	return 0 ;
@@ -207,7 +196,14 @@ static int wilc_sdio_resume(struct device *dev)
 	chip_wakeup(0);
 	printk("\n\n  <<RESUME>> \n\n");	
 	/*Init SDIO block mode*/
-	sdio_init(NULL,NULL);
+	sdio_init(NULL);
+
+	if((g_linux_sdio_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_sdio_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_sdio_os_context.hif_critical_section));
+		}
+	}
+
 	/*if there is an event , notify the chip that the host is awake now*/
 	if(pf_get_u8SuspendOnEvent_value()== 1)
 		pf_host_wakeup_notify(0);
@@ -233,11 +229,9 @@ struct sdio_driver wilc_bus = {
                }
 };
 
-
 int enable_sdio_interrupt(isr_handler_t p_isr_handler)
 {
 	int ret = 0;
-
 #ifndef WILC_SDIO_IRQ_GPIO
 	sdio_intr_lock  = WILC_SDIO_HOST_NO_TAKEN;
 
@@ -272,7 +266,6 @@ void disable_sdio_interrupt(void)
 		PRINT_ER("can't release sdio_irq, err(%d)\n", ret);
 
 	sdio_release_host(local_sdio_func);
-
 	sdio_intr_lock  = WILC_SDIO_HOST_NO_TAKEN;
 #endif /* WILC_SDIO_IRQ_GPIO */
 }
@@ -280,9 +273,12 @@ EXPORT_SYMBOL(disable_sdio_interrupt);
 
 int linux_sdio_init(void *pv)
 {
+	PRINT_D(INIT_DBG, "SDIO speed: %d\n", 
+		local_sdio_func->card->host->ios.clock);
 #ifndef WILC_SDIO_IRQ_GPIO
 	init_waitqueue_head(&sdio_intr_waitqueue);
 #endif /* WILC_SDIO_IRQ_GPIO */
+	memcpy(&g_linux_sdio_os_context,(struct wilc_wlan_os_context*) pv,sizeof(struct wilc_wlan_os_context));
 	return 1;
 }
 
@@ -290,3 +286,4 @@ void linux_sdio_deinit(void *pv)
 {
 	sdio_unregister_driver(&wilc_bus);
 }
+

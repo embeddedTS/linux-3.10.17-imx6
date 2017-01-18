@@ -19,9 +19,8 @@
 #ifndef LINUX_WLAN_COMMON_H
 #define LINUX_WLAN_COMMON_H
 
-
 #define WIFI_FIRMWARE	"atmel/wilc3000_wifi_firmware.bin"
-#define BT_FIRMWARE	"atmel/wilc3000_bt_firmware.bin"
+#define BT_FIRMWARE		"atmel/wilc3000_bt_firmware.bin"
 
 enum debug_region{
 	Generic_debug = 0,
@@ -72,9 +71,9 @@ typedef enum { ANTENNA1  = 0,
 
 #define REGION	 INIT_DBG|GENERIC_DBG|CFG80211_DBG | FIRM_DBG | HOSTAPD_DBG | PWRDEV_DBG
 
-#define DEBUG	    0
-#define INFO        0
-#define WRN         0
+#define DEBUG	    1
+#define INFO        1
+#define WRN         1
 #define PRINT_D(region,...)	do{ if(DEBUG == 1 && ((REGION)&(region))){printk("DBG [%s: %d]",__FUNCTION__,__LINE__);\
 							printk(__VA_ARGS__);}}while(0)
 							
@@ -91,25 +90,16 @@ typedef enum { ANTENNA1  = 0,
 #endif
 #define LINUX_TX_SIZE	(64 * 1024)
 
-#if defined(PLAT_SAMA5D4)
-#define MODALIAS	"wilc_spi"
-#define GPIO_NUM	46
-#define MIN_SPEED 24000000
-#define GPIO_NUM_RESET	60
-#define GPIO_NUM_CHIP_EN	94
-#endif
+#if defined(WILC_SDIO) /* TS-7990 uses SDIO */
 
-#if defined(PLAT_SAMA5D3)
-#define MODALIAS	"wilc_spi"
-#define GPIO_NUM	68
-#define MIN_SPEED 24000000
-#endif
+#define MODALIAS		"wilc_sdio"
+#define GPIO_NUM 		26
+
+#else /* TS-4100, TS-7180, etc 6ul boards that use SPI */
 
 #define MODALIAS		"wilc_spi"
 #define GPIO_NUM 		136
-#define GPIO_NUM_RESET 		181
-#define GPIO_NUM_CHIP_EN 	180
-#define MIN_SPEED 		24000000
 
-int linux_wlan_get_num_conn_ifcs(void);
+#endif
+
 #endif /* LINUX_WLAN_COMMON_H */

@@ -26,9 +26,7 @@
 /*
  * externs
  */
-void chip_sleep_manually(unsigned int u32SleepTime, int source);
-
-uint32_t wilc_get_chipid(uint8_t update);
+void chip_sleep_manually(u32 u32SleepTime, int source);
 
 /*
  * Mac eth header length
@@ -59,6 +57,9 @@ uint32_t wilc_get_chipid(uint8_t update);
 #define ETH_CONFIG_PKT_HDR_OFFSET	(ETH_ETHERNET_HDR_OFFSET \
 					+ ETH_CONFIG_PKT_HDR_LEN)
 
+/*ATWILCSW-404*/
+#define PKT_STATUS_NEW		0
+#define PKT_STATUS_BUFFERED	1
 /*
  * Endian Conversion
  */
@@ -128,22 +129,18 @@ uint32_t wilc_get_chipid(uint8_t update);
 #define rCOE_AUTO_PS_OFF_NULL_PKT (0x16046C)
 #define rPA_CONTROL				(0x9804)
 #define rHAVE_SDIO_IRQ_GPIO_BIT		(0)
-#define rHAVE_USE_PMU_BIT		(1)
 #define rHAVE_SLEEP_CLK_SRC_RTC_BIT	(2)
 #define rHAVE_SLEEP_CLK_SRC_XO_BIT	(3)
-#define rHAVE_EXT_PA_INV_TX_RX_BIT	(4)
 #define rFILTER_WIFI_LOGS_BIT		(8)
-#define rHAVE_SIN_IP_ANT_DEV_MODULE_BIT	(9)
-#define rHAVE_DUL_IP_ANT_DEV_MODULE_BIT	(10)
+#define rHAVE_ANT_SWTCH_SNGL_GPIO_CTRL_BIT	(9)
+#define rHAVE_ANT_SWTCH_DUAL_GPIO_CTRL_BIT	(10)
 
 #define WILC_HAVE_SDIO_IRQ_GPIO		(1 << rHAVE_SDIO_IRQ_GPIO_BIT)
-#define WILC_HAVE_USE_PMU		(1 << rHAVE_USE_PMU_BIT)
 #define WILC_HAVE_SLEEP_CLK_SRC_RTC	(1 << rHAVE_SLEEP_CLK_SRC_RTC_BIT)
 #define WILC_HAVE_SLEEP_CLK_SRC_XO	(1 << rHAVE_SLEEP_CLK_SRC_XO_BIT)
-#define WILC_HAVE_EXT_PA_INV_TX_RX	(1 << rHAVE_EXT_PA_INV_TX_RX_BIT)
 #define WILC_FILTER_WIFI_LOGS		(1 << rFILTER_WIFI_LOGS_BIT)
-#define WILC_HAVE_SIN_IP_ANT_DEV_MODULE (1 << rHAVE_SIN_IP_ANT_DEV_MODULE_BIT)
-#define WILC_HAVE_DUL_IP_ANT_DEV_MODULE (1 << rHAVE_DUL_IP_ANT_DEV_MODULE_BIT)
+#define WILC_HAVE_ANT_SWTCH_SNGL_GPIO_CTRL (1 << rHAVE_ANT_SWTCH_SNGL_GPIO_CTRL_BIT)
+#define WILC_HAVE_ANT_SWTCH_DUAL_GPIO_CTRL (1 << rHAVE_ANT_SWTCH_DUAL_GPIO_CTRL_BIT)
 
 /*
  * Wlan Defines
@@ -288,6 +285,6 @@ void wilc_host_wakeup_notify(int source);
 #define VI_AC_ACM_STAT_POS	16
 #define BE_AC_COUNT_POS		9
 #define BE_AC_ACM_STAT_POS	8
-#define BK_AC_COUNT_POS		2
+#define BK_AC_COUNT_POS		2	
 #define BK_AC_ACM_STAT_POS	1
 #endif

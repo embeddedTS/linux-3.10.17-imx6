@@ -42,4 +42,10 @@ struct wilc_cfg_str_t {
 
 extern struct wilc_cfg_func mac_cfg;
 
+/*ATWILCSW-403*/
+typedef struct {
+	uint32_t id;
+	uint8_t *bin;
+} wilc_cfg_bin_t;
+
 #endif

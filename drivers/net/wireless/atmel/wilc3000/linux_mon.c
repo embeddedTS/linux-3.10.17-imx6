@@ -16,7 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "wilc_wfi_cfg_operations.h"
+#include "wilc_wfi_cfgoperations.h"
 #include "linux_wlan_common.h"
 #include "wilc_wlan_if.h"
 #include "wilc_wlan.h"
@@ -111,6 +111,7 @@ void WILC_WFI_monitor_rx(uint8_t *buff, uint32_t size)
 		skb = dev_alloc_skb(size + sizeof(struct wilc_wfi_radiotap_hdr));
 
 		if (skb == NULL) {
+			PRINT_INFO(HOSTAPD_DBG,"Monitor if : No memory to allocate skb");
 			return;
 		}
 
@@ -150,7 +151,7 @@ static void mgmt_tx_complete(void *priv, int status)
 		if (INFO || buf[0] == 0x10 || buf[0] == 0xb0)
 			PRINT_D(HOSTAPD_DBG, "Packet sent successfully - Size = %d - Address = %p.\n", pv_data->size, pv_data->buff);
 	} else {
-		PRINT_D(HOSTAPD_DBG, "Couldn't send packet - Size = %d\n", pv_data->size);
+		PRINT_D(HOSTAPD_DBG,"Couldn't send packet - Size = %d - Address = %p.\n",pv_data->size,pv_data->buff);
 	}
 
 	/* incase of fully hosting mode, the freeing will be done in response to the cfg packet */
@@ -167,7 +168,7 @@ static int mon_mgmt_tx(struct net_device *dev, const u8 *buf, size_t len)
 
 	if (dev == NULL) {
 		PRINT_D(HOSTAPD_DBG, "ERROR: dev == NULL\n");
-		return ATL_FAIL;
+		return WILC_FAIL;
 	}
 	nic = netdev_priv(dev);
 
@@ -175,13 +176,13 @@ static int mon_mgmt_tx(struct net_device *dev, const u8 *buf, size_t len)
 	mgmt_tx = kmalloc(sizeof(struct tx_complete_mon_data), GFP_ATOMIC);
 	if (mgmt_tx == NULL) {
 		PRINT_ER("Failed to allocate memory for mgmt_tx structure\n");
-		return ATL_FAIL;
+		return WILC_FAIL;
 	}
 
 	mgmt_tx->buff = kmalloc(len, GFP_ATOMIC);
 	if (mgmt_tx->buff == NULL) {
 		kfree(mgmt_tx);
-		return ATL_FAIL;
+		return WILC_FAIL;
 	}
 
 	mgmt_tx->size = len;
@@ -200,21 +201,18 @@ static netdev_tx_t WILC_WFI_mon_xmit(struct sk_buff *skb,
 				       struct net_device *dev)
 {
 	struct ieee80211_radiotap_header *rtap_hdr;
-	unsigned int rtap_len, i, ret = 0;
+	u32 rtap_len, ret = 0;
 	struct WILC_WFI_mon_priv  *mon_priv;
-
-	struct sk_buff *skb2;
-	struct wilc_wfi_radiotap_cb_hdr *cb_hdr;
 
 	/* Bug 4601 */
 	if (wilc_wfi_mon == NULL)
-		return ATL_FAIL;
+		return WILC_FAIL;
 
 	mon_priv = netdev_priv(wilc_wfi_mon);
 
 	if (mon_priv == NULL) {
 		PRINT_ER("Monitor interface private structure is NULL\n");
-		return ATL_FAIL;
+		return WILC_FAIL;
 	}
 
 	rtap_hdr = (struct ieee80211_radiotap_header *)skb->data;
@@ -276,7 +274,7 @@ static void WILC_WFI_mon_setup(struct net_device *dev)
 struct net_device *WILC_WFI_init_mon_interface(const char *name,
 					       struct net_device *real_dev)
 {
-	unsigned int ret = ATL_SUCCESS;
+	u32 ret = WILC_SUCCESS;
 	struct WILC_WFI_mon_priv *priv;
 
 		/*If monitor interface is already initialized, return it*/
@@ -330,6 +328,6 @@ int WILC_WFI_deinit_mon_interface(void)
 		}
 		wilc_wfi_mon = NULL;
 	}
-	return ATL_SUCCESS;
+	return WILC_SUCCESS;
 }
 #endif /* WILC_AP_EXTERNAL_MLME */

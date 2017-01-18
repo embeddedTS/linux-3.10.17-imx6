@@ -18,11 +18,13 @@
 
 #ifndef NM_WFI_CFGOPERATIONS
 #define NM_WFI_CFGOPERATIONS
+
 #include "wilc_wfi_netdevice.h"
 
 extern u8 g_wilc_initialized;
 extern int connecting;
 extern struct timer_list hEAPFrameBuffTimer;
+
 #ifdef DISABLE_PWRSAVE_AND_SCAN_DURING_IP
 extern struct timer_list hDuringIpTimer;
 #endif
@@ -80,6 +82,7 @@ extern struct timer_list hDuringIpTimer;
 #define nl80211_SCAN_RESULT_EXPIRE	(3 * HZ)
 #define SCAN_RESULT_EXPIRE		(40 * HZ)
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,30)
 static const u32 cipher_suites[] = {
 	WLAN_CIPHER_SUITE_WEP40,
 	WLAN_CIPHER_SUITE_WEP104,
@@ -87,10 +90,11 @@ static const u32 cipher_suites[] = {
 	WLAN_CIPHER_SUITE_CCMP,
 	WLAN_CIPHER_SUITE_AES_CMAC,
 };
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
 static const struct ieee80211_txrx_stypes
-	wilc_wfi_cfg80211_mgmt_types[NL80211_IFTYPE_MAX] = {
+	wilc_wfi_cfg80211_mgmt_types[NUM_NL80211_IFTYPES] = {
 	[NL80211_IFTYPE_STATION] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_ACTION >> 4) |
@@ -119,7 +123,6 @@ static const struct ieee80211_txrx_stypes
 	}
 };
 #endif
-
 /* Time to stay on the channel */
 #define WILC_WFI_DWELL_PASSIVE	100
 #define WILC_WFI_DWELL_ACTIVE	40
@@ -133,9 +136,7 @@ int WILC_WFI_InitHostInt(struct net_device *net);
 int WILC_WFI_deinit_mon_interface(void);
 struct net_device *WILC_WFI_init_mon_interface(const char *name,
 					       struct net_device *real_dev);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
 void WILC_WFI_p2p_rx(struct net_device *dev, uint8_t *buff, uint32_t size);
-#endif
 
 #ifdef TCP_ENHANCEMENTS
 #define TCP_ACK_FILTER_LINK_SPEED_THRESH	54

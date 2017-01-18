@@ -16,8 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __ATL_MSG_QUEUE_H__
-#define __ATL_MSG_QUEUE_H__
+#ifndef __WILC_MSG_QUEUE_H__
+#define __WILC_MSG_QUEUE_H__
 
 /* Message Queue type is a structure */
 struct Message {
@@ -34,35 +34,17 @@ struct MsgQueueHandle {
 	struct Message *pstrMessageList;
 };
 
-/*
- * Creates a new Message queue, if the feature
- * CONFIG_ATL_MSG_QUEUE_IPC_NAME is enabled and pstrAttrs->pcName
- * is not Null, then this message queue can be used for IPC with
- * any other message queue having the same name in the system
- */
-signed int ATL_MsgQueueCreate(struct MsgQueueHandle *pHandle);
+signed int WILC_MsgQueueCreate(struct MsgQueueHandle *pHandle);
 
-/*
- * Sends a message, this API will block unil the message is
- * actually sent or until it is timedout (as long as the feature
- * CONFIG_ATL_MSG_QUEUE_TIMEOUT is enabled and pstrAttrs->u32Timeout
- * is not set to ATL_OS_INFINITY), zero timeout is a valid value
- */
-signed int ATL_MsgQueueSend(struct MsgQueueHandle *pHandle,
-		const void *pvSendBuffer, unsigned int u32SendBufferSize);
+signed int WILC_MsgQueueSend(struct MsgQueueHandle *pHandle,
+		const void *pvSendBuffer, u32 u32SendBufferSize);
 
-/*
- * Receives a message, this API will block unil a message is
- * received or until it is timedout (as long as the feature
- * CONFIG_ATL_MSG_QUEUE_TIMEOUT is enabled and pstrAttrs->u32Timeout
- * is not set to ATL_OS_INFINITY), zero timeout is a valid value
- */
-signed int ATL_MsgQueueRecv(struct MsgQueueHandle *pHandle,
+signed int WILC_MsgQueueRecv(struct MsgQueueHandle *pHandle,
 		void *pvRecvBuffer, unsigned int u32RecvBufferSize,
 		unsigned int *pu32ReceivedLength);
 
 /*
  * Destroys an existing  Message queue
  */
-signed int ATL_MsgQueueDestroy(struct MsgQueueHandle *pHandle);
+signed int WILC_MsgQueueDestroy(struct MsgQueueHandle *pHandle);
 #endif

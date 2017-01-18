@@ -20,7 +20,6 @@
 #include "wilc_wlan.h"
 
 struct wilc_spi {
-	void *os_context;
 	int (*spi_tx)(uint8_t *, uint32_t);
 	int (*spi_rx)(uint8_t *, uint32_t);
 	int (*spi_trx)(uint8_t *, uint8_t *, uint32_t);
@@ -33,6 +32,7 @@ static struct wilc_spi g_spi;
 
 static int spi_read(uint32_t, uint8_t *, uint32_t);
 static int spi_write(uint32_t, uint8_t *, uint32_t);
+uint8_t spi_reset(void);
 
 /*
  * Crc7
@@ -89,24 +89,29 @@ static uint8_t crc7(uint8_t crc, const uint8_t *buffer, uint32_t len)
 #define CMD_INTERNAL_WRITE	0xc3
 #define CMD_INTERNAL_READ	0xc4
 #define CMD_TERMINATE		0xc5
-#define CMD_REPEAT		0xc6
+#define CMD_REPEAT			0xc6
 #define CMD_DMA_EXT_WRITE	0xc7
 #define CMD_DMA_EXT_READ	0xc8
 #define CMD_SINGLE_WRITE	0xc9
 #define CMD_SINGLE_READ		0xca
-#define CMD_RESET		0xcf
-#define N_OK			1
-#define N_FAIL			0
-#define N_RESET			(-1)
-#define N_RETRY			(-2)
+#define CMD_RESET			0xcf
+
+#define N_OK				1
+#define N_FAIL				0
+#define N_RESET				(-1)
+#define N_RETRY				(-2)
+
+#define SPI_RESP_RETRY_COUNT (10)
+#define SPI_RETRY_COUNT		(10)
 #define DATA_PKT_SZ_256		256
 #define DATA_PKT_SZ_512		512
 #define DATA_PKT_SZ_1K		1024
+#define DATA_PKT_SZ_2K		(2 * 1024)
 #define DATA_PKT_SZ_4K		(4 * 1024)
 #define DATA_PKT_SZ_8K		(8 * 1024)
-#define DATA_PKT_SZ		DATA_PKT_SZ_8K
+#define DATA_PKT_SZ			DATA_PKT_SZ_8K
 
-static int spi_cmd(uint8_t cmd, uint32_t adr,
+static int spi_cmd(uint8_t cmd, uint32_t addr,
 		   uint32_t data, uint32_t sz, uint8_t clockless)
 {
 	uint8_t bc[9];
@@ -116,86 +121,77 @@ static int spi_cmd(uint8_t cmd, uint32_t adr,
 	bc[0] = cmd;
 	switch (cmd) {
 	case CMD_SINGLE_READ:	/* single word (4 bytes) read */
-		bc[1] = (uint8_t)(adr >> 16);
-		bc[2] = (uint8_t)(adr >> 8);
-		bc[3] = (uint8_t)adr;
+		bc[1] = (uint8_t)(addr >> 16);
+		bc[2] = (uint8_t)(addr >> 8);
+		bc[3] = (uint8_t)addr;
 		len = 5;
 		break;
-
 	case CMD_INTERNAL_READ:	/* internal register read */
-		bc[1] = (uint8_t)(adr >> 8);
+		bc[1] = (uint8_t)(addr >> 8);
 		if (clockless)
 			bc[1] |= (1 << 7);
-		bc[2] = (uint8_t)adr;
+		bc[2] = (uint8_t)addr;
 		bc[3] = 0x00;
 		len = 5;
 		break;
-
 	case CMD_TERMINATE:	/* termination */
 		bc[1] = 0x00;
 		bc[2] = 0x00;
 		bc[3] = 0x00;
 		len = 5;
 		break;
-
 	case CMD_REPEAT:	/* repeat */
 		bc[1] = 0x00;
 		bc[2] = 0x00;
 		bc[3] = 0x00;
 		len = 5;
 		break;
-
 	case CMD_RESET:		/* reset */
 		bc[1] = 0xff;
 		bc[2] = 0xff;
 		bc[3] = 0xff;
 		len = 5;
 		break;
-
 	case CMD_DMA_WRITE:	/* dma write */
 	case CMD_DMA_READ:	/* dma read */
-		bc[1] = (uint8_t)(adr >> 16);
-		bc[2] = (uint8_t)(adr >> 8);
-		bc[3] = (uint8_t)adr;
+		bc[1] = (uint8_t)(addr >> 16);
+		bc[2] = (uint8_t)(addr >> 8);
+		bc[3] = (uint8_t)addr;
 		bc[4] = (uint8_t)(sz >> 8);
 		bc[5] = (uint8_t)(sz);
 		len = 7;
 		break;
-
 	case CMD_DMA_EXT_WRITE:	/* dma extended write */
 	case CMD_DMA_EXT_READ:	/* dma extended read */
-		bc[1] = (uint8_t)(adr >> 16);
-		bc[2] = (uint8_t)(adr >> 8);
-		bc[3] = (uint8_t)adr;
+		bc[1] = (uint8_t)(addr >> 16);
+		bc[2] = (uint8_t)(addr >> 8);
+		bc[3] = (uint8_t)addr;
 		bc[4] = (uint8_t)(sz >> 16);
 		bc[5] = (uint8_t)(sz >> 8);
 		bc[6] = (uint8_t)(sz);
 		len = 8;
 		break;
-
 	case CMD_INTERNAL_WRITE:/* internal register write */
-		bc[1] = (uint8_t)(adr >> 8);
+		bc[1] = (uint8_t)(addr >> 8);
 		if (clockless)
 			bc[1] |= (1 << 7);
-		bc[2] = (uint8_t)(adr);
+		bc[2] = (uint8_t)(addr);
 		bc[3] = (uint8_t)(data >> 24);
 		bc[4] = (uint8_t)(data >> 16);
 		bc[5] = (uint8_t)(data >> 8);
 		bc[6] = (uint8_t)(data);
 		len = 8;
 		break;
-
 	case CMD_SINGLE_WRITE:	/* single word write */
-		bc[1] = (uint8_t)(adr >> 16);
-		bc[2] = (uint8_t)(adr >> 8);
-		bc[3] = (uint8_t)(adr);
+		bc[1] = (uint8_t)(addr >> 16);
+		bc[2] = (uint8_t)(addr >> 8);
+		bc[3] = (uint8_t)(addr);
 		bc[4] = (uint8_t)(data >> 24);
 		bc[5] = (uint8_t)(data >> 16);
 		bc[6] = (uint8_t)(data >> 8);
 		bc[7] = (uint8_t)(data);
 		len = 9;
 		break;
-
 	default:
 		result = N_FAIL;
 		break;
@@ -203,12 +199,12 @@ static int spi_cmd(uint8_t cmd, uint32_t adr,
 
 	if (result) {
 		if (!g_spi.crc_off)
-			bc[len - 1] = (crc7(0x7f, &bc[0], len - 1)) << 1;
+			bc[len-1] = (crc7(0x7f, (const uint8_t *)&bc[0], len-1)) << 1;
 		else
 			len -= 1;
 
 		if (!g_spi.spi_tx(bc, len)) {
-			PRINT_ER("Failed cmd write, bus error\n");
+			PRINT_ER("Failed cmd write, bus error...\n");
 			result = N_FAIL;
 		}
 	}
@@ -216,10 +212,38 @@ static int spi_cmd(uint8_t cmd, uint32_t adr,
 	return result;
 }
 
+static int spi_data_rsp(uint8_t cmd)
+{
+	uint8_t len;
+	uint8_t rsp[3];
+	int result = N_OK;
+
+	if (!g_spi.crc_off)
+		len = 2;
+	else
+		len = 3;
+
+	if (!g_spi.spi_rx(&rsp[0], len)) {
+		PRINT_ER("Failed bus error...\n");
+		result = N_FAIL;
+		goto _fail_;
+	}
+		
+	if((rsp[len-1] != 0)||(rsp[len-2] != 0xC3)){
+		PRINT_ER("Failed data response read, %x %x %x\n",rsp[0],rsp[1],rsp[2]);
+		result = N_FAIL;
+		goto _fail_;
+	}
+	
+_fail_:
+	return result;
+}
+
 static int spi_cmd_rsp(uint8_t cmd)
 {
 	uint8_t rsp;
 	int result = N_OK;
+	int retry;
 
 	/*
 	 * Command/Control response
@@ -233,37 +257,45 @@ static int spi_cmd_rsp(uint8_t cmd)
 		}
 	}
 
-	if (!g_spi.spi_rx(&rsp, 1)) {
-		PRINT_ER("Failed cmd response read, bus error\n");
-		result = N_FAIL;
-		goto _fail_;
-	}
+	retry = SPI_RESP_RETRY_COUNT;
+	do {
+		if (!g_spi.spi_rx(&rsp, 1)) {
+			PRINT_ER("Failed cmd response read, bus error...\n");
+			result = N_FAIL;
+			goto _fail_;
+		}
+	} while((rsp != cmd) && (retry-- >0));
 
 	if (rsp != cmd) {
-		PRINT_ER("Failed cmd response, cmd %02x, resp %02x\n", cmd, rsp);
+		PRINT_ER("Failed cmd response, cmd (%02x), resp (%02x)\n", cmd, rsp);
+		
 		result = N_FAIL;
 		goto _fail_;
 	}
 
-	/*
-	 * State response
-	 */
-	if (!g_spi.spi_rx(&rsp, 1)) {
-		PRINT_ER("Failed cmd state read, bus error\n");
-		result = N_FAIL;
-		goto _fail_;
-	}
+	/**
+		State response
+	**/
+	retry = SPI_RESP_RETRY_COUNT;
+	do {
+		if (!g_spi.spi_rx(&rsp, 1)) {
+			PRINT_ER("Failed cmd state read, bus error...\n");
+			result = N_FAIL;
+			goto _fail_;
+		}
+	} while((rsp != 0x00) && (retry-- >0));
 
 	if (rsp != 0x00) {
-		PRINT_ER("Failed cmd state response state %02x\n", rsp);
+		PRINT_ER("Failed cmd state response state (%02x)\n", rsp);
 		result = N_FAIL;
+		goto _fail_;
 	}
 
 _fail_:
 	return result;
 }
 
-static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
+static int spi_cmd_complete(uint8_t cmd, uint32_t addr,
 			    uint8_t *b, uint32_t sz, uint8_t clockless)
 {
 	uint8_t wb[32], rb[32];
@@ -276,98 +308,91 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 	wb[0] = cmd;
 	switch (cmd) {
 	case CMD_SINGLE_READ:		/* single word (4 bytes) read */
-		wb[1] = (uint8_t)(adr >> 16);
-		wb[2] = (uint8_t)(adr >> 8);
-		wb[3] = (uint8_t)adr;
+		wb[1] = (uint8_t)(addr >> 16);
+		wb[2] = (uint8_t)(addr >> 8);
+		wb[3] = (uint8_t)addr;
 		len = 5;
 		break;
-
 	case CMD_INTERNAL_READ:		/* internal register read */
-		wb[1] = (uint8_t)(adr >> 8);
+		wb[1] = (uint8_t)(addr >> 8);
 		if (clockless == 1)
 			wb[1] |= (1 << 7);
-		wb[2] = (uint8_t)adr;
+		wb[2] = (uint8_t)addr;
 		wb[3] = 0x00;
 		len = 5;
 		break;
-
 	case CMD_TERMINATE:		/* termination */
 		wb[1] = 0x00;
 		wb[2] = 0x00;
 		wb[3] = 0x00;
 		len = 5;
 		break;
-
 	case CMD_REPEAT:		/* repeat */
 		wb[1] = 0x00;
 		wb[2] = 0x00;
 		wb[3] = 0x00;
 		len = 5;
 		break;
-
 	case CMD_RESET:			/* reset */
 		wb[1] = 0xff;
 		wb[2] = 0xff;
 		wb[3] = 0xff;
 		len = 5;
 		break;
-
 	case CMD_DMA_WRITE:		/* dma write */
 	case CMD_DMA_READ:		/* dma read */
-		wb[1] = (uint8_t)(adr >> 16);
-		wb[2] = (uint8_t)(adr >> 8);
-		wb[3] = (uint8_t)adr;
+		wb[1] = (uint8_t)(addr >> 16);
+		wb[2] = (uint8_t)(addr >> 8);
+		wb[3] = (uint8_t)addr;
 		wb[4] = (uint8_t)(sz >> 8);
 		wb[5] = (uint8_t)(sz);
 		len = 7;
 		break;
-
 	case CMD_DMA_EXT_WRITE:		/* dma extended write */
 	case CMD_DMA_EXT_READ:		/* dma extended read */
-		wb[1] = (uint8_t)(adr >> 16);
-		wb[2] = (uint8_t)(adr >> 8);
-		wb[3] = (uint8_t)adr;
+		wb[1] = (uint8_t)(addr >> 16);
+		wb[2] = (uint8_t)(addr >> 8);
+		wb[3] = (uint8_t)addr;
 		wb[4] = (uint8_t)(sz >> 16);
 		wb[5] = (uint8_t)(sz >> 8);
 		wb[6] = (uint8_t)(sz);
 		len = 8;
 		break;
-
 	case CMD_INTERNAL_WRITE:	/* internal register write */
-		wb[1] = (uint8_t)(adr >> 8);
+		wb[1] = (uint8_t)(addr >> 8);
 		if (clockless == 1)
 			wb[1] |= (1 << 7);
-		wb[2] = (uint8_t)(adr);
+		wb[2] = (uint8_t)(addr);
 		wb[3] = b[3];
 		wb[4] = b[2];
 		wb[5] = b[1];
 		wb[6] = b[0];
 		len = 8;
 		break;
-
 	case CMD_SINGLE_WRITE:		/* single word write */
-		wb[1] = (uint8_t)(adr >> 16);
-		wb[2] = (uint8_t)(adr >> 8);
-		wb[3] = (uint8_t)(adr);
+		wb[1] = (uint8_t)(addr >> 16);
+		wb[2] = (uint8_t)(addr >> 8);
+		wb[3] = (uint8_t)(addr);
 		wb[4] = b[3];
 		wb[5] = b[2];
 		wb[6] = b[1];
 		wb[7] = b[0];
 		len = 9;
 		break;
-
 	default:
 		result = N_FAIL;
 		break;
 	}
 
-	if (result != N_OK)
+	if (result != N_OK) {
 		return result;
+	}
 
-	if (!g_spi.crc_off)
-		wb[len - 1] = (crc7(0x7f, &wb[0], len - 1)) << 1;
-	else
-		len -= 1;
+	if (!g_spi.crc_off) {
+		wb[len-1] = (crc7(0x7f, (const uint8_t *)&wb[0], len-1)) << 1;
+	} else {
+		len -=1;
+	}
 
 #define NUM_SKIP_BYTES		(1)
 #define NUM_RSP_BYTES		(2)
@@ -394,7 +419,8 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 #undef NUM_DUMMY_BYTES
 
 	if (len2 > ARRAY_SIZE(wb)) {
-		PRINT_ER("spi buf size too small %d,%d\n", len2, ARRAY_SIZE(wb));
+		PRINT_ER("spi buf size too small %d,%d\n",
+			len2, ARRAY_SIZE(wb));
 		result = N_FAIL;
 		return result;
 	}
@@ -402,13 +428,13 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 	/*
 	 * zero spi write buffers
 	 */
-	for (wix = len; wix < len2; wix++)
+	for(wix = len; wix< len2; wix++) {
 		wb[wix] = 0;
-
+	}
 	rix = len;
 
 	if (!g_spi.spi_trx(wb, rb, len2)) {
-		PRINT_ER("Failed cmd write, bus error\n");
+		PRINT_ER("Failed cmd write, bus error...\n");
 		result = N_FAIL;
 		return result;
 	}
@@ -417,15 +443,15 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 	 * Command/Control response
 	 */
 	if ((cmd == CMD_RESET) ||
-	    (cmd == CMD_TERMINATE) ||
-	    (cmd == CMD_REPEAT))
-		rix++;         /* skip 1 byte */
+		(cmd == CMD_TERMINATE) ||
+		(cmd == CMD_REPEAT))
+			rix++; /* skip 1 byte */
 
 	rsp = rb[rix++];
 
 	if (rsp != cmd) {
-		PRINT_ER("Failed cmd response, cmd %02x,resp %02x\n"
-			     , cmd, rsp);
+		PRINT_ER("Failed cmd response, cmd (%02x)"
+			", resp (%02x)\n", cmd, rsp);
 		result = N_FAIL;
 		return result;
 	}
@@ -435,7 +461,8 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 	 */
 	rsp = rb[rix++];
 	if (rsp != 0x00) {
-		PRINT_ER("Failed cmd state response state %02x\n", rsp);
+		PRINT_ER("Failed cmd state response "
+			"state (%02x)\n", rsp);
 		result = N_FAIL;
 		return result;
 	}
@@ -448,7 +475,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 		/*
 		 * Data Respnose header
 		 */
-		retry = 100;
+		retry = SPI_RESP_RETRY_COUNT;
 		do {
 			/*
 			 * ensure there is room in buffer later
@@ -465,7 +492,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 		} while (retry--);
 
 		if (retry <= 0) {
-			PRINT_ER("Err, data read resp %02x\n", rsp);
+			PRINT_ER("Error, data read resp %02x\n", rsp);
 			result = N_RESET;
 			return result;
 		}
@@ -480,7 +507,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 				b[2] = rb[rix++];
 				b[3] = rb[rix++];
 			} else {
-				PRINT_ER("buf overrun when reading data\n");
+				PRINT_ER("buffer overrun when reading data.\n");
 				result = N_FAIL;
 				return result;
 			}
@@ -493,7 +520,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 					crc[0] = rb[rix++];
 					crc[1] = rb[rix++];
 				} else {
-					PRINT_ER("buf overrun when reading crc\n");
+					PRINT_ER("buffer  overrun when reading crc.\n");
 					result = N_FAIL;
 					return result;
 				}
@@ -505,24 +532,25 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 			 * some data may be read
 			 * in response to dummy bytes
 			 */
-			for (ix = 0; (rix < len2) && (ix < sz); )
-				b[ix++] = rb[rix++];
-
+			for(ix=0; (rix < len2) && (ix < sz);) {
+				b[ix++] = rb[rix++];				
+			}
 			sz -= ix;
 
 			if (sz > 0) {
 				int nbytes;
 
-				if (sz <= (DATA_PKT_SZ - ix))
+				if (sz <= (DATA_PKT_SZ-ix)) {
 					nbytes = sz;
-				else
-					nbytes = DATA_PKT_SZ - ix;
+				} else {
+					nbytes = DATA_PKT_SZ-ix;
+				}
 
 				/*
 				 * Read bytes
 				 */
 				if (!g_spi.spi_rx(&b[ix], nbytes)) {
-					PRINT_ER("data read error\n");
+					PRINT_ER("Failed data block read, bus error...\n");
 					result = N_FAIL;
 					goto _error_;
 				}
@@ -532,7 +560,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 				 */
 				if (!g_spi.crc_off) {
 					if (!g_spi.spi_rx(crc, 2)) {
-						PRINT_ER("crc read err\n");
+						PRINT_ER("Failed data block crc read, bus error...\n");
 						result = N_FAIL;
 						goto _error_;
 					}
@@ -560,10 +588,10 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 				 * response header is already handled above
 				 * for the first DMA.
 				 */
-				retry = 10;
+				retry = SPI_RESP_RETRY_COUNT;
 				do {
 					if (!g_spi.spi_rx(&rsp, 1)) {
-						PRINT_ER("resp rx error\n");
+							PRINT_ER("Failed data response read, bus error...\n");
 						result = N_FAIL;
 						break;
 					}
@@ -578,7 +606,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 				 * Read bytes
 				 */
 				if (!g_spi.spi_rx(&b[ix], nbytes)) {
-					PRINT_ER("data rx error\n");
+					PRINT_ER("Failed data block read, bus error...\n");
 					result = N_FAIL;
 					break;
 				}
@@ -588,7 +616,7 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t adr,
 				 */
 				if (!g_spi.crc_off) {
 					if (!g_spi.spi_rx(crc, 2)) {
-						PRINT_ER("crc rx error\n");
+						PRINT_ER("Failed data block crc read, bus error...\n");
 						result = N_FAIL;
 						break;
 					}
@@ -624,10 +652,10 @@ static int spi_data_read(uint8_t *b, uint32_t sz)
 		/*
 		 * Data Respnose header
 		 */
-		retry = 10;
+		retry = SPI_RESP_RETRY_COUNT;
 		do {
 			if (!g_spi.spi_rx(&rsp, 1)) {
-				PRINT_ER("resp rx error\n");
+				PRINT_ER("Failed data response read, bus error...\n");
 				result = N_FAIL;
 				break;
 			}
@@ -639,7 +667,7 @@ static int spi_data_read(uint8_t *b, uint32_t sz)
 			break;
 
 		if (retry <= 0) {
-			PRINT_ER("resp rx error (%02x)\n", rsp);
+			PRINT_ER("Failed data response read...(%02x)\n", rsp);
 			result = N_FAIL;
 			break;
 		}
@@ -648,7 +676,7 @@ static int spi_data_read(uint8_t *b, uint32_t sz)
 		 * Read bytes
 		 */
 		if (!g_spi.spi_rx(&b[ix], nbytes)) {
-			PRINT_ER("data rx error\n");
+			PRINT_ER("Failed data block read, bus error...\n");
 			result = N_FAIL;
 			break;
 		}
@@ -658,7 +686,7 @@ static int spi_data_read(uint8_t *b, uint32_t sz)
 		 */
 		if (!g_spi.crc_off) {
 			if (!g_spi.spi_rx(crc, 2)) {
-				PRINT_ER("crc rx error\n");
+				PRINT_ER("Failed data block crc read, bus error...\n");
 				result = N_FAIL;
 				break;
 			}
@@ -705,7 +733,7 @@ static int spi_data_write(uint8_t *b, uint32_t sz)
 		}
 		cmd |= order;
 		if (!g_spi.spi_tx(&cmd, 1)) {
-			PRINT_ER("data block cmd write error\n");
+			PRINT_ER("Failed data block cmd write, bus error...\n");
 			result = N_FAIL;
 			break;
 		}
@@ -714,7 +742,7 @@ static int spi_data_write(uint8_t *b, uint32_t sz)
 		 * Write data
 		 */
 		if (!g_spi.spi_tx(&b[ix], nbytes)) {
-			PRINT_ER("data block write error\n");
+			PRINT_ER("Failed data block write, bus error...\n");
 			result = N_FAIL;
 			break;
 		}
@@ -724,7 +752,7 @@ static int spi_data_write(uint8_t *b, uint32_t sz)
 		 */
 		if (!g_spi.crc_off) {
 			if (!g_spi.spi_tx(crc, 2)) {
-				PRINT_ER("crc write error\n");
+				PRINT_ER("Failed data block crc write, bus error...\n");
 				result = N_FAIL;
 				break;
 			}
@@ -740,51 +768,73 @@ static int spi_data_write(uint8_t *b, uint32_t sz)
 /*
  * Spi Internal Read/Write Function
  */
-static int spi_internal_write(uint32_t adr, uint32_t dat)
+static int spi_internal_write(uint32_t addr, uint32_t dat)
 {
-	int result;
+	int result = N_OK;
+	uint8_t retry = SPI_RETRY_COUNT;
+
+_RETRY_:
 
 #if defined USE_OLD_SPI_SW
 	/*
 	 * Command
 	 */
-	result = spi_cmd(CMD_INTERNAL_WRITE, adr, dat, 4, 0);
+	result = spi_cmd(CMD_INTERNAL_WRITE, addr, dat, 4, 0);
 	if (result != N_OK) {
-		PRINT_ER("Failed internal write cmd\n");
-		return 0;
+		PRINT_ER("Failed internal write cmd...\n");
+		goto _FAIL_;		
 	}
 
-	result = spi_cmd_rsp(CMD_INTERNAL_WRITE, 0);
-	if (result != N_OK)
-		PRINT_ER("Failed internal write cmd response\n");
+	result = spi_cmd_rsp(CMD_INTERNAL_WRITE);
+	if (result != N_OK) {
+		PRINT_ER("Failed internal write cmd response...\n");		
+		goto _FAIL_;
+	}
 #else
 #ifdef BIG_ENDIAN
 	dat = BYTE_SWAP(dat);
 #endif
-	result = spi_cmd_complete(CMD_INTERNAL_WRITE, adr,
+	result = spi_cmd_complete(CMD_INTERNAL_WRITE, addr,
 				  (uint8_t *)&dat, 4,
 				  0);
-	if (result != N_OK)
-		PRINT_ER("Failed internal write cmd\n");
+	if (result != N_OK) {
+		PRINT_ER("Failed internal write cmd...\n");
+		goto _FAIL_;
+	}
 #endif
+
+_FAIL_:
+	if(result != N_OK)
+	{
+		msleep(1);
+		spi_reset();
+		PRINT_ER("Reset and retry %d %x\n",retry, addr);
+		msleep(1);
+		retry--;
+		if(retry) 
+			goto _RETRY_;
+	}
 	return result;
 }
 
-static int spi_internal_read(uint32_t adr, uint32_t *data)
+static int spi_internal_read(uint32_t addr, uint32_t *data)
 {
-	int result;
+	int result = N_OK;
+	uint8_t retry = SPI_RETRY_COUNT;
+
+_RETRY_:
 
 #if defined USE_OLD_SPI_SW
-	result = spi_cmd(CMD_INTERNAL_READ, adr, 0, 4, 0);
+	result = spi_cmd(CMD_INTERNAL_READ, addr, 0, 4, 0);
 	if (result != N_OK) {
-		PRINT_ER("Failed internal read cmd\n");
-		return 0;
+		PRINT_ER("Failed internal read cmd...\n");
+		goto _FAIL_;
 	}
 
-	result = spi_cmd_rsp(CMD_INTERNAL_READ, 0);
+	result = spi_cmd_rsp(CMD_INTERNAL_READ);
 	if (result != N_OK) {
-		PRINT_ER("Failed internal read cmd response\n");
-		return 0;
+		PRINT_ER("Failed internal read cmd response...\n");
+		goto _FAIL_;
 	}
 
 	/*
@@ -792,22 +842,35 @@ static int spi_internal_read(uint32_t adr, uint32_t *data)
 	 */
 	result = spi_data_read((uint8_t *)data, 4);
 	if (result != N_OK) {
-		PRINT_ER("Failed internal read data\n");
-		return 0;
+		PRINT_ER("Failed internal read data...\n");
+		goto _FAIL_;
 	}
 #else
-	result = spi_cmd_complete(CMD_INTERNAL_READ, adr,
+	result = spi_cmd_complete(CMD_INTERNAL_READ, addr,
 				  (uint8_t *)data, 4,
 				  0);
 	if (result != N_OK) {
-		PRINT_ER("Failed internal read cmd\n");
-		return 0;
+		PRINT_ER("Failed internal read cmd...\n");
+		goto _FAIL_;
 	}
 #endif
+
 #ifdef BIG_ENDIAN
 	*data = BYTE_SWAP(*data);
 #endif
-	return 1;
+
+_FAIL_:
+	if(result != N_OK)
+	{
+		msleep(1);
+		spi_reset();
+		PRINT_ER("Reset and retry %d %x\n",retry, addr);
+		msleep(1);
+		retry--;
+		if(retry) 
+			goto _RETRY_;
+	}
+	return result;
 }
 
 /*
@@ -815,44 +878,67 @@ static int spi_internal_read(uint32_t adr, uint32_t *data)
  */
 static int spi_write_reg(uint32_t addr, uint32_t data)
 {
+	uint8_t retry = SPI_RETRY_COUNT;
 	int result = N_OK;
 	uint8_t cmd = CMD_SINGLE_WRITE;
 	uint8_t clockless = 0;
 
+_RETRY_:	
+	if (addr <= 0x30)
+	{
+		/**
+		WILC clockless registers.
+		**/
+		cmd = CMD_INTERNAL_WRITE;
+		clockless = 1;
+	}
+	else
+	{
+		cmd = CMD_SINGLE_WRITE;
+		clockless = 0;
+	}
+	
 #if defined USE_OLD_SPI_SW
-	result = spi_cmd(cmd, addr, data, 4, 0);
+	result = spi_cmd(cmd, addr, data, 4, clockless);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd, write reg %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd, write reg (%08x)...\n", addr);	
+		goto _FAIL_;
 	}
 
-	result = spi_cmd_rsp(cmd, 0);
+	result = spi_cmd_rsp(cmd);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd resp, write reg %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd response, write reg (%08x)...\n", addr);	
+		goto _FAIL_;
 	}
-	return 1;
 #else
 #ifdef BIG_ENDIAN
 	data = BYTE_SWAP(data);
 #endif
-	if (addr < 0x30) {
-		/* Clockless register */
-		cmd = CMD_INTERNAL_WRITE;
-		clockless = 1;
-	}
-
 	result = spi_cmd_complete(cmd, addr, (uint8_t *)&data, 4, clockless);
-	if (result != N_OK)
-		PRINT_ER("Failed cmd, write reg %08x\n", addr);
-
-	return result;
+	if (result != N_OK) {
+		PRINT_ER("Failed cmd, write reg (%08x)...\n", addr);		
+		goto _FAIL_;
+	}
 #endif
+
+_FAIL_:
+	if(result != N_OK)
+	{
+		msleep(1);
+		spi_reset();
+		PRINT_ER("Reset and retry %d %x %d\n",retry, addr, data);
+		msleep(1);
+		retry--;
+		if(retry) 
+			goto _RETRY_;
+	}
+	return result;
 }
 
 static int spi_write(uint32_t addr, uint8_t *buf, uint32_t size)
 {
 	int result;
+	uint8_t retry = SPI_RETRY_COUNT;
 	uint8_t cmd = CMD_DMA_EXT_WRITE;
 
 	/*
@@ -861,26 +947,28 @@ static int spi_write(uint32_t addr, uint8_t *buf, uint32_t size)
 	if (size <= 4)
 		return 0;
 
+_RETRY_:
+
 #if defined USE_OLD_SPI_SW
 	/*
 	 * Command
 	 */
 	result = spi_cmd(cmd, addr, 0, size, 0);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd, write block %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd, write block (%08x)...\n", addr);		
+		goto _FAIL_;
 	}
 
-	result = spi_cmd_rsp(cmd, 0);
+	result = spi_cmd_rsp(cmd);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd resp, write block %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd response, write block (%08x)...\n", addr);
+		goto _FAIL_;
 	}
 #else
 	result = spi_cmd_complete(cmd, addr, NULL, size, 0);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd, write block %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd, write block (%08x)...\n", addr);		
+		goto _FAIL_;
 	}
 #endif
 
@@ -888,76 +976,126 @@ static int spi_write(uint32_t addr, uint8_t *buf, uint32_t size)
 	 * Data
 	 */
 	result = spi_data_write(buf, size);
-	if (result != N_OK)
-		PRINT_ER("Failed block data write\n");
+	if (result != N_OK) {
+		PRINT_ER("Failed block data write...\n");
+		goto _FAIL_;
+	}
 
-	return 1;
+	/**
+		Data RESP
+	**/
+	result = spi_data_rsp(cmd);
+	if (result != N_OK) {
+		PRINT_ER("Failed block data write...\n");
+		goto _FAIL_;
+	}
+	
+_FAIL_:
+	if(result != N_OK)
+	{
+		msleep(1);
+		spi_reset();
+		PRINT_ER("Reset and retry %d %x %d\n",retry, addr, size);
+		msleep(1);
+		retry--;
+		if(retry) 
+			goto _RETRY_;
+	}
+	return result;
 }
 
 static int spi_read_reg(uint32_t addr, uint32_t *data)
 {
+	uint8_t retry = SPI_RETRY_COUNT;
 	int result = N_OK;
 	uint8_t cmd = CMD_SINGLE_READ;
 	uint8_t clockless = 0;
 
-#if defined USE_OLD_SPI_SW
-	result = spi_cmd(cmd, addr, 0, 4, 0);
-	if (result != N_OK) {
-		PRINT_ER("Failed cmd, read reg %08x\n", addr);
-		return 0;
+_RETRY_:
+
+	if (addr <= 0x30)
+	{
+		/**
+		WILC clockless registers.
+		**/
+		cmd = CMD_INTERNAL_READ;
+		clockless = 1;
 	}
-	result = spi_cmd_rsp(cmd, 0);
+	else
+	{
+		cmd = CMD_SINGLE_READ;
+		clockless = 0;
+	}
+
+#if defined USE_OLD_SPI_SW
+	result = spi_cmd(cmd, addr, 0, 4, clockless);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd response, read reg %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd, read reg (%08x)...\n", addr);
+		goto _FAIL_;
+	}
+	result = spi_cmd_rsp(cmd);
+	if (result != N_OK) {
+		PRINT_ER("Failed cmd response, read reg (%08x)...\n", addr);
+		goto _FAIL_;
 	}
 
 	result = spi_data_read((uint8_t *)data, 4);
 	if (result != N_OK) {
-		PRINT_ER("Failed data read\n");
-		return 0;
+		PRINT_ER("Failed data read...\n");
+		goto _FAIL_;
 	}
 #else
-	if (addr < 0x30) {
-		/* Clockless register */
-		cmd = CMD_INTERNAL_READ;
-		clockless = 1;
-	}
 
 	result = spi_cmd_complete(cmd, addr, (uint8_t *)data, 4, clockless);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd, read reg %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd, read reg (%08x)...\n", addr);
+		goto _FAIL_;
 	}
 #endif
+
 #ifdef BIG_ENDIAN
 	*data = BYTE_SWAP(*data);
 #endif
-	return 1;
+
+_FAIL_:
+	if(result != N_OK)
+	{
+		msleep(1);
+		spi_reset();
+		PRINT_ER("Reset and retry %d %x\n",retry, addr);
+		msleep(1);
+		retry--;
+		if(retry) 
+			goto _RETRY_;
+	}	
+	return result;
 }
 
 static int spi_read(uint32_t addr, uint8_t *buf, uint32_t size)
 {
 	uint8_t cmd = CMD_DMA_EXT_READ;
 	int result;
+	uint8_t retry = SPI_RETRY_COUNT;
 
 	if (size <= 4)
 		return 0;
 
+_RETRY_:
+	
 #if defined USE_OLD_SPI_SW
 	/*
 	 * Command
 	 */
 	result = spi_cmd(cmd, addr, 0, size, 0);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd, read block %08x\n", addr);
-		return 0;
-	}
-
-	result = spi_cmd_rsp(cmd, 0);
+		PRINT_ER("Failed cmd, read block (%08x)...\n", addr);
+		goto _FAIL_;
+	}  
+ 
+	result = spi_cmd_rsp(cmd);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd response, read block %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd response, read block (%08x)...\n", addr);
+		goto _FAIL_;
 	}
 
 	/*
@@ -965,31 +1103,79 @@ static int spi_read(uint32_t addr, uint8_t *buf, uint32_t size)
 	 */
 	result = spi_data_read(buf, size);
 	if (result != N_OK) {
-		PRINT_ER("Failed block data read\n");
-		return 0;
+		PRINT_ER("Failed block data read...\n");
+		goto _FAIL_;
 	}
 #else
 	result = spi_cmd_complete(cmd, addr, buf, size, 0);
 	if (result != N_OK) {
-		PRINT_ER("Failed cmd, read block %08x\n", addr);
-		return 0;
+		PRINT_ER("Failed cmd, read block (%08x)...\n", addr);
+		goto _FAIL_;
 	}
 #endif
-	return 1;
+
+_FAIL_:
+	if(result != N_OK)
+	{
+		msleep(1);
+		spi_reset();
+		PRINT_ER("Reset and retry %d %x %d\n",retry, addr, size);
+		msleep(1);
+		retry--;
+		if(retry) 
+			goto _RETRY_;
+	}
+	return result;
 }
 
 /*
- * Bus interfaces
+ * Bus Interfaces
  */
+static void spi_init_pkt_sz(uint32_t* reg)
+{
+	switch(DATA_PKT_SZ)	
+	{
+		case DATA_PKT_SZ_256:  
+			*reg |= (0 << 4); 
+			break;
+		case DATA_PKT_SZ_512:  
+			*reg |= (1 << 4); 
+			break;
+		case DATA_PKT_SZ_1K: 
+			*reg |= (2 << 4); 
+			break;
+		case DATA_PKT_SZ_2K: 
+			*reg |= (3 << 4); 
+			break;
+		case DATA_PKT_SZ_4K: 
+			*reg |= (4 << 4); 
+			break;
+		case DATA_PKT_SZ_8K: 
+			*reg |= (5 << 4); 
+			break;
+	}
+}
+
+uint8_t spi_reset(void)
+{
+	int result = N_OK;
+	
+	result = spi_cmd_complete(CMD_RESET, 0, 0 ,0, 0);
+	if (result != N_OK) {
+		PRINT_ER("Failed cmd reset \n");	
+		return 0;
+	}
+	
+	return 1;
+}
+
 static int spi_clear_int(void)
 {
 	uint32_t reg;
-
 	if (!spi_read_reg(WILC_HOST_RX_CTRL_0, &reg)) {
-		PRINT_ER("Failed read reg %08x\n", WILC_HOST_RX_CTRL_0);
+		PRINT_ER("Failed read reg (%08x)...\n", WILC_HOST_RX_CTRL_0);
 		return 0;
 	}
-
 	reg &= ~0x1;
 	spi_write_reg(WILC_HOST_RX_CTRL_0, reg);
 	return 1;
@@ -1010,13 +1196,13 @@ static int spi_sync(void)
 	 */
 	ret = spi_read_reg(WILC_PIN_MUX_0, &reg);
 	if (!ret) {
-		PRINT_ER("Failed read reg %08x\n", WILC_PIN_MUX_0);
+		PRINT_ER("Failed read reg (%08x)...\n", WILC_PIN_MUX_0);
 		return 0;
 	}
 	reg |= (1 << 8);
 	ret = spi_write_reg(WILC_PIN_MUX_0, reg);
 	if (!ret) {
-		PRINT_ER("Failed write reg %08x\n", WILC_PIN_MUX_0);
+		PRINT_ER("Failed write reg (%08x)...\n", WILC_PIN_MUX_0);
 		return 0;
 	}
 
@@ -1025,13 +1211,13 @@ static int spi_sync(void)
 	 */
 	ret = spi_read_reg(WILC_INTR_ENABLE, &reg);
 	if (!ret) {
-		PRINT_ER("Failed read reg %08x\n", WILC_INTR_ENABLE);
+		PRINT_ER("Failed read reg (%08x)...\n", WILC_INTR_ENABLE);
 		return 0;
 	}
 	reg |= (1 << 16);
 	ret = spi_write_reg(WILC_INTR_ENABLE, reg);
 	if (!ret) {
-		PRINT_ER("Failed write reg %08x\n", WILC_INTR_ENABLE);
+		PRINT_ER("Failed write reg (%08x)...\n", WILC_INTR_ENABLE);
 		return 0;
 	}
 
@@ -1043,11 +1229,12 @@ static int spi_init(struct wilc_wlan_inp *inp)
 	uint32_t reg;
 	uint32_t chipid;
 
-	static int isinit;
+	static int isinit = 0;
 
-	if (isinit) {
+	if(isinit) {
+
 		if (!spi_read_reg(0x3b0000, &chipid)) {
-			PRINT_ER("Fail cmd read chip id\n");
+			PRINT_ER("Fail cmd read chip id...\n");
 			return 0;
 		}
 		return 1;
@@ -1055,69 +1242,60 @@ static int spi_init(struct wilc_wlan_inp *inp)
 
 	memset(&g_spi, 0, sizeof(struct wilc_spi));
 
-	g_spi.os_context = inp->os_context.os_private;
 	if (inp->io_func.io_init) {
-		if (!inp->io_func.io_init(g_spi.os_context)) {
-			PRINT_ER("Failed io init bus\n");
+		if (!inp->io_func.io_init(&(inp->os_context))) {
+			PRINT_ER("Failed io init bus...\n");
 			return 0;
 		}
 	} else {
 		return 0;
 	}
-
 	g_spi.spi_tx = inp->io_func.u.spi.spi_tx;
 	g_spi.spi_rx = inp->io_func.u.spi.spi_rx;
 	g_spi.spi_trx = inp->io_func.u.spi.spi_trx;
 
-	/*
-	 * configure protocol
-	 */
+	/**
+		configure protocol 
+	**/
 	g_spi.crc_off = 0;
-
-	/*
-	 * TODO: We can remove the CRC trials if there is a definite way
-	 * to reset the SPI to it's initial value.
-	 */
+	
+	// TODO: We can remove the CRC trials if there is a definite way to reset 
+	// the SPI to it's initial value.
 	if (!spi_internal_read(WILC_SPI_PROTOCOL_OFFSET, &reg)) {
-		/*
-		 * Read failed. Try with CRC off.
-		 * This might happen when module is removed but
-		 * chip isn't reset
-		 */
+		/* Read failed. Try with CRC off. This might happen when module 
+		is removed but chip isn't reset*/
 		g_spi.crc_off = 1;
-		PRINT_ER("internal read err with CRC on,retyring with CRC off\n");
-		if (!spi_internal_read(WILC_SPI_PROTOCOL_OFFSET, &reg)) {
-			/*
-			 * Read failed with both CRC on and off,
-			 * something went bad
-			 */
-			PRINT_ER("Failed internal read protocol\n");
+		PRINT_ER("Failed internal read protocol with CRC on, retyring with CRC off...\n");
+		if (!spi_internal_read(WILC_SPI_PROTOCOL_OFFSET, &reg)){
+			// Reaad failed with both CRC on and off, something went bad
+			PRINT_ER("Failed internal read protocol...\n");
 			return 0;
 		}
 	}
-
-	if (g_spi.crc_off == 0)	{
-		reg &= ~0xc;    /* disable crc checking */
-		reg &= ~0x70;
-		reg |= (0x5 << 4);
+	if(g_spi.crc_off == 0)
+	{
+		reg &= ~0xc;			/* disable crc checking */
+		reg &= ~0x70;		/*Reset pkt size bits*/
+		spi_init_pkt_sz(&reg);
 		if (!spi_internal_write(WILC_SPI_PROTOCOL_OFFSET, reg)) {
-			PRINT_ER("Failed internal write reg\n");
+			PRINT_ER("Failed internal write protocol reg...\n");
 			return 0;
 		}
 		g_spi.crc_off = 1;
 	}
 
-	/*
-	 * make sure can read back chip id correctly
-	 */
+	/**
+		make sure can read back chip id correctly
+	**/
 	if (!spi_read_reg(0x3b0000, &chipid)) {
-		PRINT_ER("Fail cmd read chip id\n");
+		PRINT_ER("Fail cmd read chip id...\n");
 		return 0;
 	}
-
+	
 	g_spi.has_thrpt_enh = 1;
-
+		
 	isinit = 1;
+
 	return 1;
 }
 
@@ -1220,12 +1398,12 @@ static int spi_clear_int_ext(uint32_t val)
 				flags >>= 1;
 			}
 			if (!ret) {
-				PRINT_ER("Failed spi_write_reg\n");
+				PRINT_ER("Failed spi_write_reg, set reg %x ...\n", 0x10c8+i*4);
 				goto _fail_;
 			}
 			for (i = g_spi.nint; i < MAX_NUM_INT; i++) {
 				if (flags & 1)
-					PRINT_ER("Unexpected int cleared\n");
+					PRINT_ER("Unexpected interrupt cleared %d...\n", i);
 				flags >>= 1;
 			}
 		}
@@ -1262,7 +1440,7 @@ static int spi_sync_ext(int nint)
 	int ret, i;
 
 	if (nint > MAX_NUM_INT) {
-		PRINT_ER("too many interupts %d\n", nint);
+		PRINT_ER("Too many interupts %d\n", nint);
 		return 0;
 	}
 

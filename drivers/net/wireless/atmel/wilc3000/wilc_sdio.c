@@ -19,12 +19,12 @@
 #include "at_pwr_dev.h"
 #include "wilc_wlan_if.h"
 #include "wilc_wlan.h"
+#include "linux_wlan_sdio.h"
 
 
 #define WILC_SDIO_BLOCK_SIZE 512
 
 struct wilc_sdio {
-	void *os_context;
 	uint32_t block_size;
 	int (*sdio_cmd52)(struct sdio_cmd52_t *);
 	int (*sdio_cmd53)(struct sdio_cmd53_t *);
@@ -482,7 +482,13 @@ _fail_:
 	return 0;
 }
 
-int sdio_deinit(void *pv)
+static int sdio_deinit(void *pv)
+{
+	return 1;	
+}
+
+
+int wilc3000_sdio_reset(void *pv)
 {
 
 	struct sdio_cmd52_t cmd;
@@ -493,7 +499,7 @@ int sdio_deinit(void *pv)
 	 */
 	cmd.read_write = 1;
 	cmd.function = 0;
-	cmd.raw = 1;
+    cmd.raw = 0;
 	cmd.address = 0x6;
 	cmd.data = 0x8;
 	if (!g_sdio.sdio_cmd52(&cmd))
@@ -584,11 +590,8 @@ int sdio_init(struct wilc_wlan_inp *inp)
 	if(inp != NULL)
 	{
 		memset(&g_sdio, 0, sizeof(struct wilc_sdio));
-
-		g_sdio.os_context = inp->os_context.os_private;
-
 		if (inp->io_func.io_init) {
-			if (!inp->io_func.io_init(g_sdio.os_context)) {
+			if (!inp->io_func.io_init(&(inp->os_context))){
 				PRINT_ER("Failed io init bus\n");
 				return 0;
 			}
@@ -684,14 +687,14 @@ int sdio_init(struct wilc_wlan_inp *inp)
 	 */
 	 if(inp != NULL)
 	{
-	if (!sdio_read_reg(0x3b0000, &chipid)) {
-		PRINT_ER("Fail cmd read chip id\n");
-		goto _fail_;
-	}
+		if (!sdio_read_reg(0x3b0000, &chipid)) {
+			PRINT_ER("Fail cmd read chip id\n");
+			goto _fail_;
+		}
 
-	PRINT_D(BUS_DBG, "chipid %08x\n", chipid);
-	g_sdio.has_thrpt_enh3 = 1;
-	PRINT_D(BUS_DBG, "has_thrpt_enh3 = %d\n", g_sdio.has_thrpt_enh3);
+		PRINT_D(BUS_DBG, "chipid %08x\n", chipid);
+		g_sdio.has_thrpt_enh3 = 1;
+		PRINT_D(BUS_DBG, "has_thrpt_enh3 = %d\n", g_sdio.has_thrpt_enh3);
 	 	}
 
 	return 1;
@@ -779,7 +782,7 @@ static int sdio_read_int(uint32_t *int_status)
 
 	for (i = g_sdio.nint; i < MAX_NUM_INT; i++) {
 		if ((tmp >> (IRG_FLAGS_OFFSET + i)) & 0x1) {
-			PRINT_ER("Unexpected int\n");
+				PRINT_ER("Unexpected interrupt (1) : tmp=%x, data=%x\n", tmp, cmd.data);
 			break;
 		}
 	}
@@ -882,7 +885,7 @@ static int sdio_clear_int_ext(uint32_t val)
 
 			for (i = g_sdio.nint; i < MAX_NUM_INT; i++) {
 				if (flags & 1)
-					PRINT_ER("Unexpected int cleared\n");
+					PRINT_ER("Unexpected interrupt cleared %d...\n", i);
 
 				flags >>= 1;
 			}
@@ -909,7 +912,7 @@ static int sdio_clear_int_ext(uint32_t val)
 			cmd.data = vmm_ctl;
 			ret = g_sdio.sdio_cmd52(&cmd);
 			if (!ret) {
-				PRINT_ER("Failed cmd52\n");
+				PRINT_ER("Failed cmd52, set 0xf1 data (%d) ...\n", __LINE__);
 				goto _fail_;
 			}
 		}
@@ -974,7 +977,7 @@ static int sdio_clear_int_ext(uint32_t val)
 			cmd.data = vmm_ctl;
 			ret = g_sdio.sdio_cmd52(&cmd);
 			if (!ret) {
-				PRINT_ER("Failed cmd52\n");
+				PRINT_ER("Failed cmd52, set 0xf6 data (%d) ...\n", __LINE__);
 				goto _fail_;
 			}
 		}

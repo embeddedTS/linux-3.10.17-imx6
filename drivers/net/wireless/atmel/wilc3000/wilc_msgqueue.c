@@ -16,7 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "atl_error_support.h"
+#include "wilc_errorsupport.h"
 #include <linux/spinlock.h>
 #include <linux/kthread.h>
 #include <linux/semaphore.h>
@@ -29,9 +29,9 @@
 #include <linux/time.h>
 #include <linux/version.h>
 #include "linux/string.h"
-#include "atl_msg_queue.h"
+#include "wilc_msgqueue.h"
 
-signed int ATL_MsgQueueCreate(struct MsgQueueHandle *pHandle)
+signed int WILC_MsgQueueCreate(struct MsgQueueHandle *pHandle)
 {
 	spin_lock_init(&pHandle->strCriticalSection);
 	sema_init(&pHandle->hSem, 0);
@@ -40,11 +40,11 @@ signed int ATL_MsgQueueCreate(struct MsgQueueHandle *pHandle)
 	pHandle->u32ReceiversCount = 0;
 	pHandle->bExiting = false;
 
-	return ATL_SUCCESS;
+	return WILC_SUCCESS;
 }
-EXPORT_SYMBOL(ATL_MsgQueueCreate);
+EXPORT_SYMBOL(WILC_MsgQueueCreate);
 
-signed int ATL_MsgQueueDestroy(struct MsgQueueHandle *pHandle)
+signed int WILC_MsgQueueDestroy(struct MsgQueueHandle *pHandle)
 {
 	pHandle->bExiting = true;
 
@@ -61,35 +61,35 @@ signed int ATL_MsgQueueDestroy(struct MsgQueueHandle *pHandle)
 		pHandle->pstrMessageList = pstrMessge;
 	}
 
-	return ATL_SUCCESS;
+	return WILC_SUCCESS;
 }
-EXPORT_SYMBOL(ATL_MsgQueueDestroy);
+EXPORT_SYMBOL(WILC_MsgQueueDestroy);
 
-signed int ATL_MsgQueueSend(struct MsgQueueHandle *pHandle,
+signed int WILC_MsgQueueSend(struct MsgQueueHandle *pHandle,
 			    const void *pvSendBuffer,
-			    unsigned int u32SendBufferSize)
+			    u32 u32SendBufferSize)
 {
-	signed int s32RetStatus = ATL_SUCCESS;
+	signed int s32RetStatus = WILC_SUCCESS;
 	unsigned long flags;
 	struct Message *pstrMessage = NULL;
 
 	if ((NULL == pHandle)
 			|| (u32SendBufferSize == 0)
 			|| (pvSendBuffer == NULL))
-		ATL_ERRORREPORT(s32RetStatus, ATL_INVALID_ARGUMENT);
+		WILC_ERRORREPORT(s32RetStatus, WILC_INVALID_ARGUMENT);
 
 	if (pHandle->bExiting == true)
-		ATL_ERRORREPORT(s32RetStatus, ATL_FAIL);
+		WILC_ERRORREPORT(s32RetStatus, WILC_FAIL);
 
 	spin_lock_irqsave(&pHandle->strCriticalSection, flags);
 
 	/* construct a new message */
 	pstrMessage = kmalloc(sizeof(struct Message), GFP_ATOMIC);
-	ATL_NULLCHECK(s32RetStatus, pstrMessage);
+	WILC_NULLCHECK(s32RetStatus, pstrMessage);
 	pstrMessage->u32Length = u32SendBufferSize;
 	pstrMessage->pstrNext = NULL;
 	pstrMessage->pvBuffer = kmalloc(u32SendBufferSize, GFP_ATOMIC);
-	ATL_NULLCHECK(s32RetStatus, pstrMessage->pvBuffer);
+	WILC_NULLCHECK(s32RetStatus, pstrMessage->pvBuffer);
 	memcpy(pstrMessage->pvBuffer, pvSendBuffer, u32SendBufferSize);
 
 
@@ -108,7 +108,7 @@ signed int ATL_MsgQueueSend(struct MsgQueueHandle *pHandle,
 
 	up(&pHandle->hSem);
 
-	ATL_CATCH(s32RetStatus){
+	WILC_CATCH(s32RetStatus){
 		/* error occured, free any allocations */
 		if (NULL != pstrMessage) {
 			kfree(pstrMessage->pvBuffer);
@@ -118,23 +118,23 @@ signed int ATL_MsgQueueSend(struct MsgQueueHandle *pHandle,
 
 	return s32RetStatus;
 }
-EXPORT_SYMBOL(ATL_MsgQueueSend);
+EXPORT_SYMBOL(WILC_MsgQueueSend);
 	
-signed int ATL_MsgQueueRecv(struct MsgQueueHandle *pHandle,
+signed int WILC_MsgQueueRecv(struct MsgQueueHandle *pHandle,
 			   void *pvRecvBuffer, unsigned int u32RecvBufferSize,
 			   unsigned int *pu32ReceivedLength)
 {
 
 	struct Message *pstrMessage;
-	signed int s32RetStatus = ATL_SUCCESS;
+	signed int s32RetStatus = WILC_SUCCESS;
 	unsigned long flags;
 
 	if ((NULL == pHandle) || (u32RecvBufferSize == 0)
 	    || (NULL == pvRecvBuffer) || (NULL == pu32ReceivedLength))
-		ATL_ERRORREPORT(s32RetStatus, ATL_INVALID_ARGUMENT);
+		WILC_ERRORREPORT(s32RetStatus, WILC_INVALID_ARGUMENT);
 
 	if (pHandle->bExiting == true)
-		ATL_ERRORREPORT(s32RetStatus, ATL_FAIL);
+		WILC_ERRORREPORT(s32RetStatus, WILC_FAIL);
 
 	spin_lock_irqsave(&pHandle->strCriticalSection, flags);
 	pHandle->u32ReceiversCount++;
@@ -143,24 +143,24 @@ signed int ATL_MsgQueueRecv(struct MsgQueueHandle *pHandle,
 	spin_unlock_irqrestore(&pHandle->strCriticalSection, flags);
 	down(&(pHandle->hSem));
 
-	ATL_ERRORCHECK(s32RetStatus);
+	WILC_ERRORCHECK(s32RetStatus);
 
 	if (pHandle->bExiting)
-		ATL_ERRORREPORT(s32RetStatus, ATL_FAIL);
+		WILC_ERRORREPORT(s32RetStatus, WILC_FAIL);
 
 	spin_lock_irqsave(&pHandle->strCriticalSection, flags);
 
 	pstrMessage = pHandle->pstrMessageList;
 	if (NULL == pstrMessage) {
 		spin_unlock_irqrestore(&pHandle->strCriticalSection, flags);
-		ATL_ERRORREPORT(s32RetStatus, ATL_FAIL);
+		WILC_ERRORREPORT(s32RetStatus, WILC_FAIL);
 	}
 
 	/* check buffer size */
 	if (u32RecvBufferSize < pstrMessage->u32Length) {
 		spin_unlock_irqrestore(&pHandle->strCriticalSection, flags);
 		up(&pHandle->hSem);
-		ATL_ERRORREPORT(s32RetStatus, ATL_BUFFER_OVERFLOW);
+		WILC_ERRORREPORT(s32RetStatus, WILC_BUFFER_OVERFLOW);
 	}
 
 	/* consume the message */
@@ -176,9 +176,9 @@ signed int ATL_MsgQueueRecv(struct MsgQueueHandle *pHandle,
 
 	spin_unlock_irqrestore(&pHandle->strCriticalSection, flags);
 
-	ATL_CATCH(s32RetStatus)
+	WILC_CATCH(s32RetStatus)
 	{
 	}
 	return s32RetStatus;
 }
-EXPORT_SYMBOL(ATL_MsgQueueRecv);
+EXPORT_SYMBOL(WILC_MsgQueueRecv);

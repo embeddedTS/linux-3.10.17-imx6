@@ -80,7 +80,7 @@ struct wilc_wlan_oup {
 
 #define MAX_SSID_LEN		33
 #define MAX_RATES_SUPPORTED	12
-#define INFINITE_SLEEP_TIME	((unsigned int)0xFFFFFFFF)
+#define INFINITE_SLEEP_TIME	((u32)0xFFFFFFFF)
 
 #ifdef WILC_PARSE_SCAN_IN_HOST
 enum BEACON_IE {
@@ -260,7 +260,7 @@ enum TX_ABORT_OPTION {
 	SW_TRIGGER_ABORT,
 };
 
-enum WID_TYPE {
+enum tenuWIDtype {
 	WID_CHAR		= 0,
 	WID_SHORT		= 1,
 	WID_INT			= 2,
@@ -426,6 +426,17 @@ enum WID_E {
 	 */
 	WID_ACK_POLICY			= 0x0011,
 
+#ifdef WILC_BT_COEXISTENCE
+	/*
+	 *  Set coex null frames transmission mode 
+	 * --------------------------------------------------------------
+ 	 *  Configuration :   Enable	Disable
+	 *  Values to set :       1			0
+	 * --------------------------------------------------------------
+	 */
+	WID_COEX_NULL_FRAMES_MODE               = 0x0013,
+#endif  
+
 	/*
 	 * Reset MAC (Set only)
 	 * --------------------------------------------------------------
@@ -433,16 +444,6 @@ enum WID_E {
 	 * Values to set:       0         1	    2
 	 * --------------------------------------------------------------
 	 */
-	 #ifdef WILC_BT_COEXISTENCE
-	/*TicketId1115*/
-    	/*  Set coex null frames transmission mode                                                        */
-    	/*  --------------------------------------------------------------       */
-    	/*  Configuration :   Enable	Disable                       */
-    	/*  Values to set :       1			0			*/
-    	/*  --------------------------------------------------------------       */
-	WID_COEX_NULL_FRAMES_MODE               = 0x0013,
-	#endif  
-
 	WID_RESET			= 0x0012,
 
 	/*
@@ -527,9 +528,6 @@ enum WID_E {
 	 * --------------------------------------------------------------------
 	 */
 	WID_JOIN_REQ			= 0x0020,
-	/*antenna selection WID*/
-
-	WID_ANTENNA_SELECTION              = 0x0021,
 
 	WID_LINKSPEED			= 0x0026,
 
@@ -749,6 +747,8 @@ enum WID_E {
 #endif
 	WID_LOGTerminal_Switch		= 0x00CD,
 	WID_TX_POWER						= 0x00CE,
+	WID_WOWLAN_TRIGGER			=0X00CF,
+	
 	/*
 	 * EMAC Short WID list
 	 * RTS Threshold
@@ -845,7 +845,7 @@ enum WID_E {
 	WID_DEVICE_NAME			= 0x3029, /*Added for CAPI tool */
 
 	/* NMAC String WID list */
- 	WID_SET_DRV_HANDLER			= 0X3079,
+ 	WID_SET_DRV_HANDLER			= 0x3079,
 	WID_11N_P_ACTION_REQ		= 0x3080,
 	WID_HUT_TEST_ID			= 0x3081,
 	WID_PMKID_INFO			= 0x3082,
@@ -892,6 +892,9 @@ enum WID_E {
 	WID_ADD_BEACON			= 0x408a,
 	WID_SETUP_MULTICAST_FILTER	= 0x408b,
 
+	/*antenna selection WID*/
+	WID_ANTENNA_SELECTION              = 0x408c,
+
 	/* Miscellaneous WIDs */
 	WID_ALL				= 0x7FFE,
 	WID_MAX				= 0xFFFF
@@ -899,4 +902,5 @@ enum WID_E {
 
 int at_wlan_init(struct wilc_wlan_inp *inp, struct wilc_wlan_oup *oup);
 void wilc_handle_isr(void);
+uint32_t wilc_get_chipid(uint8_t update);
 #endif

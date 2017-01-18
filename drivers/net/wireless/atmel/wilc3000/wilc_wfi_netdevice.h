@@ -28,7 +28,7 @@
  */
 #define WILC_WFI_TIMEOUT	5
 
-#define AT_MAX_NUM_PMKIDS	16
+#define WILC_MAX_NUM_PMKIDS  16
 #define PMKID_LEN		16
 #define PMKID_FOUND		1
 #define NUM_STA_ASSOCIATED	8
@@ -60,7 +60,11 @@
 #include "host_interface.h"
 #include "wilc_wlan.h"
 #include "wilc_wlan_if.h"
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,30)
+#include <net/wireless.h>
+#else
 #include <linux/wireless.h>
+#endif
 
 #define FLOW_CONTROL_LOWER_THRESHOLD	128
 #define FLOW_CONTROL_UPPER_THRESHOLD	256
@@ -121,9 +125,9 @@ struct sta_info {
 struct wilc_wfi_p2pListenParams {
 	struct ieee80211_channel *pstrListenChan;
 	enum nl80211_channel_type tenuChannelType;
-	unsigned int u32ListenDuration;
+	u32 u32ListenDuration;
 	unsigned long long u64ListenCookie;
-	unsigned int u32ListenSessionID;
+	u32 u32ListenSessionID;
 };
 #endif  /*WILC_P2P*/
 
@@ -142,7 +146,7 @@ struct WILC_WFI_priv {
 	unsigned long long u64tx_cookie;
 #endif
 	bool bCfgScanning;
-	unsigned int u32RcvdChCount;
+	u32 u32RcvdChCount;
 	u8 au8AssociatedBss[ETH_ALEN];
 	struct sta_info assoc_stainfo;
 	struct net_device_stats stats;
@@ -162,6 +166,9 @@ struct WILC_WFI_priv {
 	struct tstrHostIFpmkidAttr pmkid_list;
 	struct WILC_WFI_stats netstats;
 	u8 WILC_WFI_wep_default;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+#define WLAN_KEY_LEN_WEP104 13
+#endif
 	u8 WILC_WFI_wep_key[4][WLAN_KEY_LEN_WEP104];
 	u8 WILC_WFI_wep_key_len[4];
 	/* the real interface that the monitor is on  */
@@ -193,9 +200,7 @@ struct InterfaceInfo {
 struct linux_wlan {
 	int mac_status;
 	int wilc_initialized;
-#if (!defined WILC_SDIO) || (defined WILC_SDIO_IRQ_GPIO)
 	u16 dev_irq_num;
-#endif
 	struct wilc_wlan_oup oup;
 	int close;
 	uint8_t u8NoIfcs;

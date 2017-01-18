@@ -25,7 +25,7 @@
 #define PWR_DEV_SRC_MAX		2
 
 #include <linux/mutex.h>
-#include "atl_error_support.h"
+#include "wilc_errorsupport.h"
 #include <linux/kthread.h>
 #include <linux/semaphore.h>
 #include <linux/module.h>
@@ -39,6 +39,8 @@
 #include "linux/string.h"
 #include "linux_wlan_sdio.h"
 
+#define DOWNLOAD_BT_FW_ONCE
+
 #define HIF_SDIO		(0)
 #define HIF_SPI			(1 << 0)
 #define HIF_SDIO_GPIO_IRQ	(1 << 2)
@@ -48,6 +50,18 @@
 #define N_TXQ			0x00000004
 #define N_INTR			0x00000008
 #define N_RXQ			0x00000010
+
+#if defined(WILC_SDIO) /* TS-7990 uses SDIO */
+
+#define GPIO_NUM_RESET 		237
+#define GPIO_NUM_CHIP_EN 	238
+
+#else /* TS-4100, TS-7180, etc 6ul boards that use SPI */
+
+#define GPIO_NUM_RESET 		181
+#define GPIO_NUM_CHIP_EN 	180
+
+#endif
 
 enum BUS_ACQUIRE {
 	ACQUIRE_ONLY		= 0,
@@ -93,7 +107,7 @@ struct wilc_wlan_io_func {
 };
 
 struct wilc_wlan_net_func {
-	void (*rx_indicate)(uint8_t *, uint32_t, uint32_t);
+	void (*rx_indicate)(uint8_t *, uint32_t, uint32_t, uint8_t);
 	void (*rx_complete)(void);
 };
 
@@ -130,6 +144,21 @@ struct wilc_hif_func {
 typedef int (*WILCpfChangeCoexMode)(u8);
 #endif
 
+struct pwr_dev_t {
+	struct mutex cs;
+	uint8_t bus_registered[PWR_DEV_SRC_MAX];
+	uint8_t power_status[PWR_DEV_SRC_MAX];
+	uint8_t keep_awake[PWR_DEV_SRC_MAX];
+	struct wilc_hif_func hif_func;
+	struct mutex hif_cs;
+#ifdef DOWNLOAD_BT_FW_ONCE
+	uint8_t is_bt_fw_ready;
+#endif /* DOWNLOAD_BT_FW_ONCE */
+#ifdef WILC_BT_COEXISTENCE
+	WILCpfChangeCoexMode pfChangeCoexMode;
+#endif
+};
+
 extern struct wilc_hif_func hif_sdio;
 extern struct wilc_hif_func hif_spi;
 
@@ -153,7 +182,7 @@ int at_pwr_dev_init(void);
 /*
  * Deinitialize bluetooth power device
  */
-int at_pwr_dev_deinit(void);
+void at_pwr_dev_deinit(void);
 
 /*
  * Register bus
@@ -175,6 +204,8 @@ int at_pwr_power_up(int source);
  */
 int at_pwr_power_down(int source);
 
+int wilc_bt_firmware_download(void);
+int wilc_bt_start(void);
 
 #ifdef WILC_BT_COEXISTENCE
 /*
