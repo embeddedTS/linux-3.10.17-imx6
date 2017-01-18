@@ -289,8 +289,8 @@ static int pixcir_start(struct pixcir_i2c_ts_data *ts)
 	struct device *dev = &ts->client->dev;
 	int error;
 
-	/* LEVEL_TOUCH interrupt with active low polarity */
-	error = pixcir_set_int_mode(ts, PIXCIR_INT_LEVEL_TOUCH, 0);
+	error = pixcir_set_int_mode(ts, PIXCIR_INT_LEVEL_TOUCH,
+				    ts->pdata->irq_polarity);
 	if (error) {
 		dev_err(dev, "Failed to set interrupt mode: %d\n", error);
 		return error;
@@ -429,6 +429,12 @@ static struct pixcir_ts_platform_data *pixcir_parse_dt(struct device *dev)
 
 	pdata->gpio_attb = of_get_named_gpio(np, "attb-gpio", 0);
 	/* gpio_attb validity is checked in probe */
+
+	if (of_property_read_bool(np, "active-high-irq")) {
+		pdata->irq_polarity = 1;
+	} else {
+		pdata->irq_polarity = 0;
+	}
 
 	if (of_property_read_u32(np, "touchscreen-size-x", &pdata->x_max)) {
 		dev_err(dev, "Failed to get touchscreen-size-x property\n");
