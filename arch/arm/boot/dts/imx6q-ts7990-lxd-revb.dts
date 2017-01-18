@@ -1,0 +1,73 @@
+/*
+ * Copyright 2011 Freescale Semiconductor, Inc.
+ * Copyright 2011 Linaro Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "imx6qdl-ts7990.dtsi"
+
+/ {
+	model = "Technologic Systems i.MX6 Quad TS-7990 (LXD) REV B";
+	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
+
+	aliases {
+		mxcfb0 = &mxcfb0;
+	};
+
+	mxcfb0: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB666";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "okay";
+	};
+};
+
+&captouch {
+	status = "okay";
+	active-high-irq;
+};
+
+&ldb {
+	status = "okay";
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		status = "okay";
+		primary;
+		crtc = "ipu1-di0";
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: lxd-wsvga {
+				clock-frequency = <51200000>;
+				hactive = <1024>;
+				vactive = <600>;
+				hback-porch = <46>;
+				hfront-porch = <210>;
+				vback-porch = <23>;
+				vfront-porch = <12>;
+				hsync-len = <20>;
+				vsync-len = <10>;
+				de-active = <1>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				pixelclk-active = <0>;
+			};
+		};
+	};
+};
+
+&sata {
+	status = "okay";
+};
