@@ -88,17 +88,6 @@
 			enable-active-high;
 		};
 
-		wl12xx_vmmc: wl12xx_vmmc {
-			compatible = "regulator-fixed";
-			regulator-name = "wl12xx_vmmc";
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			gpio = <&gpio8 14 0>;
-			startup-delay-us = <100000>;
-			enable-active-high;
-			regulator-boot-on;
-		};
-
 		usb-hub-reset {
 			label = "usb-hub-reset";
 			regulator-min-microvolt = <5000000>;
@@ -106,6 +95,17 @@
 			gpios = <&gpio2 11 0>;
 			enable-active-high;
 			startup-delay-us = <200>;
+		};
+
+		backlight_vdd: backlight_vdd {
+			compatible = "regulator-fixed";
+			regulator-name = "backlight_vdd";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_bkl>;
+			regulator-min-microvolt = <28000000>;
+			regulator-max-microvolt = <28000000>;
+			gpios = <&gpio3 0 0>;
+			enable-active-high;
 		};
 
 		reg_can_3v3: reg_can_3v3 {
@@ -140,15 +140,9 @@
 		status = "okay";
 	};
 
-	wlan {
-		compatible = "ti,wilink8";
-		interrupt-parent = <&gpio1>;
-		wlen-gpio = <&gpio8 14 0>;
-		interrupts = <26 IRQ_TYPE_EDGE_FALLING>;
-	};
-
 	backlight_local_lcd {
 		compatible = "pwm-backlight";
+		power-supply = <&backlight_vdd>;
 		pwms = <&pwm3 0 5000000>;
 		brightness-levels = <0 128 140 160 180 200 220 240 255>;
 		default-brightness-level = <8>;
@@ -397,6 +391,12 @@
 			>;
 		};
 
+		pinctrl_bkl: bklreg {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_DA0__GPIO3_IO00  0x1b088
+			>;
+		};
+
 		pinctrl_flexcan1: flexcan1grp {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_ROW2__FLEXCAN1_RX  0x1b088
@@ -520,7 +520,7 @@
 				MX6QDL_PAD_SD1_DAT1__SD1_DATA1   0x17059
 				MX6QDL_PAD_SD1_DAT2__SD1_DATA2   0x17059
 				MX6QDL_PAD_SD1_DAT3__SD1_DATA3   0x17059
-				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x17059 // WIFI IRQ
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26 0x1f0d9 // WIFI IRQ
 			>;
 		};
 
@@ -645,20 +645,9 @@
 &usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1>;
-	vmmc-supply = <&wl12xx_vmmc>;
 	bus-width = <4>;
 	status = "okay";
-	non-removable;
-
-	#address-cells = <1>;
-	#size-cells = <0>;
-	wl1271@2 {
-		compatible = "ti,wl1271";
-		reg = <2>;
-		interrupt-parent = <&gpio1>;
-		interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
-		ref-clock-frequency = <38400000>;
-	};
+	broken-cd;
 };
 
 // SD
@@ -677,7 +666,7 @@
 	pinctrl-0 = <&pinctrl_usdhc3>;
 	vmmc-supply = <&reg_3p3v>;
 	bus-width = <4>;
-	status = "okay";
+	status = "disabled";
 	non-removable;
 };
 
