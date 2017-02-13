@@ -1,0 +1,50 @@
+/*
+ * Copyright 2011 Freescale Semiconductor, Inc.
+ * Copyright 2011 Linaro Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "imx6qdl-ts7990-revb.dtsi"
+
+/ {
+	model = "Technologic Systems i.MX6 Quad TS-7990 (Okaya)";
+	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
+
+	aliases {
+		mxcfb0 = &mxcfb0;
+	};
+
+	mxcfb0: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "lcd";
+		interface_pix_fmt = "RGB24";
+		mode_str ="OKAYA-WVGA";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "okay";
+	};
+
+	backlight_lcd {
+		compatible = "pwm-backlight";
+		pwms = <&pwm3 0 5000000>;
+		brightness-levels = <0 128 140 160 180 200 220 240 255>;
+		default-brightness-level = <8>;
+	};
+};
+
+&touchscreen_spi {
+	status = "okay";
+};
+
+&sata {
+	status = "okay";
+};
