@@ -50,6 +50,8 @@
 #include <linux/slab.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/of_dma.h>
+#include <linux/of_gpio.h>
 #include <linux/of_i2c.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_data/i2c-imx.h>
@@ -128,6 +130,10 @@ struct imx_i2c_struct {
 	int			stopped;
 	unsigned int		ifdr; /* IMX_I2C_IFDR */
 	enum imx_i2c_type	devtype;
+	struct i2c_bus_recovery_info rinfo;
+	struct pinctrl *pinctrl;
+	struct pinctrl_state *pinctrl_pins_default;
+	struct pinctrl_state *pinctrl_pins_gpio;
 
 	unsigned int            cur_clk;
 	unsigned int            bitrate;
@@ -457,8 +463,12 @@ static int i2c_imx_xfer(struct i2c_adapter *adapter,
 
 	/* Start I2C transfer */
 	result = i2c_imx_start(i2c_imx);
-	if (result)
-		goto fail0;
+	if (result) {
+		if (i2c_imx->adapter.bus_recovery_info) {
+			i2c_recover_bus(&i2c_imx->adapter);
+			result = i2c_imx_start(i2c_imx);
+		}
+	}
 
 	/* read/write data */
 	for (i = 0; i < num; i++) {
@@ -511,6 +521,54 @@ fail0:
 			(result < 0) ? result : num);
 	return (result < 0) ? result : num;
 }
+
+static void i2c_imx_prepare_recovery(struct i2c_adapter *adap)
+{
+	struct imx_i2c_struct *i2c_imx;
+
+	i2c_imx = container_of(adap, struct imx_i2c_struct, adapter);
+
+	pinctrl_select_state(i2c_imx->pinctrl, i2c_imx->pinctrl_pins_gpio);
+}
+
+static void i2c_imx_unprepare_recovery(struct i2c_adapter *adap)
+{
+	struct imx_i2c_struct *i2c_imx;
+
+	i2c_imx = container_of(adap, struct imx_i2c_struct, adapter);
+
+	pinctrl_select_state(i2c_imx->pinctrl, i2c_imx->pinctrl_pins_default);
+}
+
+static void i2c_imx_init_recovery_info(struct imx_i2c_struct *i2c_imx,
+		struct platform_device *pdev)
+{
+	struct i2c_bus_recovery_info *rinfo = &i2c_imx->rinfo;
+
+	i2c_imx->pinctrl_pins_default = pinctrl_lookup_state(i2c_imx->pinctrl,
+			PINCTRL_STATE_DEFAULT);
+	i2c_imx->pinctrl_pins_gpio = pinctrl_lookup_state(i2c_imx->pinctrl,
+			"gpio");
+	rinfo->sda_gpio = of_get_named_gpio(pdev->dev.of_node, "sda-gpios", 0);
+	rinfo->scl_gpio = of_get_named_gpio(pdev->dev.of_node, "scl-gpios", 0);
+
+	if (!gpio_is_valid(rinfo->sda_gpio) ||
+	    !gpio_is_valid(rinfo->scl_gpio) ||
+	    IS_ERR(i2c_imx->pinctrl_pins_default) ||
+	    IS_ERR(i2c_imx->pinctrl_pins_gpio)) {
+		dev_dbg(&pdev->dev, "recovery information incomplete\n");
+		return;
+	}
+
+	dev_dbg(&pdev->dev, "using scl-gpio %d and sda-gpio %d for recovery\n",
+			rinfo->sda_gpio, rinfo->scl_gpio);
+
+	rinfo->prepare_recovery = i2c_imx_prepare_recovery;
+	rinfo->unprepare_recovery = i2c_imx_unprepare_recovery;
+	rinfo->recover_bus = i2c_generic_gpio_recovery;
+	i2c_imx->adapter.bus_recovery_info = rinfo;
+}
+
 
 static u32 i2c_imx_func(struct i2c_adapter *adapter)
 {
@@ -583,6 +641,11 @@ static int __init i2c_imx_probe(struct platform_device *pdev)
 		return PTR_ERR(i2c_imx->clk);
 	}
 
+	i2c_imx->pinctrl = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(i2c_imx->pinctrl)) {
+		return PTR_ERR(i2c_imx->clk);
+	}
+
 	/* Request IRQ */
 	ret = devm_request_irq(&pdev->dev, irq, i2c_imx_isr, 0,
 				pdev->name, i2c_imx);
@@ -608,6 +671,8 @@ static int __init i2c_imx_probe(struct platform_device *pdev)
 	/* Set up chip registers to defaults */
 	writeb(0, i2c_imx->base + IMX_I2C_I2CR);
 	writeb(0, i2c_imx->base + IMX_I2C_I2SR);
+
+	i2c_imx_init_recovery_info(i2c_imx, pdev);
 
 	/* Add I2C adapter */
 	ret = i2c_add_numbered_adapter(&i2c_imx->adapter);
