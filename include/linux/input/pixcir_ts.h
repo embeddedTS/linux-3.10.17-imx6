@@ -59,6 +59,7 @@ struct pixcir_ts_platform_data {
 	int y_max;
 	int gpio_attb;		/* GPIO connected to ATTB line */
 	struct pixcir_i2c_chip_data chip;
+	int irq_polarity;
 };
 
 #endif

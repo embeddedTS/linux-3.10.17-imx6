@@ -78,7 +78,7 @@ static void pixcir_ts_parse(struct pixcir_i2c_ts_data *tsdata,
 	}
 
 	ret = i2c_master_recv(tsdata->client, rdbuf, readsize);
-	if (ret != sizeof(rdbuf)) {
+	if (ret != readsize) {
 		dev_err(&tsdata->client->dev,
 			"%s: i2c_master_recv failed(), ret=%d\n",
 			__func__, ret);
@@ -289,8 +289,8 @@ static int pixcir_start(struct pixcir_i2c_ts_data *ts)
 	struct device *dev = &ts->client->dev;
 	int error;
 
-	/* LEVEL_TOUCH interrupt with active low polarity */
-	error = pixcir_set_int_mode(ts, PIXCIR_INT_LEVEL_TOUCH, 0);
+	error = pixcir_set_int_mode(ts, PIXCIR_INT_LEVEL_TOUCH,
+				    ts->pdata->irq_polarity);
 	if (error) {
 		dev_err(dev, "Failed to set interrupt mode: %d\n", error);
 		return error;
@@ -430,6 +430,12 @@ static struct pixcir_ts_platform_data *pixcir_parse_dt(struct device *dev)
 	pdata->gpio_attb = of_get_named_gpio(np, "attb-gpio", 0);
 	/* gpio_attb validity is checked in probe */
 
+	if (of_property_read_bool(np, "active-high-irq")) {
+		pdata->irq_polarity = 1;
+	} else {
+		pdata->irq_polarity = 0;
+	}
+
 	if (of_property_read_u32(np, "touchscreen-size-x", &pdata->x_max)) {
 		dev_err(dev, "Failed to get touchscreen-size-x property\n");
 		return ERR_PTR(-EINVAL);
@@ -490,23 +496,13 @@ static int pixcir_i2c_ts_probe(struct i2c_client *client,
 	if (!tsdata)
 		return -ENOMEM;
 
-	tsdata->client = client;
-
-	/* Always be in IDLE mode to save power, device supports auto wake */
-	error = pixcir_set_power_mode(tsdata, PIXCIR_POWER_IDLE);
-	if (error) {
-		dev_err(dev, "Failed to set IDLE mode\n");
-		devm_kfree(dev, tsdata);
-		return -EPROBE_DEFER;
-	}
-
 	input = devm_input_allocate_device(dev);
 	if (!input) {
 		dev_err(dev, "Failed to allocate input device\n");
-		devm_kfree(dev, tsdata);
 		return -ENOMEM;
 	}
 
+	tsdata->client = client;
 	tsdata->input = input;
 	tsdata->pdata = pdata;
 
@@ -555,7 +551,12 @@ static int pixcir_i2c_ts_probe(struct i2c_client *client,
 		return error;
 	}
 
-
+	/* Always be in IDLE mode to save power, device supports auto wake */
+	error = pixcir_set_power_mode(tsdata, PIXCIR_POWER_IDLE);
+	if (error) {
+		dev_err(dev, "Failed to set IDLE mode\n");
+		return error;
+	}
 
 	/* Stop device till opened */
 	error = pixcir_stop(tsdata);
