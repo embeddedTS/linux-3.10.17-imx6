@@ -298,6 +298,33 @@
 		compatible = "fsl,imx6-hdmi-i2c";
 		reg = <0x50>;
 	};
+
+	ov5640_mipi: ov5640_mipi@3c {
+		compatible = "ovti,ov564x_mipi";
+		status="okay";
+		reg = <0x3c>;
+		clocks = <&clks 200>;
+		clock-names = "csi_mclk";
+		DOVDD-supply = <&reg_1p8v>;
+		AVDD-supply = <&reg_2p5v>;
+		DVDD-supply = <&reg_1p8v>;
+
+		pwn-gpios = <&gpio4 29 0>;
+		rst-gpios = <&gpio4 27 0>;
+
+		ipu_id = <0>;
+		csi_id = <0>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
+};
+
+&mipi_csi {
+	ipu_id = <0>;
+	csi_id = <0>;
+	v_channel = <0>;
+	lanes = <2>;
+	status = "okay";
 };
 
 &iomuxc {
@@ -540,6 +567,8 @@
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13        0x1b088 // MUX_AD_13
 				MX6QDL_PAD_EIM_DA14__GPIO3_IO14        0x1b088 // MUX_AD_14
 				MX6QDL_PAD_EIM_DA15__GPIO3_IO15        0x1b088 // MUX_AD_15
+				MX6QDL_PAD_DISP0_DAT8__GPIO4_IO29      0x0b0b0 // CAM_PWR_DN
+				MX6QDL_PAD_DISP0_DAT6__GPIO4_IO27      0x000b0 // CAM_RESET#
 
 				// Strapping only
 				MX6QDL_PAD_EIM_A18__GPIO2_IO20         0x1b088
