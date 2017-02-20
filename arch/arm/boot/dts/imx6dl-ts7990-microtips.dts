@@ -37,3 +37,11 @@
 &touchscreen_spi {
 	status = "okay";
 };
+
+&wl1271_wifi {
+	status = "okay";
+};
+
+&wl12xx_vmmc {
+	status = "okay";
+};

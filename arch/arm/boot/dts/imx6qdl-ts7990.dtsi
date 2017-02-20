@@ -115,6 +115,18 @@
 			regulator-max-microvolt = <3300000>;
 			gpio = <&gpio6 31 0>;
 		};
+
+		wl12xx_vmmc: wl12xx_vmmc {
+			compatible = "regulator-fixed";
+			regulator-name = "wl12xx_vmmc";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			gpio = <&gpio8 14 0>;
+			startup-delay-us = <100000>;
+			enable-active-high;
+			regulator-boot-on;
+			status = "disabled";
+		};
 	};
 
 	sound {
@@ -646,9 +658,21 @@
 &usdhc1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1>;
+	vmmc-supply = <&wl12xx_vmmc>;
 	bus-width = <4>;
 	status = "okay";
-	broken-cd;
+	non-removable;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	wl1271_wifi: wl1271@2 {
+		compatible = "ti,wl1271";
+		reg = <2>;
+		status = "disabled";
+		interrupt-parent = <&gpio1>;
+		interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
+		ref-clock-frequency = <38400000>;
+	};
 };
 
 // SD

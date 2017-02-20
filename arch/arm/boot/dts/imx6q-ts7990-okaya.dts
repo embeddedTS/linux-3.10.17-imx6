@@ -34,10 +34,18 @@
 	};
 };
 
+&sata {
+	status = "okay";
+};
+
 &touchscreen_spi {
 	status = "okay";
 };
 
-&sata {
+&wl1271_wifi {
+	status = "okay";
+};
+
+&wl12xx_vmmc {
 	status = "okay";
 };
