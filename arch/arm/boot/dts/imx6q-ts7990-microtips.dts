@@ -63,11 +63,11 @@
 	};
 };
 
-&touchscreen_spi {
+&sata {
 	status = "okay";
 };
 
-&sata {
+&touchscreen_spi {
 	status = "okay";
 };
 

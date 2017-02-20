@@ -59,9 +59,10 @@
 	leds {
 		compatible = "gpio-leds";
 
-		// These are intended as userspace controlled IO.  In this kernel
-		// version LEDs are the best interface I can find to allow both
-		// userspace control and a default value.
+		/* These are intended as userspace controlled IO.  In this
+		 * kernel version LEDs are the best interface I can find to 
+		 * allow both userspace control and a default value.
+		 */
 		en-usb-5v {
 			label = "en-usb-5v";
 			gpios = <&gpio4 22 0>;

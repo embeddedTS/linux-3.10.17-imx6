@@ -42,7 +42,6 @@
 /dts-v1/;
 #include "imx6dl.dtsi"
 #include "imx6qdl-ts7970.dtsi"
-#include <dt-bindings/interrupt-controller/irq.h>
 
 / {
 	model = "Technologic Systems i.MX6 Solo/DualLite TS-7970";

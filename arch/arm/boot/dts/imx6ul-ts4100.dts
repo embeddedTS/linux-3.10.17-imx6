@@ -47,7 +47,6 @@
 	compatible = "fsl,imx6ul-ts4100", "fsl,imx6ul";
 };
 
-
 &iomuxc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog>;
