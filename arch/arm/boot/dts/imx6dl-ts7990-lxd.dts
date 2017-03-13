@@ -66,6 +66,11 @@
 	status = "okay";
 };
 
+&epdc {
+	status = "disabled";
+};
+
+
 &ldb {
 	status = "okay";
 	lvds-channel@0 {

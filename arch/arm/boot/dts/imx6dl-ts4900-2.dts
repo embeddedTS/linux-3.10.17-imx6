@@ -47,3 +47,7 @@
 	model = "Technologic Systems i.MX6 Solo/DualLite TS-4900 (TS-TPC-8390)";
 	compatible = "fsl,imx6dl-ts4900", "fsl,imx6dl";
 };
+
+&epdc {
+	status = "disabled";
+};

@@ -63,6 +63,10 @@
 	};
 };
 
+&epdc {
+	status = "disabled";
+};
+
 &touchscreen_spi {
 	status = "okay";
 };

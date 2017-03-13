@@ -47,3 +47,7 @@
 	model = "Technologic Systems i.MX6 Solo/DualLite TS-7970";
 	compatible = "fsl,imx6dl-ts7970", "fsl,imx6dl";
 };
+
+&epdc {
+	status = "disabled";
+};

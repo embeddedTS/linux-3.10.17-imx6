@@ -67,6 +67,10 @@
 	active-high-irq;
 };
 
+&epdc {
+	status = "disabled";
+};
+
 &ldb {
 	status = "okay";
 	lvds-channel@0 {
