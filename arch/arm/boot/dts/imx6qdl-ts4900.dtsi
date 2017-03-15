@@ -542,6 +542,7 @@
 		interrupt-parent = <&gpio1>;
 		interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
 		ref-clock-frequency = <38400000>;
+		tcxo-clock-frequency = <38400000>;
 	};
 };
 
