@@ -341,6 +341,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6dl-ts7990-microtips.dtb \
 	imx6dl-ts7990-okaya-revb.dtb \
 	imx6dl-ts7990-okaya.dtb \
+	imx6q-ts4900-14.dtb \
 	imx6q-ts4900-2.dtb \
 	imx6q-ts4900.dtb \
 	imx6q-ts7970.dtb \
