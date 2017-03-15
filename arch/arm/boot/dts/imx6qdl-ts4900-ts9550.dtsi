@@ -1,0 +1,296 @@
+/*
+ * Copyright 2017 Technologic Systems
+ *
+ * This file is dual-licensed: you can use it either under the terms
+ * of the GPL or the X11 license, at your option. Note that this dual
+ * licensing only applies to this file, and not this project as a
+ * whole.
+ *
+ *  a) This file is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License
+ *     version 2 as published by the Free Software Foundation.
+ *
+ *     This file is distributed in the hope that it will be useful
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ * Or, alternatively
+ *
+ *  b) Permission is hereby granted, free of charge, to any person
+ *     obtaining a copy of this software and associated documentation
+ *     files (the "Software"), to deal in the Software without
+ *     restriction, including without limitation the rights to use
+ *     copy, modify, merge, publish, distribute, sublicense, and/or
+ *     sell copies of the Software, and to permit persons to whom the
+ *     Software is furnished to do so, subject to the following
+ *     conditions:
+ *
+ *     The above copyright notice and this permission notice shall be
+ *     included in all copies or substantial portions of the Software.
+ *
+ *     THE SOFTWARE IS PROVIDED , WITHOUT WARRANTY OF ANY KIND
+ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
+ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *     OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+#include "imx6qdl-ts4900.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	aliases {
+		ethernet0 = &fec;
+		mxcfb0 = &mxcfb0;
+	};
+
+	backlight_lcd {
+		compatible = "pwm-backlight";
+		pwms = <&pwm3 0 5000000>;
+		brightness-levels = <0 128 140 160 180 200 220 240 255>;
+		default-brightness-level = <8>;
+	};
+
+	mxcfb0: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB666";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "okay";
+	};
+
+	regulators {
+		compatible = "simple-bus";
+
+		reg_lcd3p3v: lcd3p3v {
+			compatible = "regulator-fixed";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_lcd3p3v>;
+			regulator-name = "LCD3P3V";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			gpio = <&gpio2 19 0>;
+			regulator-boot-on;
+			startup-delay-us = <60000>;
+		};
+	};
+};
+
+&ecspi2 {
+	fsl,spi-num-chipselects = <2>;
+	cs-gpios = <&gpio6 2 0>, <&gpio5 29 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi2>;
+	status = "okay";
+
+	touch: tsc2046@1 {
+		compatible = "ti,tsc2046";
+		reg = <1>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <28 IRQ_TYPE_EDGE_FALLING>;
+		vcc-supply = <&reg_3p3v>;
+		spi-max-frequency = <100000>;
+		pendown-gpio = <&gpio4 28 0>;
+		ti,penirq-recheck-delay-usecs = /bits/ 16 <5000>;
+		ti,vref-mv = <3300>;
+		ti,swap-xy;
+		ti,keep-vref-on;
+		ti,settle-delay-usec = /bits/ 16 <5000>;
+		ti,vref-delay-usecs = /bits/ 16 <0>;
+		ti,x-plate-ohms = /bits/ 16 <715>;
+		ti,y-plate-ohms = /bits/ 16 <325>;
+		ti,debounce-rep = /bits/ 16 <3>;
+		ti,debounce-tol = /bits/ 16 <65535>;
+		ti,debounce-max = /bits/ 16 <0>;
+		ti,pendown-gpio-debounce = <100000>;
+		linux,wakeup;
+	};
+};
+
+&can1 {
+	status = "disabled";
+};
+
+&can2 {
+	status = "disabled";
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_misc>;
+
+	imx6-ts4900 {
+		pinctrl_ecspi2_touch: ecspi2 {
+			fsl,pins = <
+				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK	0x100b1
+				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI	0x100b1
+				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO	0x100b1
+				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29	0x100b1 // Offboard CS0#
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02	0x100b1 // FPGA CS1#
+				MX6QDL_PAD_CSI0_VSYNC__GPIO5_IO21	0x1b0b1 // FPGA_RESET#
+				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20	0x1b0b1 // FPGA_DONE
+				MX6QDL_PAD_GPIO_3__XTALOSC_REF_CLK_24M	0x10    // FPGA 24MHZ
+				MX6QDL_PAD_GPIO_4__GPIO1_IO04		0x1b0b1 // FPGA_IRQ
+			>;
+		};
+
+		pinctrl_pwm3: pwm3grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm3: pwm3grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
+			>;
+		};
+
+		pinctrl_lcd3p3v: lcdreggrp {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_A19__GPIO2_IO19		0x1b0b1 // EN_REMOTE_LCD
+			>;
+		};
+
+		pinctrl_misc: misc {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_A17__GPIO2_IO21		0x1b0b1 // OFF_BD_RESET
+				MX6QDL_PAD_DISP0_DAT8__GPIO4_IO29	0x1b0b1 // CN1_19
+				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30	0x1b0b1 // CN1_21
+				MX6QDL_PAD_DISP0_DAT10__GPIO4_IO31	0x1b0b1 // CN1_23
+				MX6QDL_PAD_DISP0_DAT11__GPIO5_IO05	0x1b0b1 // CN1_25
+				MX6QDL_PAD_DISP0_DAT12__GPIO5_IO06	0x1b0b1 // CN1_27
+				MX6QDL_PAD_DISP0_DAT13__GPIO5_IO07	0x1b0b1 // CN1_31
+				MX6QDL_PAD_DISP0_DAT14__GPIO5_IO08	0x1b0b1 // TOUCH_SPI_CS#
+				MX6QDL_PAD_DISP0_DAT15__GPIO5_IO09	0x1b0b1 // CN1_35
+				MX6QDL_PAD_DISP0_DAT16__GPIO5_IO10	0x1b0b1 // TOUCH_SPI_MISO
+				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11	0x1b0b1 // CN1_39
+				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12	0x1b0b1 // TOUCH_SPI_MOSI
+				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13	0x1b0b1 // CN1_43
+				MX6QDL_PAD_DISP0_DAT20__GPIO5_IO14	0x1b0b1 // TOUCH_SPI_CLK
+				MX6QDL_PAD_DI0_DISP_CLK__GPIO4_IO16	0x1b0b1 // CN1_49
+				MX6QDL_PAD_DI0_PIN2__GPIO4_IO18		0x1b0b1 // CN1_51
+				MX6QDL_PAD_DI0_PIN3__GPIO4_IO19		0x1b0b1 // CN1_53
+				MX6QDL_PAD_DI0_PIN15__GPIO4_IO17	0x1b0b1 // CN1_55
+				MX6QDL_PAD_EIM_D31__GPIO3_IO31		0x1b0b1 // CN1_65
+				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15		0x1b0b1 // CN1_69
+				MX6QDL_PAD_KEY_COL4__GPIO4_IO14		0x1b0b1 // CN1_71
+				MX6QDL_PAD_EIM_A21__GPIO2_IO17		0x1b0b1 // CN1_77
+				MX6QDL_PAD_EIM_BCLK__GPIO6_IO31		0x1b0b1 // CN1_79
+				MX6QDL_PAD_EIM_A18__GPIO2_IO20		0x1b0b1 // CN1_81
+				MX6QDL_PAD_EIM_OE__GPIO2_IO25		0x1b0b1 // CN1_83
+				MX6QDL_PAD_EIM_A20__GPIO2_IO18		0x1b0b1 // CN1_85
+				MX6QDL_PAD_EIM_A22__GPIO2_IO16		0x1b0b1 // CN1_89
+				MX6QDL_PAD_EIM_A23__GPIO6_IO06		0x1b0b1 // CN1_91
+				MX6QDL_PAD_EIM_A24__GPIO5_IO04		0x1b0b1 // CN1_93
+				MX6QDL_PAD_EIM_WAIT__GPIO5_IO00		0x1b0b1 // CN1_97
+				MX6QDL_PAD_EIM_EB1__GPIO2_IO29		0x1b0b1 // CN1_99
+				MX6QDL_PAD_DISP0_DAT1__GPIO4_IO22	0x1b0b1 // CN1_04
+				MX6QDL_PAD_DISP0_DAT0__GPIO4_IO21	0x1b0b1 // CN1_24
+				MX6QDL_PAD_DISP0_DAT1__GPIO4_IO22	0x1b0b1 // CN1_26
+				MX6QDL_PAD_DISP0_DAT2__GPIO4_IO23	0x1b0b1 // CN1_28
+				MX6QDL_PAD_DISP0_DAT3__GPIO4_IO24	0x1b0b1 // CN1_30
+				MX6QDL_PAD_DISP0_DAT4__GPIO4_IO25	0x1b0b1 // CN1_32
+				MX6QDL_PAD_DISP0_DAT5__GPIO4_IO26	0x1b0b1 // CN1_34
+				MX6QDL_PAD_DISP0_DAT6__GPIO4_IO27	0x1b0b1 // CN1_38
+				MX6QDL_PAD_DISP0_DAT7__GPIO4_IO28	0x1b0b1 // CN1_40
+				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0x1b0b1 // CN1_42
+				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0x1b0b1 // CN1_SEL_AN_3.3V
+				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17	0x1b0b1 // CN1_46
+				MX6QDL_PAD_EIM_DA15__GPIO3_IO15		0x1b0b1 // CN1_64
+				MX6QDL_PAD_EIM_DA14__GPIO3_IO14		0x1b0b1 // CN1_66
+				MX6QDL_PAD_EIM_DA13__GPIO3_IO13		0x1b0b1 // CN1_68
+				MX6QDL_PAD_EIM_DA12__GPIO3_IO12		0x1b0b1 // CN1_70
+				MX6QDL_PAD_EIM_DA11__GPIO3_IO11		0x1b0b1 // CN1_72
+				MX6QDL_PAD_EIM_DA10__GPIO3_IO10		0x1b0b1 // CN1_74
+				MX6QDL_PAD_EIM_DA9__GPIO3_IO09		0x1b0b1 // CN1_76
+				MX6QDL_PAD_EIM_DA8__GPIO3_IO08		0x1b0b1 // CN1_78
+				MX6QDL_PAD_EIM_DA7__GPIO3_IO07		0x1b0b1 // CN1_80
+				MX6QDL_PAD_EIM_DA6__GPIO3_IO06		0x1b0b1 // CN1_82
+				MX6QDL_PAD_EIM_DA5__GPIO3_IO05		0x1b0b1 // CN1_84
+				MX6QDL_PAD_EIM_DA4__GPIO3_IO04		0x1b0b1 // CN1_86
+				MX6QDL_PAD_EIM_DA3__GPIO3_IO03		0x1b0b1 // CN1_88
+				MX6QDL_PAD_EIM_DA2__GPIO3_IO02		0x1b0b1 // CN1_90
+				MX6QDL_PAD_EIM_DA1__GPIO3_IO01		0x1b0b1 // CN1_92
+				MX6QDL_PAD_EIM_DA0__GPIO3_IO00		0x1b0b1 // CN1_94
+				MX6QDL_PAD_EIM_LBA__GPIO2_IO27		0x1b0b1 // CN1_96
+				MX6QDL_PAD_EIM_RW__GPIO2_IO26		0x1b0b1 // CN1_98
+				MX6QDL_PAD_EIM_CS0__GPIO2_IO23		0x1b0b1 // CN1_100
+				MX6QDL_PAD_CSI0_DAT4__GPIO5_IO22	0x1b0b1 // CN2_36
+				MX6QDL_PAD_CSI0_DAT6__GPIO5_IO24	0x1b0b1 // CN2_38
+				MX6QDL_PAD_CSI0_DAT5__GPIO5_IO23	0x1b0b1 // CN2_40
+				MX6QDL_PAD_CSI0_DAT7__GPIO5_IO25	0x1b0b1 // CN2_42
+				MX6QDL_PAD_CSI0_DAT12__GPIO5_IO30	0x1b0b1 // CN2_52
+				MX6QDL_PAD_GPIO_0__GPIO1_IO00		0x1b0b1 // CN2_54
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03	0x1b0b1 // CN2_56
+				MX6QDL_PAD_SD4_DAT7__GPIO2_IO15		0x1b0b1 // CN2_58
+				MX6QDL_PAD_SD3_RST__GPIO7_IO08		0x1b0b1 // CN2_60
+				MX6QDL_PAD_GPIO_16__GPIO7_IO11		0x1b0b1 // CN2_62
+				MX6QDL_PAD_GPIO_17__GPIO7_IO12		0x1b0b1 // CN2_64
+				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31	0x1b0b1 // CN2_66
+				MX6QDL_PAD_GPIO_19__GPIO4_IO05		0x1b0b1 // CN2_68
+				MX6QDL_PAD_CSI0_MCLK__GPIO5_IO19	0x1b0b1 // CN2_70
+				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18	0x1b0b1 // CN2_72
+				MX6QDL_PAD_KEY_COL2__GPIO4_IO10		0x1b0b1 // CN1_97
+				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11		0x1b0b1 // CN1_99
+			>;
+		};
+
+		pinctrl_pcie: pciegrp {
+			fsl,pins = <
+				MX6QDL_PAD_DISP0_DAT4__GPIO4_IO25	0x1b0b0 // PCIE_RESET
+			>;
+		};
+	};
+};
+
+&ldb {
+	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		status = "okay";
+		primary;
+		crtc = "ipu1-di0";
+
+		display-timings {
+			native-mode = <&timing0>;
+
+			timing0: okaya-wvga1 {
+				clock-frequency = <33000000>;
+				hactive = <800>;
+				vactive = <480>;
+				hback-porch = <50>;
+				hfront-porch = <70>;
+				vback-porch = <2>;
+				vfront-porch = <2>;
+				hsync-len = <50>;
+				vsync-len = <50>;
+				de-active = <1>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				pixelclk-active = <0>;
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie>;
+	reset-gpio = <&gpio4 25 0>;
+};
+
+&pwm3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3>;
+	status = "okay";
+};
