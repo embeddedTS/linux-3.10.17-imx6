@@ -48,7 +48,7 @@
 		ethernet1 = &usbeth;
 	};
 
-	backlight_local_lcd {
+	backlight0: backlight0 {
 		compatible = "pwm-backlight";
 		power-supply = <&backlight_vdd>;
 		pwms = <&pwm3 0 5000000>;
@@ -110,7 +110,8 @@
 			pinctrl-0 = <&pinctrl_bkl>;
 			regulator-min-microvolt = <28000000>;
 			regulator-max-microvolt = <28000000>;
-			gpios = <&gpio3 0 0>;
+			startup-delay-us = <2000>;
+			gpio = <&gpio3 0 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
 
@@ -134,8 +135,8 @@
 			compatible = "regulator-fixed";
 			regulator-name = "3P3V";
 			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
-			regulator-always-on;
+			regulator-max-microvolt = <3300000>
+;			regulator-always-on;
 		};
 
 		reg_can_3v3: reg_can_3v3 {
