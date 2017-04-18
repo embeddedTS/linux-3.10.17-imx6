@@ -45,6 +45,11 @@
 #define ISL12022_SR_LBAT75	(1 << 1)
 
 #define ISL12022_INT_WRTC	(1 << 6)
+#define ISL12022_INT_FOBATB	(1 << 4)
+#define ISL12022_INT_FO0	(1 << 0)
+#define ISL12022_INT_FO1	(1 << 1)
+#define ISL12022_INT_FO2	(1 << 2)
+#define ISL12022_INT_FO3	(1 << 3)
 
 #define ISL12022_VDD_VB75T_OFFSET	0
 #define ISL12022_VDD_VB75T_MASK		0x7
@@ -54,6 +59,7 @@
 #define ISL12022_BETA_TSE	(1 << 7)	/* Enable temp sensor compensation */
 #define ISL12022_BETA_BTSE	(1 << 6)	/* Temp sensor enabled in battery mode */
 #define ISL12022_BETA_BTSR	(1 << 6) 	/* Sample Frequency (1=10min,0=1min) */
+
 
 static struct i2c_driver isl12022_driver;
 
@@ -237,6 +243,17 @@ static int isl12022_set_datetime(struct i2c_client *client, struct rtc_time *tm)
 			if (ret)
 				return ret;
 		}
+
+		/* We have seen rare cases where the RTC does not start up with the correct
+		 * default regs.  This forces the wifi clk to be correct on startup. */
+		ret = isl12022_read_regs(client, ISL12022_REG_INT, buf, 1);
+		if(ret)
+			return ret;
+		buf[0] |= ISL12022_INT_FOBATB | ISL12022_INT_FO0;
+		buf[0] &= ~(ISL12022_INT_FO1 | ISL12022_INT_FO2 | ISL12022_INT_FO3);
+		ret = isl12022_write_reg(client, ISL12022_REG_INT, buf[0]);
+		if(ret)
+			return ret;
 
 		isl12022->write_enabled = 1;
 	}
