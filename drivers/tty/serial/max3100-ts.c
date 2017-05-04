@@ -162,6 +162,7 @@ struct max3100ts_port {
 
 static struct s_max3100ts_common {
 	struct max3100ts_port *max3100ts[MAX_MAX3100];	/* the chip */
+	struct mutex portlock;	/* race on port usage */
 	struct mutex max3100ts_lock;	/* race on probe */
 	struct mutex max3100s_csidx_lock;	/* race on uart_idx selection */
 	struct spi_device *spi;	/* all our uarts are on one spi */
@@ -208,8 +209,9 @@ static void max3100_port_work(struct work_struct *w);
 
 static void max3100_dowork(struct max3100ts_port *s)
 {
-	if (!s->force_end_work && !freezing(current) && !s->suspending)
+	if(!work_pending(&s->work)){
 		queue_work(s->workqueue, &s->work);
+	}
 }
 
 static void max3100_timeout(unsigned long data)
@@ -313,9 +315,8 @@ static int max3100_handlerx(struct max3100ts_port *s, u16 rx)
 	return ret;
 }
 
-static void max3100_port_work(struct work_struct *w)
+static void max3100_port_dowork(struct max3100ts_port *s)
 {
-	struct max3100ts_port *s = container_of(w, struct max3100ts_port, work);
 	int rxchars, x;
 	u16 tx, rx;
 	int conf, cconf, rts, crts;
@@ -325,6 +326,7 @@ static void max3100_port_work(struct work_struct *w)
 
 	rxchars = 0;
 	do {
+		mutex_lock(&max3100ts_common.portlock);
 		spin_lock(&s->conf_lock);
 		conf = s->conf;
 		cconf = s->conf_commit;
@@ -333,6 +335,7 @@ static void max3100_port_work(struct work_struct *w)
 		crts = s->rts_commit;
 		s->rts_commit = 0;
 		spin_unlock(&s->conf_lock);
+
 		if (cconf)
 			max3100_sr(s, MAX3100_WC | conf, &rx);
 		if (crts) {
@@ -374,19 +377,29 @@ static void max3100_port_work(struct work_struct *w)
 			tty_flip_buffer_push(&s->port.state->port);
 			rxchars = 0;
 		}
-		if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
-			uart_write_wakeup(&s->port);
 
+		if (uart_circ_chars_pending(xmit) < 4){
+			if(s->port.state->port.tty)
+				uart_write_wakeup(&s->port);
+		}
+
+		mutex_unlock(&max3100ts_common.portlock);
 	} while (!s->force_end_work &&
 		 !freezing(current) &&
 		 ((rx & MAX3100_R) ||
 		  (!uart_circ_empty(xmit) && !uart_tx_stopped(&s->port))));
-
-	if (rxchars > 0)
+	if (rxchars > 0){
 		tty_flip_buffer_push(&s->port.state->port);
+	}
 }
 
-static irqreturn_t max3100_irq(int irqno, void *dev_id)
+static void max3100_port_work(struct work_struct *w)
+{
+	struct max3100ts_port *s = container_of(w, struct max3100ts_port, work);
+	max3100_port_dowork(s);
+}
+
+static irqreturn_t max3100_thread_irq(int irqno, void *dev_id)
 {
 	int i;
 
@@ -394,9 +407,9 @@ static irqreturn_t max3100_irq(int irqno, void *dev_id)
 
 	for (i = 0; i < max3100ts_common.uart_count; i++) {
 		struct max3100ts_port *s = max3100ts_common.max3100ts[i];
-		if (s && s->workqueue && !s->force_end_work && !s->suspending)
-			queue_work(s->workqueue, &s->work);
+		max3100_port_dowork(s);
 	}
+
 	return IRQ_HANDLED;
 }
 
@@ -409,7 +422,6 @@ static void max3100_enable_ms(struct uart_port *port)
 	if (s->poll_time > 0)
 		mod_timer(&s->timer, jiffies);
 	dev_dbg(&max3100ts_common.spi->dev, "%s\n", __func__);
-
 }
 
 static void max3100_start_tx(struct uart_port *port)
@@ -436,7 +448,6 @@ static void max3100_stop_rx(struct uart_port *port)
 	s->conf &= ~MAX3100_RM;
 	s->conf_commit = 1;
 	spin_unlock(&s->conf_lock);
-	max3100_dowork(s);
 }
 
 static unsigned int max3100_tx_empty(struct uart_port *port)
@@ -460,8 +471,6 @@ static unsigned int max3100_get_mctrl(struct uart_port *port)
 
 	dev_dbg(&max3100ts_common.spi->dev, "%s\n", __func__);
 
-	/* may not be truly up-to-date */
-	max3100_dowork(s);
 	/* always assert DCD and DSR since these lines are not wired */
 	return (s->cts ? TIOCM_CTS : 0) | TIOCM_DSR | TIOCM_CAR;
 }
@@ -481,7 +490,6 @@ static void max3100_set_mctrl(struct uart_port *port, unsigned int mctrl)
 	if (s->rts != rts) {
 		s->rts = rts;
 		s->rts_commit = 1;
-		max3100_dowork(s);
 	}
 	spin_unlock(&s->conf_lock);
 }
@@ -604,7 +612,6 @@ max3100_set_termios(struct uart_port *port, struct ktermios *termios,
 	s->conf_commit = 1;
 	s->parity = parity;
 	spin_unlock(&s->conf_lock);
-	max3100_dowork(s);
 
 	if (UART_ENABLE_MS(&s->port, termios->c_cflag))
 		max3100_enable_ms(&s->port);
@@ -664,7 +671,7 @@ static int max3100_startup(struct uart_port *port)
 	s->rts = 0;
 
 	sprintf(b, "max3100-%d", s->minor);
-	s->workqueue = create_freezable_workqueue(b);
+	s->workqueue = create_singlethread_workqueue(b);
 	if (!s->workqueue) {
 		dev_warn(&max3100ts_common.spi->dev,
 			 "cannot create workqueue\n");
@@ -681,7 +688,6 @@ static int max3100_startup(struct uart_port *port)
 	if (s->max3100_hw_suspend)
 		s->max3100_hw_suspend(0);
 	s->conf_commit = 1;
-	max3100_dowork(s);
 
 	/* wait for clock to settle */
 	if (s->port.line == 0)
@@ -838,6 +844,8 @@ static int max3100_probe(struct spi_device *spi)
 
 	mutex_init(&max3100ts_common.max3100s_csidx_lock);
 	mutex_init(&max3100ts_common.max3100ts_lock);
+	mutex_init(&max3100ts_common.portlock);
+
 	mutex_lock(&max3100ts_common.max3100ts_lock);
 
 	if (!uart_driver_registered) {
@@ -861,12 +869,6 @@ static int max3100_probe(struct spi_device *spi)
 	max3100ts_common.irq = spi->irq;
 	max3100ts_common.uart_idx = -1;
 	max3100ts_common.uart_count = 0;
-
-	if (request_irq(spi->irq, max3100_irq,
-			IRQF_TRIGGER_FALLING, "max3100-ts",
-			&max3100ts_common) < 0) {
-		dev_warn(&spi->dev, "cannot allocate irq %d\n", spi->irq);
-	}
 
 	for (i = 0; i < MAX_MAX3100; i++) {
 		max3100ts_common.max3100ts[i] =
@@ -931,10 +933,19 @@ static int max3100_probe(struct spi_device *spi)
 				 i, retval);
 		tx = MAX3100_WC | MAX3100_SHDN;
 		max3100_sr(max3100ts_common.max3100ts[i], tx, &rx);
-
 	}
 
 	mutex_unlock(&max3100ts_common.max3100ts_lock);
+
+	retval = devm_request_threaded_irq(&spi->dev, spi->irq, NULL, max3100_thread_irq,
+									IRQF_TRIGGER_LOW | IRQF_ONESHOT, "max3100-ts",
+									&max3100ts_common);
+
+	if (retval) {
+		dev_warn(&spi->dev, "cannot allocate irq %d\n", spi->irq);
+		return retval;
+	}
+
 	dev_info(&spi->dev, "Detected %d uarts\n", max3100ts_common.uart_count);
 	return 0;
 }
