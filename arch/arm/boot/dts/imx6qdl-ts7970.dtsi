@@ -54,7 +54,7 @@
 
 		blue-led {
 			label = "blue-led";
-			gpios = <&gpio4 25 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio4 25 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 
