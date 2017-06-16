@@ -502,6 +502,7 @@ max3100_set_termios(struct uart_port *port, struct ktermios *termios,
 						struct max3100ts_port,
 						port);
 	int baud = 0;
+	int i;
 	unsigned cflag;
 	u32 param_new, param_mask, parity = 0;
 
@@ -612,6 +613,11 @@ max3100_set_termios(struct uart_port *port, struct ktermios *termios,
 	s->conf_commit = 1;
 	s->parity = parity;
 	spin_unlock(&s->conf_lock);
+
+	for (i = 0; i < max3100ts_common.uart_count; i++) {
+		struct max3100ts_port *s = max3100ts_common.max3100ts[i];
+		max3100_port_dowork(s);
+	}
 
 	if (UART_ENABLE_MS(&s->port, termios->c_cflag))
 		max3100_enable_ms(&s->port);
