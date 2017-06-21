@@ -653,6 +653,7 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart3>;
+	fsl,uart-has-rtscts;
 };
 
 &uart4 {
