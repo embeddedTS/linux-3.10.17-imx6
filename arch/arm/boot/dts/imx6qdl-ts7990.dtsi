@@ -590,6 +590,12 @@
 			>;
 		};
 
+		pinctrl_pcie: pciegrp {
+			fsl,pins = <
+				MX6QDL_PAD_NANDF_D4__GPIO2_IO04		0x1b088 /* PCIE_RESET# */
+			>;
+		};
+
 		pinctrl_sgtl5000: sgtl5000grp {
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT7__AUD3_RXD		0x130b0
@@ -629,7 +635,10 @@
 };
 
 &pcie {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie>;
 	status = "okay";
+	reset-gpio = <&gpio2 4 GPIO_ACTIVE_LOW>;
 };
 
 &pwm3 {
