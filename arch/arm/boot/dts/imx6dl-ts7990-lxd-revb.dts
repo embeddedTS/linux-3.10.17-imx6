@@ -60,11 +60,51 @@
 		late_init = <0>;
 		status = "okay";
 	};
+
+	wifi_spi {
+		compatible = "spi-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ecspi5gpio>;
+		status = "okay";
+		num-chipselects = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio-sck = <&gpio1 20 0>;
+		gpio-mosi = <&gpio1 18 0>;
+		gpio-miso = <&gpio1 16 0>;
+		cs-gpios = <&gpio1 17 0>;
+
+		wilc_spi@0 {
+			compatible = "atmel,wilc_spi";
+			reg = <0>;
+			spi-max-frequency = <24000000>;
+			wilc3000,reset-gpios = <&gpio8 14 0>;
+			wilc3000,chip-en-gpios = <&gpio8 13 0>;
+			wilc3000,irq-gpios = <&gpio1 26 0>;
+			status = "okay";
+		};
+	};
 };
 
 &captouch {
 	status = "okay";
 	active-high-irq;
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	imx6-ts7990 {
+		pinctrl_ecspi5gpio: ecspi5gpio {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_CMD__GPIO1_IO18		0x100b1 /* mosi */
+				MX6QDL_PAD_SD1_CLK__GPIO1_IO20		0x100b1 /* sclk */
+				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16		0x100b1 /* miso */
+				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17		0x1b088 /* SPI_1_CS# */
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26	0x1b088 /* WIFI_IRQ# */
+			>;
+		};
+	};
 };
 
 &epdc {
