@@ -67,6 +67,39 @@
 	active-high-irq;
 };
 
+&ecspi5 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio1 17 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi5>;
+	status = "okay";
+
+	wilc_spi@0 {
+		compatible = "atmel,wilc_spi";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+		wilc3000,reset-gpios = <&gpio8 14 0>;
+		wilc3000,chip-en-gpios = <&gpio8 13 0>;
+		wilc3000,irq-gpios = <&gpio1 26 0>;
+		status = "okay";
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	imx6-ts7990 {
+		pinctrl_ecspi5: ecspi5 {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_CMD__ECSPI5_MOSI		0x100b1
+				MX6QDL_PAD_SD1_CLK__ECSPI5_SCLK		0x100b1
+				MX6QDL_PAD_SD1_DAT0__ECSPI5_MISO	0x100b1
+				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17		0x1b088 /* SPI_1_CS# */
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26	0x1b088 /* WIFI_IRQ# */
+			>;
+		};
+	};
+};
+
 &ldb {
 	status = "okay";
 	lvds-channel@0 {
