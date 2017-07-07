@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -51,17 +51,11 @@
 #define N_INTR			0x00000008
 #define N_RXQ			0x00000010
 
-#if defined(WILC_SDIO) /* TS-7990 uses SDIO */
+/* 4100 uses RESET 181, ENABLE 180 */
 
-#define GPIO_NUM_RESET 		237
-#define GPIO_NUM_CHIP_EN 	238
 
-#else /* TS-4100, TS-7180, etc 6ul boards that use SPI */
-
-#define GPIO_NUM_RESET 		181
-#define GPIO_NUM_CHIP_EN 	180
-
-#endif
+#define GPIO_NUM_RESET	160 /*60*/
+#define GPIO_NUM_CHIP_EN	161 /*94*/
 
 enum BUS_ACQUIRE {
 	ACQUIRE_ONLY		= 0,
@@ -137,6 +131,7 @@ struct wilc_hif_func {
 	int (*hif_block_tx_ext)(uint32_t, uint8_t *, uint32_t);
 	int (*hif_block_rx_ext)(uint32_t, uint8_t *, uint32_t);
 	int (*hif_sync_ext)(int);
+	int (*hif_reset)(void);
 };
 
 /*TicketId883*/

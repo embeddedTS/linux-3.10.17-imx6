@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -822,7 +822,6 @@ s32 SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
 	if (NULL == gpstrWlanOps) {
 		PRINT_INFO(CORECONFIG_DBG,"Net Dev is still not initialized\n");
 		return 1;
-	/*TicketId1003*/
 	/*Suspend host interface till recovery is done*/
 	} else if (g_bWaitForRecovery) {
 		PRINT_D(CORECONFIG_DBG, "Host interface is suspended\n");
@@ -872,7 +871,6 @@ s32 SendConfigPkt(u8 u8Mode, struct tstrWID *pstrWIDs,
 			}
 		}
 	}
-	/*TicketId1003*/
 	cfg_timed_out_cnt = (ret != -1) ? 0 : cfg_timed_out_cnt + 1;
 	return ret;
 }

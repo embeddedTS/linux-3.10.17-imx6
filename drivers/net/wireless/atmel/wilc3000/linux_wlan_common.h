@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -71,9 +71,9 @@ typedef enum { ANTENNA1  = 0,
 
 #define REGION	 INIT_DBG|GENERIC_DBG|CFG80211_DBG | FIRM_DBG | HOSTAPD_DBG | PWRDEV_DBG
 
-#define DEBUG	    1
-#define INFO        1
-#define WRN         1
+#define DEBUG	    0
+#define INFO        0
+#define WRN         0
 #define PRINT_D(region,...)	do{ if(DEBUG == 1 && ((REGION)&(region))){printk("DBG [%s: %d]",__FUNCTION__,__LINE__);\
 							printk(__VA_ARGS__);}}while(0)
 							
@@ -90,16 +90,14 @@ typedef enum { ANTENNA1  = 0,
 #endif
 #define LINUX_TX_SIZE	(64 * 1024)
 
-#if defined(WILC_SDIO) /* TS-7990 uses SDIO */
 
-#define MODALIAS		"wilc_sdio"
-#define GPIO_NUM 		26
+//#if defined(SAMA5D4_BOARD)
+	//#define MODALIAS 	"wilc_spi"
+	//#define GPIO_NUM	0x5B
+//#else
+	#define MODALIAS 	"WILC_SPI"
+	#define GPIO_NUM	136
 
-#else /* TS-4100, TS-7180, etc 6ul boards that use SPI */
-
-#define MODALIAS		"wilc_spi"
-#define GPIO_NUM 		136
-
-#endif
+//#endif
 
 #endif /* LINUX_WLAN_COMMON_H */

@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -461,7 +461,7 @@ static int wilc_wlan_txq_add_cfg_pkt(uint8_t *buffer, uint32_t buffer_size)
 	}
 
 	tqe = kmalloc(sizeof(*tqe), GFP_KERNEL);
-	if (NULL == tqe){
+	if (NULL == tqe) {
 		up(p->cfg_wait);
 		return 0;
 	}
@@ -480,7 +480,7 @@ static int wilc_wlan_txq_add_cfg_pkt(uint8_t *buffer, uint32_t buffer_size)
 	 */
 	PRINT_D(TX_DBG, "Adding the config packet at the Queue tail\n");
 
-	if(wilc_wlan_txq_add_to_head(AC_VO_Q, tqe)){
+	if(wilc_wlan_txq_add_to_head(AC_VO_Q, tqe)) {
 		up(p->cfg_wait);
 		return 0;
 	}
@@ -534,7 +534,7 @@ static int wilc_wlan_txq_add_net_pkt(void *priv, uint8_t *buffer,
 	uint8_t q_num;
 	uint16_t q_limit[NQUEUES] = {0, 0, 0, 0};
 
-	if (p->quit){
+	if (p->quit) {
 		PRINT_D(TX_DBG, "drv is quitting, return from net_pkt\n");
 		func(priv, 0);
 		return 0;
@@ -546,8 +546,7 @@ static int wilc_wlan_txq_add_net_pkt(void *priv, uint8_t *buffer,
 	}
 
 	tqe = kmalloc(sizeof(*tqe), GFP_KERNEL);
-	if (tqe == NULL)
-	{
+	if (tqe == NULL) {
 		PRINT_D(TX_DBG, "malloc failed, return from net_pkt\n");
 		func(priv, 0);
 		return 0;
@@ -595,7 +594,7 @@ int wilc_wlan_txq_add_mgmt_pkt(void *priv, uint8_t *buffer,
 	struct wilc_wlan_dev *p = (struct wilc_wlan_dev *)&g_wlan;
 	struct txq_entry_t *tqe;
 
-	if (p->quit){
+	if (p->quit) {
 		PRINT_D(TX_DBG, "drv is quitting, return from mgmt_pkt\n");
 		func(priv, 0);
 		return 0;
@@ -608,7 +607,7 @@ int wilc_wlan_txq_add_mgmt_pkt(void *priv, uint8_t *buffer,
 	}
 
 	tqe = kmalloc(sizeof(*tqe), GFP_KERNEL);
-	if (NULL == tqe){
+	if (NULL == tqe) {
 		PRINT_D(TX_DBG, "malloc failed, return from mgmt_pkt\n");
 		func(priv, 0);
 		return 0;		
@@ -960,7 +959,7 @@ static int wilc_wlan_handle_txq(uint32_t* pu32TxqCount)
 				break;
 			} 
 
-				vmm_table[i] = 0x0;	/* mark the last element to 0 */
+			vmm_table[i] = 0x0;	/* mark the last element to 0 */
 
 			acquire_bus(ACQUIRE_AND_WAKEUP, PWR_DEV_SRC_WIFI);
 			counter = 0;
@@ -984,16 +983,16 @@ static int wilc_wlan_handle_txq(uint32_t* pu32TxqCount)
 					break;
 				} 
 
-					counter++;
-					if(counter > 200) {
-						counter = 0;
-						PRINT_D(TX_DBG,"Looping in tx ctrl , force quit\n");
-						ret = p->hif_func.hif_write_reg(WILC_HOST_TX_CTRL, 0);
-						break;
-					}
-					/**
-						wait for vmm table is ready
-					**/
+				counter++;
+				if(counter > 200) {
+					counter = 0;
+					PRINT_D(TX_DBG,"Looping in tx ctrl , force quit\n");
+					ret = p->hif_func.hif_write_reg(WILC_HOST_TX_CTRL, 0);
+					break;
+				}
+				/**
+					wait for vmm table is ready
+				**/
 			} while (!p->quit);
 
 			if(!ret) 
@@ -1518,7 +1517,8 @@ static int wilc_wlan_firmware_download(const uint8_t *buffer, uint32_t buffer_si
 	} while (offset < buffer_size);
 
 _fail_:
-	kfree(dma_buffer);
+	if(dma_buffer) 
+		kfree(dma_buffer);
 _fail_1:
 	return (ret < 0) ? ret : 0;
 }
@@ -1747,14 +1747,6 @@ static int wilc_wlan_stop(void)
 	return ret;
 }
 
-#ifdef DOWNLOAD_BT_FW
-/* Define Modes of operation for WILC3000 */
-#define WIFI_ONLY	1
-#define BT_ONLY		2
-#define FM_ONLY		4
-
-#endif
-
 static void wilc_wlan_cleanup(void)
 {
 	struct wilc_wlan_dev *p = (struct wilc_wlan_dev *)&g_wlan;
@@ -1789,11 +1781,15 @@ static void wilc_wlan_cleanup(void)
 
 	/* clean up buffer */
 #ifdef MEMORY_STATIC
-	kfree(p->rx_buffer);
-	p->rx_buffer = NULL;
+	if (p->rx_buffer) {
+		kfree(p->rx_buffer);
+		p->rx_buffer = NULL;
+	}
 #endif
-	kfree(p->tx_buffer);
-	p->tx_buffer = NULL;
+	if (p->tx_buffer) {
+		kfree(p->tx_buffer);
+		p->tx_buffer = NULL;
+	}
 
 	acquire_bus(ACQUIRE_AND_WAKEUP, PWR_DEV_SRC_WIFI);
 
@@ -1997,6 +1993,7 @@ uint32_t init_chip(void)
 
 end:
 	release_bus(RELEASE_ALLOW_SLEEP, PWR_DEV_SRC_WIFI);
+
 	return ret;
 }
 
@@ -2024,7 +2021,7 @@ _fail_:
 	return chipid;
 }
 
-int at_wlan_init(struct wilc_wlan_inp *inp, struct wilc_wlan_oup *oup)
+int wilc_wlan_init(struct wilc_wlan_inp *inp, struct wilc_wlan_oup *oup)
 {
 	int ret = 0;
 
@@ -2124,13 +2121,16 @@ int at_wlan_init(struct wilc_wlan_inp *inp, struct wilc_wlan_oup *oup)
 
 _fail_:
 #ifdef MEMORY_STATIC
-	kfree(g_wlan.rx_buffer);
-	g_wlan.rx_buffer = NULL;
+	if (g_wlan.rx_buffer) {
+		kfree(g_wlan.rx_buffer);
+		g_wlan.rx_buffer = NULL;
+	}
 #endif
-	kfree(g_wlan.tx_buffer);
-	g_wlan.tx_buffer = NULL;
+	if (g_wlan.tx_buffer) {
+		kfree(g_wlan.tx_buffer);
+		g_wlan.tx_buffer = NULL;
+	}
 
 	return ret;
 }
-
 

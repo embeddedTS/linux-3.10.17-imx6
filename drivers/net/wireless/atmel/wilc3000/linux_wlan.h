@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -54,10 +54,9 @@ int linux_wlan_get_firmware(struct perInterface_wlan *p_nic);
 int mac_open(struct net_device *ndev);
 int mac_close(struct net_device *ndev);
 void EAP_buff_timeout(unsigned long pUserVoid);
-void wilc_wlan_deinit(struct linux_wlan *nic);
 void frmw_to_linux(uint8_t *buff, uint32_t size, uint32_t pkt_offset, uint8_t status);
 int linux_wlan_set_bssid(struct net_device *wilc_netdev, uint8_t *pBSSID, uint8_t mode);
-int wilc_wlan_init(struct net_device *dev, struct perInterface_wlan *p_nic);
+int linux_wlan_init(struct net_device *dev, struct perInterface_wlan *p_nic);
 void linux_wlan_enable_irq(void);
 
 #endif /* WILC_LINUX_WLAN_H */

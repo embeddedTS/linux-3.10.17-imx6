@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -32,7 +32,7 @@ static struct wilc_spi g_spi;
 
 static int spi_read(uint32_t, uint8_t *, uint32_t);
 static int spi_write(uint32_t, uint8_t *, uint32_t);
-uint8_t spi_reset(void);
+static int spi_reset(void);
 
 /*
  * Crc7
@@ -639,6 +639,8 @@ static int spi_data_read(uint8_t *b, uint32_t sz)
 	uint8_t crc[2];
 	uint8_t rsp;
 
+int i, k = sz;	
+	
 	/*
 	 * Data
 	 */
@@ -697,6 +699,12 @@ static int spi_data_read(uint8_t *b, uint32_t sz)
 
 	} while (sz);
 
+	printk("%s ", __func__);
+	for(i=0; i < k; i++) {
+	   printk("%02X ", b[i]);
+	}
+	printk("\n");
+	
 	return result;
 }
 
@@ -1156,7 +1164,7 @@ static void spi_init_pkt_sz(uint32_t* reg)
 	}
 }
 
-uint8_t spi_reset(void)
+static int spi_reset(void)
 {
 	int result = N_OK;
 	
@@ -1516,5 +1524,6 @@ struct wilc_hif_func hif_spi = {
 	spi_write,
 	spi_read,
 	spi_sync_ext,
+	spi_reset,
 };
 EXPORT_SYMBOL(hif_spi);

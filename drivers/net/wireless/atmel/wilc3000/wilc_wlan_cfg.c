@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -280,20 +280,20 @@ static void wilc_wlan_parse_response_frame(uint8_t *info, int size)
 	#endif
 		PRINT_INFO(GENERIC_DBG,"Processing response for %d seq %d\n", wid, seq++);
 		switch ((wid >> 12) & 0x7) {
-			case WID_CHAR:
+			case WID_CHAR:			
 				do {
 					if (g_cfg_byte[i].id == WID_NIL)
 						break;
 
 					if (g_cfg_byte[i].id == wid) {
-						g_cfg_byte[i].val = info[4];
+						g_cfg_byte[i].val = info[4];												
 						break;
 					}
 					i++;
 				} while (1);
 				len = 3;
 				break;
-			case WID_SHORT:
+			case WID_SHORT:			
 				do {
 					if (g_cfg_hword[i].id == WID_NIL)
 						break;
@@ -344,26 +344,37 @@ static void wilc_wlan_parse_response_frame(uint8_t *info, int size)
 							toggle ^= 1;
 						}
 						memcpy(g_cfg_str[i].str, &info[2], (2+((info[3] << 8) | info[2])));
+						
+						//for(j=0; j < 8; j++)						
+				        // printk("%02X ", g_cfg_str[i].str[j]);
 						break;
 					}
 					i++;
 				} while (1);
 				len = 2+((info[3] << 8) | info[2]);
+				
+				
 				break;
 
 			/*ATWILCSW-403*/
-			case WID_BIN_DATA:
+			case WID_BIN_DATA:			
 				do {
 					if (g_cfg_bin[i].id == WID_NIL)
 						break;
 
 					if (g_cfg_bin[i].id == wid) {					
 						memcpy(g_cfg_bin[i].bin, &info[2], (2+((info[3] << 8) | info[2])));
+						
+						//for(j=0; j < (2+((info[3] << 8) | info[2])); j++)
+						  // printk("%02X ", g_cfg_bin[i].bin[j]);
+						
 						break;
 					} 
 					i++;
 				} while (1);
 				len = 2+((info[3] << 8) | info[2]);
+				
+				
 				break;
 				
 			default:

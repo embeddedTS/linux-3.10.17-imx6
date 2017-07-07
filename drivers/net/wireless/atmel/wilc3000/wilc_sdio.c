@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -488,7 +488,7 @@ static int sdio_deinit(void *pv)
 }
 
 
-int wilc3000_sdio_reset(void *pv)
+int sdio_reset(void)
 {
 
 	struct sdio_cmd52_t cmd;
@@ -591,7 +591,7 @@ int sdio_init(struct wilc_wlan_inp *inp)
 	{
 		memset(&g_sdio, 0, sizeof(struct wilc_sdio));
 		if (inp->io_func.io_init) {
-			if (!inp->io_func.io_init(&(inp->os_context))){
+			if (!inp->io_func.io_init(&(inp->os_context))) {
 				PRINT_ER("Failed io init bus\n");
 				return 0;
 			}
@@ -802,6 +802,7 @@ static int sdio_clear_int_ext(uint32_t val)
 		uint32_t reg;
 
 		reg = val & ((1 << MAX_NUN_INT_THRPT_ENH2) - 1);
+		/* WILC3000 only */
 		if (reg) {
 			struct sdio_cmd52_t cmd;
 
@@ -1014,6 +1015,9 @@ static int sdio_sync_ext(int nint)
 		return 0;
 	}
 
+/* WILC3000 only. Was removed in WILC1000 on revision 6200.
+ * Might be related to suspend/resume
+ */
 	reg &= ~(1 << 8);
 	if (!sdio_write_reg(WILC_MISC, reg)) {
 		PRINT_ER("Failed write misc reg\n");
@@ -1094,7 +1098,10 @@ static int sdio_sync_ext(int nint)
 		PRINT_ER("Failed read misc reg\n");
 		return 0;
 	}
-
+	
+/* WILC3000 only. Was removed in WILC1000 on revision 6200.
+ * Might be related to suspend/resume
+ */
 	reg &= ~(1 << 8);
 	if (!sdio_write_reg(WILC_MISC, reg)) {
 		PRINT_ER("Failed write misc reg\n");
@@ -1123,6 +1130,7 @@ struct wilc_hif_func hif_sdio = {
 	sdio_write,
 	sdio_read,
 	sdio_sync_ext,
+	sdio_reset,
 };
 EXPORT_SYMBOL(hif_sdio);
 

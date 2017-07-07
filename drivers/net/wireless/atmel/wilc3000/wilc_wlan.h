@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -134,6 +134,9 @@ void chip_sleep_manually(u32 u32SleepTime, int source);
 #define rFILTER_WIFI_LOGS_BIT		(8)
 #define rHAVE_ANT_SWTCH_SNGL_GPIO_CTRL_BIT	(9)
 #define rHAVE_ANT_SWTCH_DUAL_GPIO_CTRL_BIT	(10)
+
+#define rCCA_CTL_2 (0x160EF4)
+#define rCCA_CTL_7 (0x160F08)
 
 #define WILC_HAVE_SDIO_IRQ_GPIO		(1 << rHAVE_SDIO_IRQ_GPIO_BIT)
 #define WILC_HAVE_SLEEP_CLK_SRC_RTC	(1 << rHAVE_SLEEP_CLK_SRC_RTC_BIT)

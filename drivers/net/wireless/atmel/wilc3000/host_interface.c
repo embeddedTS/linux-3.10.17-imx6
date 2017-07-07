@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -920,6 +920,15 @@ static signed int Handle_GetMacAddress(void *drvHandler,
 	}
 	up(&hWaitResponse);
 
+	
+		PRINT_D(INIT_DBG, "Mac address: %x:%x:%x:%x:%x:%x\n", 
+		    pstrHostIfGetMacAddress->u8MacAddress[0], 
+		    pstrHostIfGetMacAddress->u8MacAddress[1],
+		    pstrHostIfGetMacAddress->u8MacAddress[2], 
+		    pstrHostIfGetMacAddress->u8MacAddress[3], 
+		    pstrHostIfGetMacAddress->u8MacAddress[4], 
+		    pstrHostIfGetMacAddress->u8MacAddress[5]);
+	
 	return s32Error;
 }
 
@@ -3361,6 +3370,13 @@ static void Handle_GetLinkspeed(void *drvHandler)
 	up(&(pstrWFIDrv->hSemGetLINKSPEED));
 }
 
+#ifdef TCP_ENHANCEMENTS
+#define TCP_ACK_FILTER_LINK_SPEED_THRESH 54
+#define DEFAULT_LINK_SPEED 72
+extern void Enable_TCP_ACK_Filter(bool value);
+#endif
+
+struct tstrStatistics gDummyStatistics;
 signed int Handle_GetStatistics(void *drvHandler,
 				struct tstrStatistics *pstrStatistics)
 {
@@ -3408,11 +3424,21 @@ signed int Handle_GetStatistics(void *drvHandler,
 	strWIDList[u32WidsCount].ps8WidVal = (s8 *)(&(pstrStatistics->u32TxFailureCount));
 	u32WidsCount++;
 
-	s32Error = SendConfigPkt(GET_CFG, strWIDList, u32WidsCount, false, driver_handler_id);
+	s32Error = SendConfigPkt(GET_CFG, strWIDList, u32WidsCount, true, driver_handler_id);
 
 	if (s32Error)
 		PRINT_ER("Failed to send scan paramters config packet\n");
-	up(&hWaitResponse);
+#ifdef TCP_ENHANCEMENTS
+	if ((pstrStatistics->u8LinkSpeed > TCP_ACK_FILTER_LINK_SPEED_THRESH) && (pstrStatistics->u8LinkSpeed != DEFAULT_LINK_SPEED)) {
+		PRINT_D(HOSTINF_DBG, "Enable TCP filter\n");
+		Enable_TCP_ACK_Filter(true);
+	} else if( pstrStatistics->u8LinkSpeed != DEFAULT_LINK_SPEED) {
+		PRINT_D(HOSTINF_DBG, "Disable TCP filter %d\n",pstrStatistics->u8LinkSpeed);
+		Enable_TCP_ACK_Filter(false);
+	}
+#endif
+	if(pstrStatistics != &gDummyStatistics)
+		up(&hWaitResponse);
 
 	return 0;
 }
@@ -5487,6 +5513,10 @@ signed int host_int_get_MacAddress(struct WFIDrvHandle *hWFIDrv,
 		return WILC_FAIL;
 	}
 
+	
+	PRINT_D(INIT_DBG, "Mac address: %x:%x:%x:%x:%x:%x\n", pu8MacAddress[0], pu8MacAddress[1],
+		 pu8MacAddress[2], pu8MacAddress[3], pu8MacAddress[4], pu8MacAddress[5]);
+	
 	down(&hWaitResponse);
 	return s32Error;
 }
@@ -6312,7 +6342,8 @@ signed int host_int_get_statistics(struct WFIDrvHandle *hWFIDrv,
 		return WILC_FAIL;
 	}
 
-	down(&hWaitResponse);
+	if(pstrStatistics != &gDummyStatistics)
+		down(&hWaitResponse);
 	return s32Error;
 }
 
@@ -6561,21 +6592,8 @@ void GetPeriodicRSSI(unsigned long pvArg)
 	}
 
 	if (pstrWFIDrv->enuHostIFstate == HOST_IF_CONNECTED) {
-		signed int s32Error = WILC_SUCCESS;
-		struct tstrHostIFmsg strHostIFmsg;
-
-		/* prepare the Get RSSI Message */
-		memset(&strHostIFmsg, 0, sizeof(struct tstrHostIFmsg));
-
-		strHostIFmsg.u16MsgId = HOST_IF_MSG_GET_RSSI;
-		strHostIFmsg.drvHandler = pstrWFIDrv;
-
-		s32Error = WILC_MsgQueueSend(&gMsgQHostIF, &strHostIFmsg,
-					    sizeof(struct tstrHostIFmsg));
-		if (s32Error) {
-			PRINT_ER("Failed to send get host channel param's message queue ");
-			return;
-		}
+			
+		host_int_get_statistics((struct WFIDrvHandle *)pstrWFIDrv,&gDummyStatistics);
 	}
 	g_hPeriodicRSSI.data = (unsigned long)pstrWFIDrv;
 	mod_timer(&(g_hPeriodicRSSI), (jiffies + msecs_to_jiffies(5000)));

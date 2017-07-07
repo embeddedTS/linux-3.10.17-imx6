@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -18,7 +18,6 @@
 
 #include "wilc_wfi_cfgoperations.h"
 #include "linux_wlan.h"
-#include "coreconfigurator.h"
 
 #define IS_MANAGMEMENT				0x100
 #define IS_MANAGMEMENT_CALLBACK			0x080
@@ -795,6 +794,7 @@ static int WILC_WFI_CfgConnect(struct wiphy *wiphy, struct net_device *dev,
 	struct WILC_WFIDrv *pstrWFIDrv;
 	struct tstrNetworkInfo *pstrNetworkInfo = NULL;
 
+	connecting = 1;
 	priv = wiphy_priv(wiphy);
 	pstrWFIDrv = (struct WILC_WFIDrv *)(priv->hWILCWFIDrv);
 
@@ -1032,8 +1032,10 @@ static int WILC_WFI_CfgConnect(struct wiphy *wiphy, struct net_device *dev,
 	}
 
 done:
-	if(s32Error == WILC_SUCCESS)
-		connecting = 1;
+	if (s32Error != WILC_SUCCESS) {
+		s32Error = -ENOENT;
+		connecting = 0;
+	}
 	return s32Error;
 }
 
@@ -1603,8 +1605,7 @@ static int WILC_WFI_get_station(struct wiphy *wiphy, struct net_device *dev,
 #endif
 	if (nic->iftype == STATION_MODE) {
 		struct tstrStatistics strStatistics;
-		if(!g_linux_wlan->wilc_initialized)
-		{
+		if (!g_linux_wlan->wilc_initialized) {
 			PRINT_D(CFG80211_DBG,"driver not initialized, return error\n");
 			return -EBUSY;
 		}
@@ -2872,17 +2873,10 @@ static int WILC_WFI_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	struct WILC_WFI_priv *priv;
 	struct perInterface_wlan* nic;
 	s32 s32Error = WILC_SUCCESS;
-	u8 i;
 	nic = netdev_priv(dev);
 	priv = wiphy_priv(wiphy);
-	for(i=0;i<g_linux_wlan->u8NoIfcs;i++)
-	{
-		if(g_linux_wlan->strInterfaceInfo[i].wilc_netdev == dev)
-		{
-			PRINT_D(HOSTAPD_DBG,"Starting AP on interface %d\n", i);
-			linux_wlan_set_bssid(dev,g_linux_wlan->strInterfaceInfo[i].aSrcAddress, AP_MODE);
-		}		
-	}
+	
+	PRINT_D(HOSTAPD_DBG,"Starting ap\n");
 
 	PRINT_D(CFG80211_DBG, "Interval = %d\n DTIM period = %d\n Head length = %d Tail length = %d\n",
 		settings->beacon_interval, settings->dtim_period, beacon->head_len, beacon->tail_len);
@@ -2893,7 +2887,9 @@ static int WILC_WFI_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	if (s32Error != WILC_SUCCESS)
 		PRINT_ER("Error in setting channel\n");
 #endif
-
+	linux_wlan_set_bssid(dev,g_linux_wlan->strInterfaceInfo[nic->u8IfIdx].aSrcAddress,AP_MODE);
+	/*disable PS  in case of AP*/
+	host_int_set_power_mgmt(priv->hWILCWFIDrv, 0, 0);
 	s32Error = host_int_add_beacon(priv->hWILCWFIDrv,
 				       settings->beacon_interval,
 				       settings->dtim_period,
@@ -2984,23 +2980,16 @@ static int WILC_WFI_add_beacon(struct wiphy *wiphy, struct net_device *dev,
 	struct WILC_WFI_priv *priv;
 	struct perInterface_wlan* nic;
 	signed int  s32Error = WILC_SUCCESS;
-	u8 i;
+
 
 	nic = netdev_priv(dev);
 	priv = wiphy_priv(wiphy);
 	PRINT_D(CFG80211_DBG, "Adding Beacon\n");
 
 	PRINT_D(CFG80211_DBG, "Interval = %d\n DTIM period = %d\n Head length = %d Tail length = %d\n", info->interval, info->dtim_period, info->head_len, info->tail_len);
-	/*TicketId108*/
-	/*Set bssid of the matching net device*/
-	for(i=0;i<g_linux_wlan->u8NoIfcs;i++)
-	{
-		if(g_linux_wlan->strInterfaceInfo[i].atwilc_netdev == dev)
-		{
-			PRINT_D(CFG80211_DBG,"Adding Beacon on interface %d\n", i);
-			linux_wlan_set_bssid(dev,g_linux_wlan->strInterfaceInfo[i].aSrcAddress, AP_MODE);
-		}		
-	}
+
+	linux_wlan_set_bssid(dev,g_linux_wlan->strInterfaceInfo[nic->u8IfIdx].aSrcAddress,AP_MODE);
+	host_int_set_power_mgmt(priv->hWILCWFIDrv, 0, 0);
 
 	s32Error = host_int_add_beacon(priv->hWILCWFIDrv, info->interval,
 				       info->dtim_period,
@@ -3156,7 +3145,7 @@ static int WILC_WFI_del_station(struct wiphy *wiphy, struct net_device *dev,
 #endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
-	u8 *mac = params->mac;
+	const u8 *mac = params->mac;
 #endif
 	s32 s32Error = WILC_SUCCESS;
 	struct WILC_WFI_priv *priv;

@@ -17,6 +17,16 @@ struct wilc_wlan_os_context  g_linux_spi_os_context;
 struct spi_device *wilc_spi_dev;
 EXPORT_SYMBOL(wilc_spi_dev);
 
+void chip_wakeup(int source);
+void chip_allow_sleep(int source);
+extern void (*pf_chip_sleep_manually)(unsigned int , int );
+extern int (*pf_get_num_conn_ifcs)(void);
+extern void (*pf_host_wakeup_notify)(int);
+extern void (*pf_host_sleep_notify)(int);
+extern int (*pf_get_u8SuspendOnEvent_value)(void);
+
+
+
 static int wilc_bus_probe(struct spi_device* spi)
 {
 	PRINT_D(INIT_DBG, "spiModalias: %s, spiMax-Speed: %d\n", 
@@ -32,6 +42,64 @@ static int wilc_bus_remove(struct spi_device *spi)
 	return 0;
 }
 
+static int wilc_spi_suspend(struct device *dev)
+{
+	printk("\n\n << SUSPEND >>\n\n");
+	if((g_linux_spi_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+	chip_wakeup(0);
+	if((g_linux_spi_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_spi_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		}
+	}
+	/*if there is no events , put the chip in low power mode */
+	if(pf_get_u8SuspendOnEvent_value()== 0){
+		/*BugID_5213*/
+		/*Allow chip sleep, only if both interfaces are not connected*/
+		if(!pf_get_num_conn_ifcs())
+			pf_chip_sleep_manually(0xFFFFFFFF,0);
+	}
+	else{
+		/*notify the chip that host will sleep*/
+		pf_host_sleep_notify(0);
+		chip_allow_sleep(0);
+	}
+	if((g_linux_spi_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+
+ 	return 0 ;
+}
+
+static int wilc_spi_resume(struct device *dev)
+{
+	printk("\n\n  <<RESUME>> \n\n");
+	
+	/*wake the chip to compelete the re-intialization*/
+	chip_wakeup(0);
+
+	if((g_linux_spi_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_spi_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		}
+	}
+
+	if(pf_get_u8SuspendOnEvent_value()== 1)
+		pf_host_wakeup_notify(0);
+	
+	if((g_linux_spi_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		
+	chip_allow_sleep(0);
+	
+	if((g_linux_spi_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_spi_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		}
+	}
+
+	return 0;
+}
 #ifdef CONFIG_OF
 static const struct of_device_id wilc_of_match[] = {
 	{ .compatible = "atmel,wilc_spi", },
@@ -40,12 +108,18 @@ static const struct of_device_id wilc_of_match[] = {
 MODULE_DEVICE_TABLE(of, wilc_of_match);
 #endif
 
+static const struct dev_pm_ops wilc_spi_pm_ops = {	
+     .suspend = wilc_spi_suspend,    
+     .resume    = wilc_spi_resume,
+    	};
+
 struct spi_driver wilc_bus __refdata = {
 	.driver = {
 		.name = MODALIAS,
 #ifdef CONFIG_OF
 		.of_match_table = wilc_of_match,
 #endif
+		.pm = &wilc_spi_pm_ops,
 	},
 	.probe =  wilc_bus_probe,
 	.remove = __exit_p(wilc_bus_remove),
@@ -140,6 +214,13 @@ int linux_spi_read(u8 *rb, uint32_t rlen)
 		ret = spi_sync(wilc_spi_dev,&msg);
 		if(ret < 0)
 			PRINT_ER("SPI transaction failed\n");
+		/*	
+		else {
+		   int i;
+		   for(i=0; i < rlen; i++)
+		      printk("%02X ", rb[i]);
+		}
+		*/
 		kfree(t_buffer);
 	}else{
 		PRINT_ER("can't read data with the following length: %d\n",rlen);

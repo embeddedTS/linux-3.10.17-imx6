@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -21,6 +21,7 @@
 #include "host_interface.h"
 #include "wilc_wlan.h"
 
+#include <linux/of_gpio.h>
 #include <linux/gpio.h>
 #include <linux/version.h>
 #include <linux/module.h>
@@ -30,6 +31,7 @@
 #include <linux/kdev_t.h>
 #include <linux/fs.h>
 #include <linux/device.h>
+#include <linux/platform_device.h>
 #include <linux/cdev.h>
 #include <linux/firmware.h>
 #ifdef WILC_SDIO
@@ -40,7 +42,14 @@
 #include "linux_wlan_spi.h"
 #endif /* WILC_SDIO */
 
-typedef int (cmd_handler)(int);
+
+#define DRV_NAME  "at_pwr_dev"
+
+/* GPIO definitions */
+int reset_gpio;
+int chip_en_gpio;
+
+typedef int (cmd_handler)(int, char*);
 
 struct cmd_handle_entry {
 	const char *cmd_str;
@@ -57,11 +66,17 @@ struct pwr_dev_t pwr_dev;
 int bt_init_done=0;
 int (*pf_is_wilc3000_initalized)(void)=NULL;
 
+static struct platform_device *at_pwr_platform_dev;
+
 #ifdef WILC_SDIO
 struct semaphore sdio_probe_sync;
 #else
 struct semaphore spi_probe_sync;
 #endif /* WILC_SDIO */
+
+
+static int at_pwr_probe(struct platform_device *pdev);
+static int at_pwr_remove(struct platform_device *pdev);
 
 /* Character device operations*/
 static int pwr_dev_open(struct inode *i, struct file *f);
@@ -71,12 +86,13 @@ static ssize_t pwr_dev_read(struct file *f, char __user *buf, size_t len,
 static ssize_t pwr_dev_write(struct file *f, const char __user *buff,
 			     size_t len, loff_t *off);
 /* Command handlers */
-static int cmd_handle_bt_download_fw(int source);
-static int cmd_handle_bt_power_up(int source);
-static int cmd_handle_bt_power_down(int source);
-static int cmd_handle_bt_fw_chip_wake_up(int source);
-static int cmd_handle_bt_fw_chip_allow_sleep(int source);
-static int cmd_handle_wilc_review_current_status(int source);
+static int cmd_handle_bt_download_fw(int source, char* param);
+static int cmd_handle_bt_power_up(int source, char* param);
+static int cmd_handle_bt_power_down(int source, char* param);
+static int cmd_handle_bt_fw_chip_wake_up(int source, char* param);
+static int cmd_handle_bt_fw_chip_allow_sleep(int source, char* param);
+static int cmd_handle_wilc_review_current_status(int source, char* param);
+static int cmd_handle_wilc_cca_threshold(int source, char* param);
 
 int wilc_bt_firmware_download(void);
 int wilc_bt_start(void);
@@ -91,6 +107,7 @@ static const struct cmd_handle_entry cmd_table[] = {
 	{"BT_FW_CHIP_WAKEUP", cmd_handle_bt_fw_chip_wake_up},
 	{"BT_FW_CHIP_ALLOW_SLEEP", cmd_handle_bt_fw_chip_allow_sleep},
 	{"WILC_CURRENT_STATUS", cmd_handle_wilc_review_current_status},
+	{"CCA_THRESHOLD", cmd_handle_wilc_cca_threshold},
 	/* Keep the NULL handler at the end of the table */
 	{(const char *) NULL, NULL},
 };
@@ -103,10 +120,111 @@ static const struct file_operations pugs_fops = {
 	.write = pwr_dev_write
 };
 
+
+static struct platform_driver at_pwr_driver = {
+	.probe = at_pwr_probe,
+	.remove = at_pwr_remove,
+	.driver = {
+		.name = DRV_NAME,
+		.owner = THIS_MODULE,
+	},
+};
+
+
+static int at_pwr_probe(struct platform_device *pdev)
+{
+   struct device_node *node;
+
+  	PRINT_D(PWRDEV_DBG, "at_pwr_dev: probe\n");
+        
+   /* Get GPIO numbers from DT */
+#ifdef WILC_SDIO
+	node = of_find_node_by_name(NULL, "wilc_sdio");
+#else
+	node = of_find_node_by_name(NULL, "wilc_spi");
+#endif
+
+	if (node == NULL) {
+		PRINT_ER("Couldn't get device node\n");
+		return -EIO;
+	}
+
+	if ((reset_gpio = of_get_named_gpio(node, "wilc3000,reset-gpios", 0)) < 0) {
+		PRINT_ER("Failed to get reset GPIO\n");
+		if (-EPROBE_DEFER == reset_gpio)
+		   printk("reset_gpio == -EPROBE_DEFER\n");
+		
+	} else {
+	   if (gpio_request(reset_gpio, "wilc3000_reset") != 0) {
+		   PRINT_ER("Failed to request reset GPIO\n");
+		   return -EIO;
+	   } else 
+	      gpio_direction_output(reset_gpio, 0);
+   }
+
+	if ((chip_en_gpio = of_get_named_gpio(node, "wilc3000,chip-en-gpios", 0)) < 0) {
+		PRINT_ER("Failed to get chip EN GPIO\n");
+		if (-EPROBE_DEFER == chip_en_gpio)
+		   printk("chip_en_gpio == -EPROBE_DEFER\n");		
+	} else {
+	   if (gpio_request(chip_en_gpio, "wilc3000_chip_en") != 0) {
+		   PRINT_ER("Failed to request chip EN GPIO\n");
+		   return -EIO;
+	   } else 
+	      gpio_direction_output(chip_en_gpio, 0);
+   }
+	
+  	PRINT_D(PWRDEV_DBG, "at_pwr_dev: reset_gpio = GPIO #%d, chip_en_gpio = GPIO #%d\n", 
+  	   reset_gpio, chip_en_gpio);
+	
+	if (chip_en_gpio < 0)
+	   return chip_en_gpio;
+	if (reset_gpio < 0)
+	   return reset_gpio;
+	
+	linux_wlan_device_power(0);
+   return 0;
+   
+}
+
+static int at_pwr_remove(struct platform_device *pdev)
+{
+	PRINT_D(PWRDEV_DBG, "at_pwr_dev: remove\n");
+   
+   if (reset_gpio > 0)
+	   gpio_free(reset_gpio);
+	if (chip_en_gpio > 0)   
+	   gpio_free(chip_en_gpio);
+	   
+   return 0;
+}
+
+
 int at_pwr_dev_init(void)
 {
 	int ret = 0;
 
+	PRINT_D(PWRDEV_DBG, "at_pwr_dev: init\n");
+	
+	at_pwr_platform_dev = platform_device_alloc(DRV_NAME, 0);
+	
+	if (at_pwr_platform_dev == NULL) {
+	   printk("Failed to allocate platform device '" DRV_NAME "'\n");
+	   return -ENOMEM;
+	}
+	
+	ret = platform_device_add(at_pwr_platform_dev);
+	if (ret) {
+	   printk("Failed to add platform device '" DRV_NAME "'\n");
+	   platform_device_put(at_pwr_platform_dev);
+	}   
+	
+	ret = platform_driver_register(&at_pwr_driver);
+	if (ret) {
+		printk("Failed to register platform driver '" DRV_NAME "'\n");
+		goto exit_free_device;
+	}
+	
 	PRINT_D(PWRDEV_DBG, "at_pwr_dev: registered\n");
 	memset(&pwr_dev, 0, sizeof(pwr_dev));
 	ret = alloc_chrdev_region(&chc_dev_no, 0, 1, "atmel");
@@ -144,15 +262,19 @@ int at_pwr_dev_init(void)
 	mutex_init(&pwr_dev.hif_cs);
 	
 	/*initialize Chip_En and ResetN */
-	linux_wlan_device_power(0);
+	//linux_wlan_device_power(0);
 
+	return 0;
+	
+exit_free_device:
+  	platform_device_unregister(at_pwr_platform_dev);	
 	return ret;
 }
 
 void at_pwr_dev_deinit(void)
 {
 	PRINT_D(PWRDEV_DBG, "at_pwr_dev: deinit\n");
-
+	
 	if (&pwr_dev.hif_cs != NULL)
 		mutex_destroy(&pwr_dev.hif_cs);
 
@@ -164,6 +286,10 @@ void at_pwr_dev_deinit(void)
 	class_destroy(chc_dev_class);
 	unregister_chrdev_region(chc_dev_no, 1);
 	PRINT_D(PWRDEV_DBG, "at_pwr_dev: unregistered\n");
+	
+  	platform_driver_unregister(&at_pwr_driver);	
+	platform_device_unregister(at_pwr_platform_dev);
+	
 	return;
 }
 
@@ -330,7 +456,7 @@ int at_pwr_register_bus(int source)
 		 pwr_dev.bus_registered[PWR_DEV_SRC_BT]);
 
 	if (pwr_dev.bus_registered[source] == true) {
-		PRINT_ER("Registering bus request for already registered source %s\n",
+		PRINT_WRN(PWRDEV_DBG, "Registering bus request for already registered source %s\n",
 		       (source == PWR_DEV_SRC_WIFI ? "Wifi" : "BT"));
 	} else {
 		if ((pwr_dev.bus_registered[PWR_DEV_SRC_WIFI] == true) ||
@@ -407,7 +533,7 @@ int at_pwr_unregister_bus(int source)
 		 pwr_dev.bus_registered[PWR_DEV_SRC_BT]);
 
 	if (pwr_dev.bus_registered[source] == false) {
-		PRINT_ER("Unregistering bus request for already unregistered source %s\n",
+		PRINT_WRN(PWRDEV_DBG, "Unregistering bus request for already unregistered source %s\n",
 		       (source == PWR_DEV_SRC_WIFI ? "Wifi" : "BT"));
 	} else if (((source == PWR_DEV_SRC_WIFI) &&
 		   (pwr_dev.bus_registered[PWR_DEV_SRC_BT] == true)) ||
@@ -465,17 +591,21 @@ static ssize_t pwr_dev_write(struct file *f, const char __user *buff,
 			     size_t len, loff_t *off)
 {
 	struct cmd_handle_entry *cmd_entry;
+	char *param = (char*)kmalloc(len+1 ,GFP_ATOMIC);
+	
+	strncpy(param, buff, len);
+	param[len] = '\0';
 
-	PRINT_D(PWRDEV_DBG, "at_pwr_dev: dev_write size %d\n", len);
 	if (len > 0) {
-		PRINT_D(PWRDEV_DBG, "received %s\n", buff);
-
+		PRINT_D(PWRDEV_DBG, "received %s, len %d\n", param, len);
 		/* call the appropriate command handler */
 		cmd_entry = (struct cmd_handle_entry *)cmd_table;
 		while (cmd_entry->handle_cmd != NULL) {
-			if (strncmp(cmd_entry->cmd_str, buff,
+			if (strncmp(cmd_entry->cmd_str, param,
 			    strlen(cmd_entry->cmd_str)) == 0) {
-				cmd_entry->handle_cmd(PWR_DEV_SRC_BT);
+				PRINT_D(PWRDEV_DBG, "param len: %d, string: %s\n", len - strlen(cmd_entry->cmd_str), param);
+				cmd_entry->handle_cmd(PWR_DEV_SRC_BT, param + strlen(cmd_entry->cmd_str));
+				
 				break;
 			}
 			cmd_entry++;
@@ -483,11 +613,12 @@ static ssize_t pwr_dev_write(struct file *f, const char __user *buff,
 	} else {
 		PRINT_D(PWRDEV_DBG, "received invalid size <=0: %d\n", len);
 	}
+	kfree(param);
 	return len;
 }
 
 
-static int cmd_handle_bt_power_up(int source)
+static int cmd_handle_bt_power_up(int source, char* param)
 {
 	int ret;
 	
@@ -502,14 +633,14 @@ static int cmd_handle_bt_power_up(int source)
 }
 
 
-static int cmd_handle_bt_power_down(int source)
+static int cmd_handle_bt_power_down(int source, char* param)
 {	
 	at_pwr_power_down(PWR_DEV_SRC_BT);
 
 	return 0;
 }
 
-static int cmd_handle_bt_download_fw(int source)
+static int cmd_handle_bt_download_fw(int source, char* param)
 {
 	PRINT_D(PWRDEV_DBG, "AT PWR: bt_download_fw\n");
 
@@ -530,7 +661,7 @@ static int cmd_handle_bt_download_fw(int source)
 
 
 
-static int cmd_handle_bt_fw_chip_wake_up(int source)
+static int cmd_handle_bt_fw_chip_wake_up(int source, char* param)
 {
 	chip_wakeup(source);
 	return 0;
@@ -538,7 +669,7 @@ static int cmd_handle_bt_fw_chip_wake_up(int source)
 
 
 
-static int cmd_handle_bt_fw_chip_allow_sleep(int source)
+static int cmd_handle_bt_fw_chip_allow_sleep(int source, char* param)
 {
 	bt_init_done=1;
 	chip_allow_sleep(source);
@@ -546,11 +677,65 @@ static int cmd_handle_bt_fw_chip_allow_sleep(int source)
 }
 
 
-static int cmd_handle_wilc_review_current_status(int source)
+static int cmd_handle_wilc_review_current_status(int source, char* param)
 {
 	PRINT_D(PWRDEV_DBG, "WILC Devices current status Wifi: %d, BT: %d\n",
 		 pwr_dev.power_status[PWR_DEV_SRC_WIFI],
 		 pwr_dev.power_status[PWR_DEV_SRC_BT]);
+	
+	return 0;
+}
+
+static int cmd_handle_wilc_cca_threshold(int source, char* param)
+{
+	int carrier_thrshold, noise_thrshold;
+	unsigned int carr_thrshold_frac, noise_thrshold_frac, carr_thrshold_int, 
+		noise_thrshold_int, reg;
+	
+	if(param == NULL) {
+		PRINT_ER("Invalid parameter\n");
+		return -1;
+	}
+
+	if(!(pwr_dev.bus_registered[PWR_DEV_SRC_WIFI] || pwr_dev.bus_registered[PWR_DEV_SRC_BT])) {
+		PRINT_ER("Bus not registered\n");
+		return -1;
+	}
+
+	if(sscanf(param, " %d %d", &noise_thrshold, &carrier_thrshold) != 2) {
+		PRINT_ER("Failed to parse input parameters. Usage:\n echo CCA_THRESHOLD "
+			"NOISE_THRESHOLD CARRIER_THRESHOLD > /dev/at_pwr_dev\n"
+			"where threshold values are in dB * 10\ne.g."
+			"echo CCA_THRESHOLD -625 -826 > /dev/at_pwr_dev to set thresholds "
+			"to -62.5 and -82.6\n\n");
+		return -1;
+	}
+	
+	PRINT_D(PWRDEV_DBG, 
+		"Changing CCA noise threshold to %d and carrier thresholds to %d \n",
+		noise_thrshold, carrier_thrshold);
+
+	carr_thrshold_int = carrier_thrshold/10;
+	if(carrier_thrshold < 0)
+		carr_thrshold_frac = (carr_thrshold_int * 10) - carrier_thrshold;
+	else
+		carr_thrshold_frac = carrier_thrshold - (carr_thrshold_int * 10);
+
+	noise_thrshold_int = noise_thrshold/10;
+	if(noise_thrshold < 0)
+		noise_thrshold_frac = (noise_thrshold_int * 10) - noise_thrshold;
+	else
+		noise_thrshold_frac = noise_thrshold - (noise_thrshold_int * 10);
+
+	pwr_dev.hif_func.hif_read_reg(rCCA_CTL_2, &reg);
+	reg &= ~(0x7FF0000);
+	reg |= ((noise_thrshold_frac & 0x7) | ((noise_thrshold_int & 0x1FF) << 3)) << 16;
+	pwr_dev.hif_func.hif_write_reg(rCCA_CTL_2, reg);
+	
+	pwr_dev.hif_func.hif_read_reg(rCCA_CTL_7, &reg);
+	reg &= ~(0x7FF0000);
+	reg |= ((carr_thrshold_frac & 0x7) | ((carr_thrshold_int & 0x1FF) << 3)) << 16;
+	pwr_dev.hif_func.hif_write_reg(rCCA_CTL_7, reg);
 	
 	return 0;
 }
@@ -682,12 +867,33 @@ void release_bus(enum BUS_RELEASE release, int source)
 }
 EXPORT_SYMBOL(release_bus);
 
-#define ATWILC_SDIO_CARD_ID	1
-#define _linux_wlan_device_power_on()          wifi_pm_power(1)
-#define _linux_wlan_device_power_off()         wifi_pm_power(0)
+ #if defined(SAMA5D4_BOARD)
+ extern void atmci_rescan_card(unsigned id,unsigned insert);
+ #define WILC_SDIO_CARD_ID	0
+ #define _linux_wlan_device_detection()		atmci_rescan_card(WILC_SDIO_CARD_ID,1)
+ #define _linux_wlan_device_removal()		atmci_rescan_card(WILC_SDIO_CARD_ID,0)
+ #define _linux_wlan_device_power_on()		wifi_pm_power(1)
+ #define _linux_wlan_device_power_off()		wifi_pm_power(0) 
+ #elif defined(PANDA_BOARD)
+ #define _linux_wlan_device_detection()		mmc_start_host(mmc_host_backup[2])
+ #define _linux_wlan_device_removal()		mmc_stop_host(mmc_host_backup[2])
+ #define _linux_wlan_device_power_on()		{}
+ #define _linux_wlan_device_power_off()		{} 
+ #elif defined(PLAT_ALLWINNER_A31)
+ extern void sw_mci_rescan_card(unsigned id, unsigned insert);
 
+ #define ATWILC_SDIO_CARD_ID	1
+ #define _linux_wlan_device_power_on()          wifi_pm_power(1)
+ #define _linux_wlan_device_power_off()         wifi_pm_power(0)
+ #define _linux_wlan_device_detection()         sw_mci_rescan_card(ATWILC_SDIO_CARD_ID,1)
+ #define _linux_wlan_device_removal()           sw_mci_rescan_card(ATWILC_SDIO_CARD_ID,0)
+#endif
+
+
+#if (0)
 void wifi_pm_power(int power)
 {
+
 	PRINT_D(INIT_DBG, "wifi_pm : %d \n", power);
 	if (gpio_request(GPIO_NUM_CHIP_EN, "CHIP_EN") == 0 && gpio_request(GPIO_NUM_RESET, "RESET") == 0)
 	{
@@ -695,19 +901,43 @@ void wifi_pm_power(int power)
 		gpio_direction_output(GPIO_NUM_RESET, 0);
 		if (power)
 		{
-			gpio_set_value_cansleep(GPIO_NUM_CHIP_EN , 1);
+			gpio_set_value(GPIO_NUM_CHIP_EN , 1);
 			mdelay(5);
-			gpio_set_value_cansleep(GPIO_NUM_RESET , 1);
+			gpio_set_value(GPIO_NUM_RESET , 1);
 		}
 		else
 		{
-			gpio_set_value_cansleep(GPIO_NUM_RESET , 0);
-			gpio_set_value_cansleep(GPIO_NUM_CHIP_EN , 0);
+			gpio_set_value(GPIO_NUM_RESET , 0);
+			gpio_set_value(GPIO_NUM_CHIP_EN , 0);
 		}
 		gpio_free(GPIO_NUM_CHIP_EN);
 		gpio_free(GPIO_NUM_RESET);
 	}
 }
+#else
+void wifi_pm_power(int power)
+{
+	PRINT_D(INIT_DBG, "wifi_pm : %d \n", power);
+	
+	if (reset_gpio > 0 && chip_en_gpio > 0) {
+	
+	   gpio_direction_output(reset_gpio, 0);
+	   gpio_direction_output(chip_en_gpio, 0);
+	   msleep(100);
+
+	   if (power) {
+		   gpio_set_value_cansleep(chip_en_gpio, 1);
+		   msleep(5);
+		   gpio_set_value_cansleep(reset_gpio, 1);
+	   } else {
+		   gpio_set_value_cansleep(chip_en_gpio, 0);
+		   gpio_set_value_cansleep(reset_gpio, 0);
+	   }
+	} else printk("Can't enable wifi; chip_en and/or reset gpio not assigned\n");
+	
+}
+#endif
+
 static int linux_wlan_device_power(int on_off)
 {
     PRINT_D(INIT_DBG,"linux_wlan_device_power.. (%d)\n", on_off);
@@ -727,6 +957,13 @@ static int linux_wlan_device_power(int on_off)
 static int linux_wlan_device_detection(int on_off)
 {
     PRINT_D(INIT_DBG,"linux_wlan_device_detection.. (%d)\n", on_off);
+
+#ifdef WILC_SDIO
+    if ( on_off )
+        _linux_wlan_device_detection();
+    else
+        _linux_wlan_device_removal();
+#endif
 
     return 0;
 }
