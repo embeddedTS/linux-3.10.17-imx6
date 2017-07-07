@@ -706,7 +706,7 @@
 	pinctrl-0 = <&pinctrl_usdhc1>;
 	vmmc-supply = <&wl12xx_vmmc>;
 	bus-width = <4>;
-	status = "okay";
+	status = "disabled";
 	non-removable;
 
 	#address-cells = <1>;

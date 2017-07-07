@@ -71,6 +71,10 @@
 	status = "okay";
 };
 
+&usdhc1 {
+	status = "okay";
+};
+
 &wl1271_wifi {
 	status = "okay";
 };
