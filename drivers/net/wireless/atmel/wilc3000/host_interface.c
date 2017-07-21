@@ -6876,7 +6876,7 @@ void GnrlAsyncInfoReceived(u8 *pu8Buffer, u32 u32Length)
 	PRINT_D(HOSTINF_DBG, "General asynchronous info packet received\n");
 
 	if (pstrWFIDrv == NULL || pstrWFIDrv == terminated_handle) {
-		PRINT_ER("Wifi driver handler is equal to NULL\n");
+		/*PRINT_ER("Wifi driver handler is equal to NULL\n");*/
 		/*BugID_5348*/
 		up(&hSemHostIntDeinit);
 		return;
