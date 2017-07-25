@@ -196,12 +196,6 @@
 	};
 };
 
-&pwm1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm_rem>;
-	status = "okay";
-};
-
 &pwm3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm3_1>;
@@ -452,14 +446,6 @@
 		};
 	};
 
-	pwm-rem {
-		pinctrl_pwm_rem: rem_pwm {
-			fsl,pins = <
-				MX6QDL_PAD_GPIO_9__PWM1_OUT            0x1b0b1   // PWM_REM_LCD
-			>;
-		};
-	};
-
 	enet-7990 {
 		pinctrl_enet_7990: enet-7990 {
 			fsl,pins = <
@@ -516,6 +502,7 @@
 				MX6QDL_PAD_EIM_DA10__GPIO3_IO10        0x80000000 // PUSH_SW_2#
 				MX6QDL_PAD_EIM_DA13__GPIO3_IO13        0x80000000 // GPS_1PPS
 				MX6QDL_PAD_EIM_DA15__GPIO3_IO15        0x80000000 // ACCEL_2_INT
+				MX6QDL_PAD_GPIO_9__GPIO1_IO09          0x88 // TOUCH_RESET
 
 				// Strapping only
 				MX6QDL_PAD_EIM_LBA__GPIO2_IO27         0x80000000 // BUS_ALE#
