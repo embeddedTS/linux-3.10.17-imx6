@@ -1,6 +1,6 @@
 config WILC3000
 	tristate "WILC3000 support (WiFi & Bluetooth coexistence)"
-    	depends on CFG80211 && BT
+	depends on CFG80211 && BT && m
 	depends on MMC || SPI
 	---help---
 	  This module supports Atmel IEEE 802.11n FullMAC and Bluetooth combo
