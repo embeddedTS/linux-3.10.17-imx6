@@ -450,8 +450,8 @@ static int spi_cmd_complete(uint8_t cmd, uint32_t addr,
 	rsp = rb[rix++];
 
 	if (rsp != cmd) {
-		PRINT_ER("Failed cmd response, cmd (%02x)"
-			", resp (%02x)\n", cmd, rsp);
+		/*PRINT_ER("Failed cmd response, cmd (%02x)"
+			", resp (%02x)\n", cmd, rsp);*/
 		result = N_FAIL;
 		return result;
 	}
@@ -1235,12 +1235,13 @@ static int spi_sync(void)
 static int spi_init(struct wilc_wlan_inp *inp)
 {
 	uint32_t reg;
+	uint8_t dat[32];
 	uint32_t chipid;
+	uint8_t result;
 
 	static int isinit = 0;
 
 	if(isinit) {
-
 		if (!spi_read_reg(0x3b0000, &chipid)) {
 			PRINT_ER("Fail cmd read chip id...\n");
 			return 0;
@@ -1266,7 +1267,18 @@ static int spi_init(struct wilc_wlan_inp *inp)
 		configure protocol 
 	**/
 	g_spi.crc_off = 0;
-	
+
+
+	/* Simpler test probe */
+	result = spi_cmd_complete(CMD_INTERNAL_READ, WILC_SPI_PROTOCOL_OFFSET,
+			  (uint8_t *)dat, 4,
+			  0);
+	if (result != N_OK) {
+		printk(KERN_INFO "wilc3000: Not detected.\n");
+		return 0;
+	}
+	printk(KERN_INFO "wilc3000: Detected.\n");
+
 	// TODO: We can remove the CRC trials if there is a definite way to reset 
 	// the SPI to it's initial value.
 	if (!spi_internal_read(WILC_SPI_PROTOCOL_OFFSET, &reg)) {
