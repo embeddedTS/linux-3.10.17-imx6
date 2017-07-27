@@ -133,11 +133,13 @@ static struct platform_driver at_pwr_driver = {
 
 static int at_pwr_probe(struct platform_device *pdev)
 {
-   struct device_node *node;
+	struct device_node *node;
+	int ret;
 
-  	PRINT_D(PWRDEV_DBG, "at_pwr_dev: probe\n");
-        
-   /* Get GPIO numbers from DT */
+	const struct firmware *wilc_firmware;
+	PRINT_D(PWRDEV_DBG, "at_pwr_dev: probe\n");
+
+	/* Get GPIO numbers from DT */
 #ifdef WILC_SDIO
 	node = of_find_node_by_name(NULL, "wilc_sdio");
 #else
@@ -146,45 +148,50 @@ static int at_pwr_probe(struct platform_device *pdev)
 
 	if (node == NULL) {
 		PRINT_ER("Couldn't get device node\n");
-		return -EIO;
+	return -EIO;
 	}
 
 	if ((reset_gpio = of_get_named_gpio(node, "wilc3000,reset-gpios", 0)) < 0) {
 		PRINT_ER("Failed to get reset GPIO\n");
-		if (-EPROBE_DEFER == reset_gpio)
-		   printk("reset_gpio == -EPROBE_DEFER\n");
-		
+		return -EIO;
 	} else {
-	   if (gpio_request(reset_gpio, "wilc3000_reset") != 0) {
-		   PRINT_ER("Failed to request reset GPIO\n");
-		   return -EIO;
-	   } else 
-	      gpio_direction_output(reset_gpio, 0);
-   }
+		ret = gpio_request(reset_gpio, "wilc3000_reset");
+		if(ret == -EPROBE_DEFER){
+		printk(KERN_INFO "HERE, %s, %s, %d\n", __FILE__, __FUNCTION__, __LINE__);
+			return -EPROBE_DEFER;
+		} else if (ret != 0) {
+			PRINT_ER("Failed to request reset GPIO, %d\n", ret);
+			return -EIO;
+		} else {
+			gpio_direction_output(reset_gpio, 0);
+		}
+	}
 
 	if ((chip_en_gpio = of_get_named_gpio(node, "wilc3000,chip-en-gpios", 0)) < 0) {
 		PRINT_ER("Failed to get chip EN GPIO\n");
-		if (-EPROBE_DEFER == chip_en_gpio)
-		   printk("chip_en_gpio == -EPROBE_DEFER\n");		
+		return -EIO;
 	} else {
-	   if (gpio_request(chip_en_gpio, "wilc3000_chip_en") != 0) {
-		   PRINT_ER("Failed to request chip EN GPIO\n");
-		   return -EIO;
-	   } else 
-	      gpio_direction_output(chip_en_gpio, 0);
-   }
-	
-  	PRINT_D(PWRDEV_DBG, "at_pwr_dev: reset_gpio = GPIO #%d, chip_en_gpio = GPIO #%d\n", 
-  	   reset_gpio, chip_en_gpio);
-	
+		ret = gpio_request(chip_en_gpio, "wilc3000_chip_en");
+		if(ret == -EPROBE_DEFER){
+		printk(KERN_INFO "HERE, %s, %s, %d\n", __FILE__, __FUNCTION__, __LINE__);
+			return -EPROBE_DEFER;
+		} else if (ret != 0) {
+			PRINT_ER("Failed to request chip EN GPIO, %d\n", ret);
+			return -EIO;
+		} else {
+			gpio_direction_output(chip_en_gpio, 0);
+		}
+	}
+	PRINT_D(PWRDEV_DBG, "at_pwr_dev: reset_gpio = GPIO #%d, chip_en_gpio = GPIO #%d\n", 
+	reset_gpio, chip_en_gpio);
+
 	if (chip_en_gpio < 0)
-	   return chip_en_gpio;
+		return chip_en_gpio;
 	if (reset_gpio < 0)
-	   return reset_gpio;
-	
+		return reset_gpio;
+
 	linux_wlan_device_power(0);
-   return 0;
-   
+	return 0;
 }
 
 static int at_pwr_remove(struct platform_device *pdev)
@@ -491,8 +498,9 @@ int at_pwr_register_bus(int source)
 				} else {
 					PRINT_D(PWRDEV_DBG, "sdio probe is called\n");
 					pwr_dev.bus_registered[source] = true;
-					if (!hif_sdio.hif_init(&inp))
-						ret = -5;
+					if (!hif_sdio.hif_init(&inp)){
+						ret = -5
+					}
 					memcpy((void *)&pwr_dev.hif_func, &hif_sdio, sizeof(struct wilc_hif_func));
 				}
 			}
@@ -509,8 +517,9 @@ int at_pwr_register_bus(int source)
 				} else {
 					PRINT_D(PWRDEV_DBG, "spi probe is called\n");
 					pwr_dev.bus_registered[source] = true;
-					if (!hif_spi.hif_init(&inp))
-						ret = -5;
+					if (!hif_spi.hif_init(&inp)){
+						ret = -ENODEV;
+					}
 					memcpy((void *)&pwr_dev.hif_func, &hif_spi, sizeof(struct wilc_hif_func));
 				}
 			}
