@@ -488,7 +488,7 @@ static int sdio_deinit(void *pv)
 }
 
 
-int sdio_reset(void)
+int wilc_sdio_reset(void)
 {
 
 	struct sdio_cmd52_t cmd;
@@ -1130,7 +1130,7 @@ struct wilc_hif_func hif_sdio = {
 	sdio_write,
 	sdio_read,
 	sdio_sync_ext,
-	sdio_reset,
+	wilc_sdio_reset,
 };
 EXPORT_SYMBOL(hif_sdio);
 
