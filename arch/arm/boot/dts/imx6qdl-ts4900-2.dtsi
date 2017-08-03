@@ -631,8 +631,7 @@
 
 &fec {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_enet_4900 &pinctrl_enet_irq>;
-		interrupts-extended = <&gpio1 6 0x04>, <&intc 0 119 0x04>;
+	pinctrl-0 = <&pinctrl_enet_4900>;
 	phy-mode = "rgmii";
 	status = "okay";
 };
