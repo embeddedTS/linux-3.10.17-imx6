@@ -164,7 +164,6 @@ static struct s_max3100ts_common {
 	struct max3100ts_port *max3100ts[MAX_MAX3100];	/* the chip */
 	struct mutex portlock;	/* race on port usage */
 	struct mutex max3100ts_lock;	/* race on probe */
-	struct mutex max3100s_csidx_lock;	/* race on uart_idx selection */
 	struct spi_device *spi;	/* all our uarts are on one spi */
 	int irq;		/* single irq assigned to the max3100-ts */
 	int uart_idx;		/* index into max3100ts[ ] */
@@ -217,7 +216,6 @@ static void max3100_dowork(struct max3100ts_port *s)
 static void max3100_timeout(unsigned long data)
 {
 	struct max3100ts_port *s = (struct max3100ts_port *)data;
-
 	if (s->port.state) {
 		max3100_dowork(s);
 		mod_timer(&s->timer, jiffies + s->poll_time);
@@ -239,8 +237,6 @@ static int max3100_sr(struct max3100ts_port *s, u16 tx, u16 * rx)
 		.len = 1,
 	};
 
-	mutex_lock(&max3100ts_common.max3100s_csidx_lock);
-
 	if (max3100ts_common.uart_idx != s->minor) {
 		u8 cs = s->minor | MAX3100_CSI;
 		idx.tx_buf = &cs;
@@ -250,7 +246,6 @@ static int max3100_sr(struct max3100ts_port *s, u16 tx, u16 * rx)
 		if (status) {
 			dev_warn(&max3100ts_common.spi->dev,
 				 "error while calling spi_sync\n");
-			mutex_unlock(&max3100ts_common.max3100s_csidx_lock);
 			return -EIO;
 		}
 		max3100ts_common.uart_idx = s->minor;
@@ -261,7 +256,6 @@ static int max3100_sr(struct max3100ts_port *s, u16 tx, u16 * rx)
 	spi_message_init(&message);
 	spi_message_add_tail(&tran, &message);
 	status = spi_sync(max3100ts_common.spi, &message);
-	mutex_unlock(&max3100ts_common.max3100s_csidx_lock);
 	if (status) {
 		dev_warn(&max3100ts_common.spi->dev,
 			 "error while calling spi_sync\n");
@@ -326,7 +320,6 @@ static void max3100_port_dowork(struct max3100ts_port *s)
 
 	rxchars = 0;
 	do {
-		mutex_lock(&max3100ts_common.portlock);
 		spin_lock(&s->conf_lock);
 		conf = s->conf;
 		cconf = s->conf_commit;
@@ -348,9 +341,13 @@ static void max3100_port_dowork(struct max3100ts_port *s)
 		if (s->port.x_char) {
 			tx = s->port.x_char;
 			x = 1;
-		} else if (!uart_circ_empty(xmit) && !uart_tx_stopped(&s->port)) {
-			tx = xmit->buf[xmit->tail];
-			x = 2;
+		} else{
+			if(!s->force_end_work){
+				if (!uart_circ_empty(xmit) && !uart_tx_stopped(&s->port)) {
+					tx = xmit->buf[xmit->tail];
+					x = 2;
+				}
+			}
 		}
 		if (x) {	/* we have something to send, so send it! */
 			max3100_calc_parity(s, &tx);
@@ -382,8 +379,6 @@ static void max3100_port_dowork(struct max3100ts_port *s)
 			if(s->port.state->port.tty)
 				uart_write_wakeup(&s->port);
 		}
-
-		mutex_unlock(&max3100ts_common.portlock);
 	} while (!s->force_end_work &&
 		 !freezing(current) &&
 		 ((rx & MAX3100_R) ||
@@ -396,7 +391,9 @@ static void max3100_port_dowork(struct max3100ts_port *s)
 static void max3100_port_work(struct work_struct *w)
 {
 	struct max3100ts_port *s = container_of(w, struct max3100ts_port, work);
+	mutex_lock(&max3100ts_common.portlock);
 	max3100_port_dowork(s);
+	mutex_unlock(&max3100ts_common.portlock);
 }
 
 static irqreturn_t max3100_thread_irq(int irqno, void *dev_id)
@@ -407,7 +404,9 @@ static irqreturn_t max3100_thread_irq(int irqno, void *dev_id)
 
 	for (i = 0; i < max3100ts_common.uart_count; i++) {
 		struct max3100ts_port *s = max3100ts_common.max3100ts[i];
+		mutex_lock(&max3100ts_common.portlock);
 		max3100_port_dowork(s);
+		mutex_unlock(&max3100ts_common.portlock);
 	}
 
 	return IRQ_HANDLED;
@@ -634,7 +633,10 @@ static void max3100_shutdown(struct uart_port *port)
 	if (s->suspending)
 		return;
 
+	/* Make sure any dowork from the irq thread are finished */
 	s->force_end_work = 1;
+	mutex_lock(&max3100ts_common.portlock);
+	mutex_unlock(&max3100ts_common.portlock);
 
 	if (s->poll_time > 0)
 		del_timer_sync(&s->timer);
@@ -652,7 +654,9 @@ static void max3100_shutdown(struct uart_port *port)
 		u16 tx, rx;
 
 		tx = MAX3100_WC | MAX3100_SHDN;
+		mutex_lock(&max3100ts_common.portlock);
 		max3100_sr(s, tx, &rx);
+		mutex_unlock(&max3100ts_common.portlock);
 	}
 }
 
@@ -848,7 +852,6 @@ static int max3100_probe(struct spi_device *spi)
 	const struct plat_max3100 *pdata;
 	u16 tx, rx;
 
-	mutex_init(&max3100ts_common.max3100s_csidx_lock);
 	mutex_init(&max3100ts_common.max3100ts_lock);
 	mutex_init(&max3100ts_common.portlock);
 
@@ -1007,7 +1010,9 @@ static int max3100_suspend(struct device *dev)
 		/* no HW suspend, so do SW one */
 		u16 tx, rx;
 		tx = MAX3100_WC | MAX3100_SHDN;
+		mutex_lock(&max3100ts_common.portlock);
 		max3100_sr(s, tx, &rx);
+		mutex_unlock(&max3100ts_common.portlock);
 	}
 	return 0;
 }
