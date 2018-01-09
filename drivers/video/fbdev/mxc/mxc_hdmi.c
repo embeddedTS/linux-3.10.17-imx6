@@ -63,9 +63,6 @@
 #define HDMI_EDID_SAME		-2
 #define HDMI_EDID_NO_MODES	-3
 
-#define NUM_CEA_VIDEO_MODES	64
-#define DEFAULT_VIDEO_MODE	16 /* 1080P */
-
 #define RGB			0
 #define YCBCR444		1
 #define YCBCR422_16BITS		2
@@ -1796,15 +1793,14 @@ static void mxc_hdmi_edid_rebuild_modelist(struct mxc_hdmi *hdmi)
 		/*
 		 * We might check here if mode is supported by HDMI.
 		 * We do not currently support interlaced modes.
-		 * And add CEA modes in the modelist.
 		 */
 		mode = &hdmi->fbi->monspecs.modedb[i];
 
 		if (!(mode->vmode & FB_VMODE_INTERLACED) &&
-				(mxc_edid_mode_to_vic(mode) != 0)) {
-
-			dev_dbg(&hdmi->pdev->dev, "Added mode %d:", i);
-			dev_dbg(&hdmi->pdev->dev,
+			mode->xres <= 1920 &&
+			mode->yres <= 1080) {
+			dev_info(&hdmi->pdev->dev, "Added mode %d:", i);
+			dev_info(&hdmi->pdev->dev,
 				"xres = %d, yres = %d, freq = %d, vmode = %d, flag = %d\n",
 				hdmi->fbi->monspecs.modedb[i].xres,
 				hdmi->fbi->monspecs.modedb[i].yres,
