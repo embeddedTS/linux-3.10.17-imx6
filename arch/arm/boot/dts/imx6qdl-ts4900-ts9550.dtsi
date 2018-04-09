@@ -82,6 +82,16 @@
 	};
 };
 
+/delete-node/ &flash;
+
+&ecspi1 {
+	spidev@0 {
+		compatible = "spidev";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+	};
+};
+
 &ecspi2 {
 	fsl,spi-num-chipselects = <2>;
 	cs-gpios = <&gpio6 2 0>, <&gpio5 29 0>;
