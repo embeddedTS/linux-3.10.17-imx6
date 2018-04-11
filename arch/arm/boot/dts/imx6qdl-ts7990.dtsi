@@ -221,6 +221,7 @@
 			ti,debounce-rep = /bits/ 16 <2>;
 			ti,debounce-tol = /bits/ 16 <65535>;
 			ti,debounce-max = /bits/ 16 <0>;
+			ti,pressure-max = /bits/ 16 <15000>;
 			ti,pendown-gpio-debounce = <10000>;
 			linux,wakeup;
 		};
