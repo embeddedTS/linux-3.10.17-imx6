@@ -272,7 +272,7 @@
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <3>;
-	cs-gpios = <&gpio5 31 0>, <&gpio1 6 0>, <&gpio5 18 0>;
+	cs-gpios = <&gpio5 31 0>, <&gpio1 6 0>, <&gpio8 7 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi2>;
 	status = "okay";
@@ -402,7 +402,6 @@
 				MX6QDL_PAD_GPIO_4__GPIO1_IO04		0x1b088 /* FPGA_IRQ_1 */
 				MX6QDL_PAD_EIM_EB0__GPIO2_IO28		0x1b088 /* FPGA_IRQ_2 */
 				MX6QDL_PAD_GPIO_6__GPIO1_IO06		0x1b088 /* FPGA_SPI_CS1# */
-				MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18	0x1c0b1 /* DC_SPI_CS# */
 			>;
 		};
 
