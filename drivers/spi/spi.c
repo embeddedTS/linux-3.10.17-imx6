@@ -465,7 +465,7 @@ static void spi_set_cs(struct spi_device *spi, bool enable)
 		enable = !enable;
 
 	if (spi->cs_gpio >= 0)
-		gpio_set_value(spi->cs_gpio, !enable);
+		gpio_set_value_cansleep(spi->cs_gpio, !enable);
 	else if (spi->master->set_cs)
 		spi->master->set_cs(spi, !enable);
 }
