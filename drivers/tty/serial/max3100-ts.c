@@ -946,6 +946,9 @@ static int max3100_probe(struct spi_device *spi)
 
 	mutex_unlock(&max3100ts_common.max3100ts_lock);
 
+	if(max3100ts_common.uart_count == 0)
+		return 0;
+
 	retval = devm_request_threaded_irq(&spi->dev, spi->irq, NULL, max3100_thread_irq,
 									IRQF_TRIGGER_LOW | IRQF_ONESHOT, "max3100-ts",
 									&max3100ts_common);
