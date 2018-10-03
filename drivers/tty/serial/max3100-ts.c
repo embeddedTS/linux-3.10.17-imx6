@@ -168,6 +168,7 @@ static struct s_max3100ts_common {
 	int irq;		/* single irq assigned to the max3100-ts */
 	int uart_idx;		/* index into max3100ts[ ] */
 	int uart_count;		/* number of uarts detected */
+	int opencnt;		/* Reference count instances to know when to enable IRQ */
 } max3100ts_common;
 
 static int max3100_do_parity(struct max3100ts_port *s, u16 c)
@@ -630,6 +631,12 @@ static void max3100_shutdown(struct uart_port *port)
 
 	dev_dbg(&max3100ts_common.spi->dev, "%s\n", __func__);
 
+	max3100ts_common.opencnt--;
+
+	if(max3100ts_common.opencnt == 0) {
+		free_irq(max3100ts_common.spi->irq, &max3100ts_common);
+	}
+
 	if (s->suspending)
 		return;
 
@@ -704,6 +711,21 @@ static int max3100_startup(struct uart_port *port)
 		msleep(50);
 
 	max3100_enable_ms(&s->port);
+
+	max3100ts_common.opencnt++;
+	if(max3100ts_common.opencnt == 1){
+		int ret;
+		ret = request_threaded_irq(max3100ts_common.spi->irq,
+				  NULL,
+				  max3100_thread_irq,
+				  IRQF_TRIGGER_LOW | IRQF_ONESHOT,
+				  "max3100-ts",
+				  &max3100ts_common);
+		if (ret) {
+			dev_warn(&max3100ts_common.spi->dev, "cannot allocate irq %d\n", max3100ts_common.spi->irq);
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -945,18 +967,6 @@ static int max3100_probe(struct spi_device *spi)
 	}
 
 	mutex_unlock(&max3100ts_common.max3100ts_lock);
-
-	if(max3100ts_common.uart_count == 0)
-		return 0;
-
-	retval = devm_request_threaded_irq(&spi->dev, spi->irq, NULL, max3100_thread_irq,
-									IRQF_TRIGGER_LOW | IRQF_ONESHOT, "max3100-ts",
-									&max3100ts_common);
-
-	if (retval) {
-		dev_warn(&spi->dev, "cannot allocate irq %d\n", spi->irq);
-		return retval;
-	}
 
 	dev_info(&spi->dev, "Detected %d uarts\n", max3100ts_common.uart_count);
 	return 0;
