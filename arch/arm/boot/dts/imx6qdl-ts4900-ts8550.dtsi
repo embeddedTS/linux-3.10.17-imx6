@@ -1,0 +1,285 @@
+/*
+ * Copyright 2020 Technologic Systems
+ *
+ * This file is dual-licensed: you can use it either under the terms
+ * of the GPL or the X11 license, at your option. Note that this dual
+ * licensing only applies to this file, and not this project as a
+ * whole.
+ *
+ *  a) This file is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License
+ *     version 2 as published by the Free Software Foundation.
+ *
+ *     This file is distributed in the hope that it will be useful
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ * Or, alternatively
+ *
+ *  b) Permission is hereby granted, free of charge, to any person
+ *     obtaining a copy of this software and associated documentation
+ *     files (the "Software"), to deal in the Software without
+ *     restriction, including without limitation the rights to use
+ *     copy, modify, merge, publish, distribute, sublicense, and/or
+ *     sell copies of the Software, and to permit persons to whom the
+ *     Software is furnished to do so, subject to the following
+ *     conditions:
+ *
+ *     The above copyright notice and this permission notice shall be
+ *     included in all copies or substantial portions of the Software.
+ *
+ *     THE SOFTWARE IS PROVIDED , WITHOUT WARRANTY OF ANY KIND
+ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
+ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *     OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+#include "imx6qdl-ts4900.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	aliases {
+		ethernet0 = &fec;
+		mxcfb0 = &mxcfb0;
+	};
+
+	backlight_lcd {
+		compatible = "pwm-backlight";
+		pwms = <&pwm3 0 50000>; // 20khz as recommended by bklt manual
+		brightness-levels = <0 128 140 160 180 200 220 240 255>;
+		default-brightness-level = <8>;
+		power-supply = <&reg_lcdbklt19v>;
+	};
+
+	lcd@0 {
+		compatible = "fsl,lcd";
+		ipu_id = <0>;
+		disp_id = <0>;
+		default_ifmt = "RGB24";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ipu>;
+		status = "okay";
+		display-supply = <&reg_3p3v>;
+	};
+
+	mxcfb0: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "lcd";
+		interface_pix_fmt = "RGB24";
+		mode_str ="NHD-3.5-320240MF";
+		default_bpp = <24>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "okay";
+	};
+
+	regulators {
+		compatible = "simple-bus";
+
+		reg_lcdbklt19v: lcdbklt19v {
+			compatible = "regulator-fixed";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_lcdbklt19v>;
+			regulator-name = "LCD_BKLT";
+			regulator-min-microvolt = <19000000>;
+			regulator-max-microvolt = <19000000>;
+			gpio = <&gpio2 15 0>;
+			enable-active-high;
+			startup-delay-us = <60000>;
+			regulator-boot-on;
+		};
+	};
+
+	v4l2_out {
+		compatible = "fsl,mxc_v4l2_output";
+		status = "okay";
+	};
+};
+
+&pwm3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3>;
+	status = "okay";
+};
+
+&i2c2 {
+	/* This is actually a 5426, but, it is compatible with the 5406 base */
+	lcd_touch: ft5x26@38 {
+		status = "okay";
+		compatible = "edt,edt-ft5406", "edt,edt-ft5x06";
+		reg = <0x38>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&edt_ft5x06_pins>;
+		interrupt-parent = <&gpio7>;
+		interrupts = <8 0>;
+		reset-gpios = <&gpio7 11 GPIO_ACTIVE_LOW>;
+
+		touchscreen-size-x = <320>;
+		touchscreen-size-y = <240>;
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_misc>;
+
+	imx6-ts4900 {
+		edt_ft5x06_pins: touchgrp {
+			fsl,pins = <
+				/* Touch RST */
+				MX6QDL_PAD_GPIO_16__GPIO7_IO11          0x4001b8b1
+				/* Touch IRQ */
+				MX6QDL_PAD_SD3_RST__GPIO7_IO08          0x4001b8b1
+			>;
+		};
+
+		pinctrl_lcdbklt19v: lcdreggrp {
+			fsl,pins = <
+				/* EN_LCD_BKLT */
+				MX6QDL_PAD_SD4_DAT7__GPIO2_IO15          0x1b088
+			>;
+		};
+
+		pinctrl_pwm3: pwm3grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT1__PWM3_OUT 0x1b088
+			>;
+		};
+
+		pinctrl_ipu: tsipugrp {
+			fsl,pins = <
+			  MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK      0x38
+
+			  /* DE */
+			  MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15            0xe0
+			  /* Hsync */
+			  MX6QDL_PAD_DI0_PIN2__IPU1_DI0_PIN02             0xe0
+			  /* Vsync */
+			  MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03             0xe0
+
+			  MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00        0xe0
+			  MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01        0xe0
+			  MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02        0xe0
+			  MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03        0xe0
+			  MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04        0xe0
+			  MX6QDL_PAD_DISP0_DAT5__IPU1_DISP0_DATA05        0xe0
+			  MX6QDL_PAD_DISP0_DAT6__IPU1_DISP0_DATA06        0xe0
+			  MX6QDL_PAD_DISP0_DAT7__IPU1_DISP0_DATA07        0xe0
+			  MX6QDL_PAD_DISP0_DAT8__IPU1_DISP0_DATA08        0xe0
+			  MX6QDL_PAD_DISP0_DAT9__IPU1_DISP0_DATA09        0xe0
+			  MX6QDL_PAD_DISP0_DAT10__IPU1_DISP0_DATA10       0xe0
+			  MX6QDL_PAD_DISP0_DAT11__IPU1_DISP0_DATA11       0xe0
+			  MX6QDL_PAD_DISP0_DAT12__IPU1_DISP0_DATA12       0xe0
+			  MX6QDL_PAD_DISP0_DAT13__IPU1_DISP0_DATA13       0xe0
+			  MX6QDL_PAD_DISP0_DAT14__IPU1_DISP0_DATA14       0xe0
+			  MX6QDL_PAD_DISP0_DAT15__IPU1_DISP0_DATA15       0xe0
+			  MX6QDL_PAD_DISP0_DAT16__IPU1_DISP0_DATA16       0xe0
+			  MX6QDL_PAD_DISP0_DAT17__IPU1_DISP0_DATA17       0xe0
+			  MX6QDL_PAD_DISP0_DAT18__IPU1_DISP0_DATA18       0xe0
+			  MX6QDL_PAD_DISP0_DAT19__IPU1_DISP0_DATA19       0xe0
+			  MX6QDL_PAD_DISP0_DAT20__IPU1_DISP0_DATA20       0xe0
+			  MX6QDL_PAD_DISP0_DAT21__IPU1_DISP0_DATA21       0xe0
+			  MX6QDL_PAD_DISP0_DAT22__IPU1_DISP0_DATA22       0xe0
+			  MX6QDL_PAD_DISP0_DAT23__IPU1_DISP0_DATA23       0xe0
+			>;
+		};
+
+		pinctrl_misc: misc {
+			fsl,pins = <
+			  /* OFF_BD_RESET# */
+			  MX6QDL_PAD_EIM_A17__GPIO2_IO21          0x1b0b1
+			  /* EN_USB_5V# */
+			  MX6QDL_PAD_EIM_A16__GPIO2_IO22          0x1b0b1
+			  /* EN_LCD_3.3V */
+			  MX6QDL_PAD_EIM_A19__GPIO2_IO19          0x1b0b1
+			  /* Audio CLK */
+			  MX6QDL_PAD_GPIO_0__CCM_CLKO1            0x130b0
+
+			  /* DIO_1 */
+			  MX6QDL_PAD_GPIO_5__GPIO1_IO05           0x1b0b1
+			  /* DIO_3 */
+			  MX6QDL_PAD_GPIO_9__GPIO1_IO09           0x1b0b1
+			  /* DIO_5 */
+			  MX6QDL_PAD_GPIO_17__GPIO7_IO12          0x1b0b1
+			  /* DIO_7 */
+			  MX6QDL_PAD_GPIO_19__GPIO4_IO05          0x1b0b1
+			  /* DIO_8 */
+			  MX6QDL_PAD_CSI0_MCLK__GPIO5_IO19        0x1b0b1
+			  /* DIO_9 */
+			  MX6QDL_PAD_CSI0_PIXCLK__GPIO5_IO18      0x1b0b1
+			  /* DIO_0 */
+			  MX6QDL_PAD_CSI0_DAT12__GPIO5_IO30       0x1b0b1
+			  /* DIO_6 */
+			  MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31       0x1b0b1
+			  /* CPU_DIO_A */
+			  MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03       0x1b0b1
+			  /* BUS_ALE# */
+			  MX6QDL_PAD_EIM_LBA__GPIO2_IO27          0x1b0b1
+			  /* DIO_15 */
+			  MX6QDL_PAD_EIM_OE__GPIO2_IO25           0x1b0b1
+			  /* BUS_DIR */
+			  MX6QDL_PAD_EIM_RW__GPIO2_IO26           0x1b0b1
+			  /* BUS_CS# */
+			  MX6QDL_PAD_EIM_CS0__GPIO2_IO23          0x1b0b1
+			  /* DIO_14 */
+			  MX6QDL_PAD_EIM_A18__GPIO2_IO20          0x1b0b1
+			  /* DIO_16 */
+			  MX6QDL_PAD_EIM_A20__GPIO2_IO18          0x1b0b1
+			  /* DIO_12 */
+			  MX6QDL_PAD_EIM_A21__GPIO2_IO17          0x1b0b1
+			  /* DIO_18 */
+			  MX6QDL_PAD_EIM_A22__GPIO2_IO16          0x1b0b1
+			  /* DIO_19 */
+			  MX6QDL_PAD_EIM_A23__GPIO6_IO06          0x1b0b1
+			  /* DIO_20 */
+			  MX6QDL_PAD_EIM_A24__GPIO5_IO04          0x1b0b1
+			  /* BUS_BHE# */
+			  MX6QDL_PAD_EIM_D31__GPIO3_IO31          0x1b0b1
+			  /* DIO_13 */
+			  MX6QDL_PAD_EIM_BCLK__GPIO6_IO31         0x1b0b1
+			  /* EIM_WAIT# */
+			  MX6QDL_PAD_EIM_WAIT__GPIO5_IO00         0x1b0b1
+			  /* DIO_10 */
+			  MX6QDL_PAD_EIM_EB1__GPIO2_IO29          0x1b0b1
+			  /* MUX_AD_00 */
+			  MX6QDL_PAD_EIM_DA0__GPIO3_IO00          0x1b0b1
+			  /* MUX_AD_01 */
+			  MX6QDL_PAD_EIM_DA1__GPIO3_IO01          0x1b0b1
+			  /* MUX_AD_02 */
+			  MX6QDL_PAD_EIM_DA2__GPIO3_IO02          0x1b0b1
+			  /* MUX_AD_03 */
+			  MX6QDL_PAD_EIM_DA3__GPIO3_IO03          0x1b0b1
+			  /* MUX_AD_04 */
+			  MX6QDL_PAD_EIM_DA4__GPIO3_IO04          0x1b0b1
+			  /* MUX_AD_05 */
+			  MX6QDL_PAD_EIM_DA5__GPIO3_IO05          0x1b0b1
+			  /* MUX_AD_06 */
+			  MX6QDL_PAD_EIM_DA6__GPIO3_IO06          0x1b0b1
+			  /* MUX_AD_07 */
+			  MX6QDL_PAD_EIM_DA7__GPIO3_IO07          0x1b0b1
+			  /* MUX_AD_08 */
+			  MX6QDL_PAD_EIM_DA8__GPIO3_IO08          0x1b0b1
+			  /* MUX_AD_09 */
+			  MX6QDL_PAD_EIM_DA9__GPIO3_IO09          0x1b0b1
+			  /* MUX_AD_10 */
+			  MX6QDL_PAD_EIM_DA10__GPIO3_IO10         0x1b0b1
+			  /* MUX_AD_11 */
+			  MX6QDL_PAD_EIM_DA11__GPIO3_IO11         0x1b0b1
+			  /* MUX_AD_12 */
+			  MX6QDL_PAD_EIM_DA12__GPIO3_IO12         0x1b0b1
+			  /* MUX_AD_13 */
+			  MX6QDL_PAD_EIM_DA13__GPIO3_IO13         0x1b0b1
+			  /* MUX_AD_14 */
+			  MX6QDL_PAD_EIM_DA14__GPIO3_IO14         0x1b0b1
+			  /* MUX_AD_15 */
+			  MX6QDL_PAD_EIM_DA15__GPIO3_IO15         0x1b0b1
+			>;
+		};
+	};
+};
+
