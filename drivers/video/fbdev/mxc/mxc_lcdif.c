@@ -60,6 +60,12 @@ static struct fb_videomode lcdif_modedb[] = {
 	0,
 	FB_VMODE_NONINTERLACED,
 	0,},
+	{
+	/* 320x240 @ 50 Hz? , pixel clk @ 6.4 MHz */
+	"NHD-3.5-320240MF", 60, 320, 240, 156000, 70, 70, 12, 12, 1, 2,
+	0,
+	FB_VMODE_NONINTERLACED,
+	0,},
 };
 static int lcdif_modedb_sz = ARRAY_SIZE(lcdif_modedb);
 
