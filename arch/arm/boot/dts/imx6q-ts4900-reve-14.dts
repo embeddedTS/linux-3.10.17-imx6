@@ -41,10 +41,14 @@
 
 /dts-v1/;
 #include "imx6q.dtsi"
-#include "imx6qdl-ts4900.dtsi"
-#include "imx6qdl-ts4900-ts8390.dtsi"
+#include "imx6qdl-ts4900-reve.dtsi"
+#include "imx6qdl-ts4900-ts8950.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6 Quad TS-4900 (TS-TPC-8390)";
+	model = "Technologic Systems i.MX6 Quad TS-4900 (TS-TPC-8950)";
 	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
+};
+
+&sata {
+        status = "okay";
 };

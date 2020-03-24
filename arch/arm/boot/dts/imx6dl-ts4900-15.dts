@@ -41,6 +41,7 @@
 
 /dts-v1/;
 #include "imx6dl.dtsi"
+#include "imx6qdl-ts4900.dtsi"
 #include "imx6qdl-ts4900-ts9550.dtsi"
 
 / {

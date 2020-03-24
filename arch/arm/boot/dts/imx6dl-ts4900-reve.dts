@@ -40,11 +40,14 @@
  */
 
 /dts-v1/;
-#include "imx6q.dtsi"
-#include "imx6qdl-ts4900.dtsi"
-#include "imx6qdl-ts4900-ts8390.dtsi"
+#include "imx6dl.dtsi"
+#include "imx6qdl-ts4900-reve.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6 Quad TS-4900 (TS-TPC-8390)";
-	compatible = "fsl,imx6q-ts4900", "fsl,imx6q";
+	model = "Technologic Systems i.MX6 Solo/DualLite TS-4900 (Default Device Tree)";
+	compatible = "fsl,imx6dl-ts4900", "fsl,imx6dl";
+};
+
+&epdc {
+	status = "disabled";
 };
