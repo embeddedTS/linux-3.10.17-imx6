@@ -340,6 +340,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6dl-ts4900-2.dtb\
 	imx6dl-ts4900.dtb \
 	imx6dl-ts7970.dtb \
+	imx6dl-ts7970-revf.dtb \
 	imx6dl-ts7990-lxd-revb.dtb \
 	imx6dl-ts7990-lxd.dtb \
 	imx6dl-ts7990-microtips-revb.dtb \
@@ -355,6 +356,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6q-ts4900-2.dtb \
 	imx6q-ts4900.dtb \
 	imx6q-ts7970.dtb \
+	imx6q-ts7970-revf.dtb \
 	imx6q-ts7990-lxd-revb.dtb \
 	imx6q-ts7990-lxd.dtb \
 	imx6q-ts7990-microtips-revb.dtb \
