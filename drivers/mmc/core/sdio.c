@@ -452,18 +452,18 @@ static int sdio_set_bus_speed_mode(struct mmc_card *card)
 
 	bus_speed = SDIO_SPEED_SDR12;
 	timing = MMC_TIMING_UHS_SDR12;
-	if ((card->host->caps & MMC_CAP_UHS_SDR104) &&
-	    (card->sw_caps.sd3_bus_mode & SD_MODE_UHS_SDR104)) {
-			bus_speed = SDIO_SPEED_SDR104;
-			timing = MMC_TIMING_UHS_SDR104;
-			card->sw_caps.uhs_max_dtr = UHS_SDR104_MAX_DTR;
-			card->sd_bus_speed = UHS_SDR104_BUS_SPEED;
-	} else if ((card->host->caps & MMC_CAP_UHS_DDR50) &&
+	if ((card->host->caps & MMC_CAP_UHS_DDR50) &&
 		   (card->sw_caps.sd3_bus_mode & SD_MODE_UHS_DDR50)) {
 			bus_speed = SDIO_SPEED_DDR50;
 			timing = MMC_TIMING_UHS_DDR50;
 			card->sw_caps.uhs_max_dtr = UHS_DDR50_MAX_DTR;
 			card->sd_bus_speed = UHS_DDR50_BUS_SPEED;
+	} else if ((card->host->caps & MMC_CAP_UHS_SDR104) &&
+		   (card->sw_caps.sd3_bus_mode & SD_MODE_UHS_SDR104)) {
+		bus_speed = SDIO_SPEED_SDR104;
+		timing = MMC_TIMING_UHS_SDR104;
+		card->sw_caps.uhs_max_dtr = UHS_SDR104_MAX_DTR;
+		card->sd_bus_speed = UHS_SDR104_BUS_SPEED;
 	} else if ((card->host->caps & (MMC_CAP_UHS_SDR104 |
 		    MMC_CAP_UHS_SDR50)) && (card->sw_caps.sd3_bus_mode &
 		    SD_MODE_UHS_SDR50)) {
