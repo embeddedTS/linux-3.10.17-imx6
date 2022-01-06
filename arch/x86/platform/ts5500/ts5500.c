@@ -1,5 +1,5 @@
 /*
- * Technologic Systems TS-5500 Single Board Computer support
+ * embeddedTS TS-5500 Single Board Computer support
  *
  * Copyright (C) 2013-2014 Savoir-faire Linux Inc.
  *	Vivien Didelot <vivien.didelot@savoirfairelinux.com>
@@ -10,7 +10,7 @@
  * version.
  *
  *
- * This driver registers the Technologic Systems TS-5500 Single Board Computer
+ * This driver registers the embeddedTS TS-5500 Single Board Computer
  * (SBC) and its devices, and exposes information to userspace such as jumpers'
  * state or available options. For further information about sysfs entries, see
  * Documentation/ABI/testing/sysfs-platform-ts5500.
@@ -348,4 +348,4 @@ device_initcall(ts5500_init);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Savoir-faire Linux Inc. <kernel@savoirfairelinux.com>");
-MODULE_DESCRIPTION("Technologic Systems TS-5500 platform driver");
+MODULE_DESCRIPTION("embeddedTS TS-5500 platform driver");

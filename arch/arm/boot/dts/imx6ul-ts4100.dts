@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Technologic Systems
+ * Copyright 2017-2022 Technologic Systems, Inc. dba embeddedTS
  *
  * This file is dual-licensed: you can use it either under the terms
  * of the GPL or the X11 license, at your option. Note that this dual
@@ -43,7 +43,7 @@
 #include "imx6ul-ts4100.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6ul TS-4100 (Default Device Tree)";
+	model = "embeddedTS i.MX6ul TS-4100 (Default Device Tree)";
 	compatible = "fsl,imx6ul-ts4100", "fsl,imx6ul";
 };
 

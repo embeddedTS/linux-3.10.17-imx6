@@ -36,7 +36,7 @@
  */
 
  /*
-    Modified from the original max3100.c to support the Technologic Systems
+    Modified from the original max3100.c to support the embeddedTS
     MAX3100 extended UARTs.  This device puts 3 MAX3100-like uarts in one
     chip, but with only a single CS# line going to the chip, and a single
     IRQ pin.  This requires that all SPI transactions are preceded by a byte 

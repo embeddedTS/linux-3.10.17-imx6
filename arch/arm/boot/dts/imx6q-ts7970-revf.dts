@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Technologic Systems
+ * Copyright 2017-2022 Technologic Systems, Inc. dba embeddedTS
  *
  * This file is dual-licensed: you can use it either under the terms
  * of the GPL or the X11 license, at your option. Note that this dual
@@ -44,7 +44,7 @@
 #include "imx6qdl-ts7970-revf.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6 Quad TS-7970";
+	model = "embeddedTS i.MX6 Quad TS-7970";
 	compatible = "fsl,imx6q-ts7970", "fsl,imx6q";
 };
 
