@@ -16,7 +16,7 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "Technologic Systems i.MX6 Quad TS-7970";
+	model = "embeddedTS i.MX6 Quad TS-7970";
 	compatible = "fsl,imx6q-ts7970", "fsl,imx6q";
 };
 
