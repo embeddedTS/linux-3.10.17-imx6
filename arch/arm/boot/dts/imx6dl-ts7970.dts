@@ -1,6 +1,6 @@
 /*
  * Copyright 2011 Freescale Semiconductor, Inc.
- * Copyright 2015 Technologic Systems
+ * Copyright 2015-2022 Technologic Systems, Inc. dba embeddedTS
  *
  * The code contained herein is licensed under the GNU General Public
  * License. You may obtain a copy of the GNU General Public License
@@ -16,6 +16,6 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "Technologic Systems i.MX6 Solo/DualLite TS-7970";
+	model = "embeddedTS i.MX6 Solo/DualLite TS-7970";
 	compatible = "fsl,imx6dl-ts7970", "fsl,imx6dl";
 };
