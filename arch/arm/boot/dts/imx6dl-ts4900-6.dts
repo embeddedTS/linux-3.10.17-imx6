@@ -13,6 +13,6 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "Technologic Systems i.MX6 Solo/DualLite TS-4900 (TS-8160)";
+	model = "embeddedTS i.MX6 Solo/DualLite TS-4900 (TS-8160)";
 	compatible = "fsl,imx6dl-ts4900", "fsl,imx6dl";
 };

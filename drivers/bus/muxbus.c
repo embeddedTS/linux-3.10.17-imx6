@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014, Technologic Systems, Inc
+ * Copyright (C) 2014-2022 Technologic Systems, Inc. dba embeddedTS
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -431,7 +431,7 @@ static void __exit muxbus_exit(void)
 
 subsys_initcall(muxbus_init);
 module_exit(muxbus_exit);
-MODULE_AUTHOR("Ian <ian@embeddedarm.com>");
+MODULE_AUTHOR("Ian <ian@embeddedTS.com>");
 MODULE_DESCRIPTION("TS MUXBUS Driver");
 MODULE_ALIAS("TS-MUXBUS driver");
 MODULE_LICENSE("GPL v2");

@@ -864,7 +864,7 @@ config SOC_VF610
 	  This enable support for Freescale Vybrid VF610 processor.
 
 config MACH_TS4900
-   bool "Technologic Systems TS-4900 support"
+   bool "embeddedTS TS-4900 support"
    
 endif
 

@@ -12,7 +12,7 @@
 #include <linux/i2c/ts4900gpio.h>
 
 /* See register documentation at 
- * http://wiki.embeddedarm.com/wiki/TS-4900#FPGA
+ * http://wiki.embeddedTS.com/wiki/TS-4900#FPGA
  */
 
 struct gpio_ts4900_priv {
@@ -347,6 +347,6 @@ static void __exit gpio_ts4900_exit(void)
 }
 module_exit(gpio_ts4900_exit);
 
-MODULE_AUTHOR("Technologic Systems");
+MODULE_AUTHOR("embeddedTS");
 MODULE_DESCRIPTION("GPIO interface for ts4900");
 MODULE_LICENSE("GPL");

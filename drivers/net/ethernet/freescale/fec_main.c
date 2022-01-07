@@ -21,7 +21,7 @@
  * Copyright (C) 2010-2013 Freescale Semiconductor, Inc.
  *
  * Includes some patches originally made by boundarydevices to 3.0.35,
- * slightly modified to fit the 3.10 kernel here, by Technologic Systems for
+ * slightly modified to fit the 3.10 kernel here, by embeddedTS for
  * the imx6-based TS-4900 board.
  */
 
