@@ -15,6 +15,6 @@
 #include "imx6qdl-ts4900-9.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6 Solo/DualLite TS-4900 (TS-8150)";
+	model = "embeddedTS i.MX6 Solo/DualLite TS-4900 (TS-8150)";
 	compatible = "fsl,imx6dl-ts4900", "fsl,imx6dl";
 };
