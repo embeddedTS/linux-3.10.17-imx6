@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Technologic Systems
+ * Copyright 2017-2022 Technologic Systems, Inc. dba embeddedTS
  *
  * This file is dual-licensed: you can use it either under the terms
  * of the GPL or the X11 license, at your option. Note that this dual
@@ -43,8 +43,8 @@
 #include "imx6ul.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6ul TS-4100";
-	compatible = "technologic,ts4100", "fsl,imx6ul";
+	model = "embeddedTS i.MX6ul TS-4100";
+	compatible = "embeddedts,ts4100", "fsl,imx6ul";
 
 	chosen {
 		stdout-path = &uart1;
@@ -321,7 +321,7 @@
 	sda-gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
 
 	gpio6: tsgpio@28 {
-		compatible = "technologic,tsgpio";
+		compatible = "embeddedts,tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;

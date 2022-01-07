@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Technologic Systems
+ * Copyright 2020-2022 Technologic Systems, Inc. dba embeddedTS
  *
  * This file is dual-licensed: you can use it either under the terms
  * of the GPL or the X11 license, at your option. Note that this dual
@@ -44,7 +44,7 @@
 #include "imx6qdl-ts4900-ts8550.dtsi"
 
 / {
-	model = "Technologic Systems i.MX6 Solo/DualLite TS-4900 (TS-8550)";
+	model = "embeddedTS i.MX6 Solo/DualLite TS-4900 (TS-8550)";
 	compatible = "fsl,imx6dl-ts4900", "fsl,imx6dl";
 };
 

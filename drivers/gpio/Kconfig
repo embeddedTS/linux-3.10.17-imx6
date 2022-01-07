@@ -421,7 +421,7 @@ config GPIO_TS5500
 	depends on TS5500 || COMPILE_TEST
 	help
 	  This driver supports Digital I/O exposed by pin blocks found on some
-	  Technologic Systems platforms. It includes, but is not limited to, 3
+	  embeddedTS platforms. It includes, but is not limited to, 3
 	  blocks of the TS-5500: DIO1, DIO2 and the LCD port, and the TS-5600
 	  LCD port.
 
@@ -648,7 +648,7 @@ config GPIO_SX150X
 	  16 bits: sx1509q
 
 config GPIO_TS
-	bool "Technologic Systems FPGA I2C GPIO"
+	bool "embeddedTS FPGA I2C GPIO"
 	depends on I2C
 	help
 	  GPIO driver for TS I2C FPGA
