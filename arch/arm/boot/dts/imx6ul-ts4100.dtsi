@@ -44,7 +44,7 @@
 
 / {
 	model = "embeddedTS i.MX6ul TS-4100";
-	compatible = "embeddedts,ts4100", "fsl,imx6ul";
+	compatible = "technologic,ts4100", "fsl,imx6ul";
 
 	chosen {
 		stdout-path = &uart1;
@@ -321,7 +321,7 @@
 	sda-gpios = <&gpio3 5 GPIO_ACTIVE_HIGH>;
 
 	gpio6: tsgpio@28 {
-		compatible = "embeddedts,tsgpio";
+		compatible = "technologic,tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;

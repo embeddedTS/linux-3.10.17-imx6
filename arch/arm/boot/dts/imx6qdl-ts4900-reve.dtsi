@@ -185,7 +185,7 @@
 	};
 
 	gpio8: tsgpio@28 {
-		compatible = "embeddedts,tsgpio";
+		compatible = "technologic,tsgpio";
 		reg = <0x28>;
 		#gpio-cells = <2>;
 		gpio-controller;
