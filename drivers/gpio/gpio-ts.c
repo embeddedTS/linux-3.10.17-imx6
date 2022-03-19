@@ -200,8 +200,8 @@ static struct gpio_chip template_chip = {
 
 #ifdef CONFIG_OF
 static const struct of_device_id tsgpio_ids[] = {
-	{ .compatible = "embeddedts,tsgpio", .data = (void *) 0},
-	{ .compatible = "embeddedts,tsgpio-2bitio", .data = (void *) 1},
+	{ .compatible = "technologic,tsgpio", .data = (void *) 0},
+	{ .compatible = "technologic,tsgpio-2bitio", .data = (void *) 1},
 	{},
 };
 
